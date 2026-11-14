@@ -19,6 +19,7 @@ sfc_render_header($context, 'voting');
       <p>Track area-based business demand through premium vote cards, clear breakdowns, and admin-curated options that make the signal easier to trust.</p>
     </div>
     <div class="intro-actions">
+      <a href="<?= htmlspecialchars(sfc_path('/wellness.php#needs'), ENT_QUOTES, 'UTF-8') ?>" class="btn-shell btn-shell-secondary">Record a wellness access need</a>
       <a href="<?= htmlspecialchars(sfc_path('/property-ranking.php'), ENT_QUOTES, 'UTF-8') ?>" class="btn-shell btn-shell-secondary">View Rankings</a>
       <a href="<?= htmlspecialchars(sfc_path('/investor-login.php'), ENT_QUOTES, 'UTF-8') ?>" class="btn-shell btn-shell-primary">Investor / Resident Access</a>
     </div>

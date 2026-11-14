@@ -2452,12 +2452,12 @@ document.addEventListener('click', async event => {
 
 function setupPrivacy() {
   const dialog=document.getElementById('cityPrivacyDialog');if(!dialog)return;
-  let dismissed=false;try{dismissed=sessionStorage.getItem('locus.privacy-preview')==='1';}catch{}
+  let dismissed=false;try{dismissed=sessionStorage.getItem('well-yu.privacy-preview')==='1';}catch{}
   const checkbox=document.getElementById('cityPrivacyConsent');const continueButton=document.getElementById('cityPrivacyContinue');
   checkbox.addEventListener('change',()=>continueButton.disabled=!checkbox.checked);
-  function close(){try{sessionStorage.setItem('locus.privacy-preview','1');}catch{}dialog.close();}
+  function close(){try{sessionStorage.setItem('well-yu.privacy-preview','1');}catch{}dialog.close();}
   document.getElementById('cityPrivacyGuest').addEventListener('click',close);
-  dialog.addEventListener('cancel',()=>{try{sessionStorage.setItem('locus.privacy-preview','1');}catch{}});
+  dialog.addEventListener('cancel',()=>{try{sessionStorage.setItem('well-yu.privacy-preview','1');}catch{}});
   continueButton.addEventListener('click',()=>{if(checkbox.checked){close();location.href=path('investor-login.php?mode=signup');}});
   if(!dismissed&&typeof dialog.showModal==='function')setTimeout(()=>dialog.showModal(),500);
 }

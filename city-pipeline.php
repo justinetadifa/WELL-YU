@@ -8,6 +8,7 @@ sfc_render_head('City Pipeline | LOCUS-SF', $context, ['page' => 'city-pipeline'
 sfc_render_header($context, 'city-pipeline');
 ?>
 <main class="page-shell pipeline-page-shell">
+  <p class="site-shell"><a class="btn-shell btn-shell-secondary" href="<?= htmlspecialchars(sfc_path('/wellness.php#follow'), ENT_QUOTES, 'UTF-8') ?>">Wellness proposals &amp; follow-up</a></p>
   <div class="site-shell pipeline-site-shell" id="cityPipelineRoot">
     <div class="loading-panel">Loading city pipeline signal atlas...</div>
   </div>

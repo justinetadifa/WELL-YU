@@ -17,14 +17,14 @@ try {
 }
 ?>
 <main id="main-content">
-  <div id="locus-react-hero" class="city-hero-frame ios-hero-frame" data-asset-base="<?= $e($context['assetBase']) ?>" data-availability="<?= $e($heroAvailability) ?>"><?= str_replace(['__LOCUS_ASSET_BASE__', '__LOCUS_AVAILABILITY__'], [$e($context['assetBase']), $e($heroAvailability)], trim((string) file_get_contents(__DIR__ . '/app/Views/home-hero.generated.html'))) ?></div>
+  <?php require __DIR__ . '/app/Views/welyu-home-hero.php'; ?>
 
   <!-- SAN FERNANDO AT A GLANCE -->
   <section class="home-glance" id="at-a-glance" aria-labelledby="glanceTitle">
     <div class="city-container home-glance-panel">
       <div class="glance-profile-header">
         <div>
-          <p class="glance-section-label">City overview</p>
+          <p class="glance-section-label">02 / City overview</p>
           <h2 id="glanceTitle" class="home-glance-title">San Fernando,<br class="glance-title-break"> at a glance.</h2>
           <p class="glance-profile-description">The people, businesses and connections that make up the city.</p>
         </div>
@@ -108,7 +108,7 @@ try {
     <div class="city-container locator-section-content">
       <div class="locator-section-header">
         <div class="locator-section-intro">
-          <p class="locator-section-eyebrow">Business community</p>
+          <p class="locator-section-eyebrow">03 / Business community</p>
           <h2 id="recipientsSectionTitle" class="locator-section-title">In good <br>company.</h2>
           <p class="locator-section-description">Meet the businesses investing in San Fernando. Compare their approved incentives and explore each company.</p>
         </div>
@@ -174,8 +174,8 @@ try {
   <section class="city-container city-section" id="why-invest" aria-labelledby="whyTitle">
     <div class="discovery-section-heading">
       <div>
-        <span class="discovery-eyebrow"><span aria-hidden="true">03 /</span> Find your opportunity</span>
-        <h2 id="whyTitle" class="city-why-heading">WHY SAN FERNANDO?</h2>
+        <span class="discovery-eyebrow"><span aria-hidden="true">04 /</span> Find your opportunity</span>
+        <h2 id="whyTitle" class="city-why-heading">Good things start locally.</h2>
         <p class="discovery-heading-note">Six things to know before your next move. Pick a topic to begin.</p>
       </div>
       <a class="discovery-heading-link" href="https://www.sanfernandocity.gov.ph/business-in-the-city/" target="_blank" rel="noopener"><span>City investment guide</span> <span class="discovery-heading-link-arrow" aria-hidden="true">&nearr;</span></a>
@@ -741,12 +741,13 @@ try {
   <section class="city-container city-section" id="properties">
     <div class="city-section-heading tw-flex tw-flex-col sm:tw-flex-row sm:tw-items-end sm:tw-justify-between tw-gap-3 sm:tw-gap-4 tw-mb-6">
       <div>
-        <h2 class="tw-m-0 tw-text-2xl sm:tw-text-3xl tw-font-black tw-italic tw-uppercase tw-tracking-tight tw-text-[#9E1B22]" style="font-family: 'Poppins', sans-serif;">FEATURED PROPERTIES.</h2>
-        <p class="tw-mt-1 tw-mb-0 tw-text-sm sm:tw-text-base tw-font-semibold tw-text-[#11224D]">Three listings to get you started.</p>
+        <p class="welyu-section-eyebrow">05 / Property Collection</p>
+        <h2 class="welyu-collection-title">A place for your next chapter.</h2>
+        <p class="welyu-collection-sub">Curated parcels and commercial spaces in San Fernando.</p>
       </div>
-      <a class="city-featured-props-cta tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-w-fit tw-px-5 sm:tw-px-6 tw-py-2 sm:tw-py-2.5 tw-rounded-full tw-bg-[#9E1B22] tw-text-white tw-font-semibold tw-text-xs sm:tw-text-sm hover:tw-bg-[#80141a] hover:tw-shadow-md hover:tw-scale-[1.02] active:tw-scale-[0.98] tw-transition-all tw-duration-200" href="<?= $e(sfc_path($cataloguePath)) ?>">
+      <a class="city-featured-props-cta city-button city-button-small city-cta-button welyu-collection-cta" href="<?= $e(sfc_path($cataloguePath)) ?>">
         <span>View all properties</span>
-        <span class="tw-ml-1.5" aria-hidden="true">&rarr;</span>
+        <span class="welyu-arrow" aria-hidden="true">&nearr;</span>
       </a>
     </div>
     <?php sfc_investor_view_control($context); ?>
@@ -772,8 +773,8 @@ try {
       
       <div class="city-concierge-header">
         <div>
-          <span class="city-concierge-kicker">City Government of San Fernando &bull; LEBDO</span>
-          <h2 id="conciergeTitle" class="city-concierge-title">INVESTMENT INQUIRIES &amp; ASSISTANCE</h2>
+          <span class="city-concierge-kicker">06 / Direct Facilitation &bull; LEBDO</span>
+          <h2 id="conciergeTitle" class="city-concierge-title">A little guidance goes a long way.</h2>
           <p class="city-concierge-subtitle">Direct facilitation for capital investors, business locators, and tax incentive applications.</p>
         </div>
         <div class="city-concierge-hotline-pill">
@@ -854,12 +855,12 @@ try {
   <section class="city-container city-section" id="about">
     <div class="city-about">
       <div class="city-about-intro">
-        <div class="city-about-eyebrow">ABOUT LOCUS-SF</div>
-        <h2 class="city-about-title">LOCAL INSIGHT.<br>BETTER DECISIONS.</h2>
-        <p class="city-about-lead">LOCUS-SF is a decision-support system that brings property listings, spatial data, and departmental assessments into one place—helping investors compare opportunities across San Fernando City with greater clarity.</p>
-        <p class="city-about-sub">Developed as a thesis project by the LOCUS-SF team in collaboration with local government offices.</p>
+        <div class="city-about-eyebrow">07 / ABOUT wELYU</div>
+        <h2 class="city-about-title">Local insight.<br>Thoughtful decisions.</h2>
+        <p class="city-about-lead">wELYU brings property listings, local context, and recorded assessments together—helping you consider where your next investment could fit in San Fernando City.</p>
+        <p class="city-about-sub">An independent competition prototype, built on the existing LOCUS-SF research foundation.</p>
       </div>
-      <div class="city-about-list" role="region" aria-label="About LOCUS-SF details">
+      <div class="city-about-list" role="region" aria-label="About wELYU details">
         <div class="city-about-item" data-about-item>
           <button type="button" class="city-about-btn" data-about-toggle aria-expanded="false">
             <span class="city-about-icon" aria-hidden="true">&#9654;</span>

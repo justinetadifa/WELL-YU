@@ -15,7 +15,7 @@
   const PING_URL = config.pingUrl || 'api/session-ping.php';
   const LOGOUT_URL = config.logoutUrl || 'logout.php';
   const LOGIN_URL = config.loginUrl || 'index.php?reason=timeout';
-  const STORAGE_KEY = 'locus_sf_session_last_activity';
+  const STORAGE_KEY = 'well_yu_session_last_activity';
 
   let warningActive = false;
   let countdownInterval = null;

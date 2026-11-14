@@ -15,6 +15,15 @@ final class Database
 
     public function __construct(array $config)
     {
+        // Defense in depth for CLI tools as well as the web application.
+        if (($config['name'] ?? null) !== 'well_yu_db') {
+            throw new \InvalidArgumentException('WELL-YU may connect only to well_yu_db.');
+        }
+        foreach (['host', 'charset'] as $key) {
+            if (preg_match('/[;\x00-\x20]/', (string) ($config[$key] ?? ''))) {
+                throw new \InvalidArgumentException('Invalid WELL-YU database connection setting.');
+            }
+        }
         $this->config = $config;
     }
 

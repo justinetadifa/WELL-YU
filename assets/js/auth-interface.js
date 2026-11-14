@@ -196,25 +196,25 @@
     const roleData = {
       investor: {
         kicker: 'YOUR NEXT MOVE',
-        title: '<span>STARTS</span><span>HERE.</span>',
+        title: '<span>A fresh start.</span><span>A thoughtful move.</span>',
         taglineScript: 'Discover spaces, explore opportunities',
-        taglineAction: 'AND INVEST IN THE CITY!',
-        eyebrow: 'YOUR LOCUS-SF ACCOUNT',
-        intro: 'SIGN IN TO EXPLORE YOUR NEXT OPPORTUNITY.'
+        taglineAction: 'Invest with a little more perspective.',
+        eyebrow: 'YOUR wELYU ACCOUNT',
+        intro: 'Sign in to explore your next opportunity.'
       },
       seller: {
         kicker: 'LOCAL EXPERTISE',
-        title: '<span>NEW</span><span>HORIZONS.</span>',
+        title: '<span>Good places.</span><span>Shared possibilities.</span>',
         taglineScript: 'Connect spaces, empower clients',
-        taglineAction: 'AND SHAPE THE CITY!',
-        eyebrow: 'YOUR LOCUS-SF ACCOUNT',
+        taglineAction: 'Find the right place for the next idea.',
+        eyebrow: 'YOUR wELYU ACCOUNT',
         intro: 'Sign in to your listings and verification status.'
       },
       admin: {
         kicker: 'ONE CITY',
-        title: '<span>SHARED</span><span>VISION.</span>',
+        title: '<span>Local insight.</span><span>Better decisions.</span>',
         taglineScript: 'Informed decisions, seamless data',
-        taglineAction: 'FOR THE CITY WE SERVE!',
+        taglineAction: 'For the community we serve.',
         eyebrow: 'CITY WORKSPACE',
         intro: 'CICTO · City Assessor · LEBDO'
       }
@@ -325,9 +325,9 @@
           if (newRole === 'admin') {
             heading.textContent = 'City staff access';
           } else {
-            let isReturning = document.cookie.includes('sfc_returning_user=1');
-            try { isReturning ||= localStorage.getItem('sfc_user_returning') === '1'; } catch { /* Storage is optional. */ }
-            heading.textContent = isReturning ? 'WELCOME BACK!' : 'WELCOME!';
+            let isReturning = document.cookie.includes('well_yu_returning_user=1');
+            try { isReturning ||= localStorage.getItem('well_yu_user_returning') === '1'; } catch { /* Storage is optional. */ }
+            heading.textContent = isReturning ? 'Welcome back.' : 'Welcome.';
           }
         }
 
@@ -348,7 +348,7 @@
             switchP.innerHTML = 'Need a city staff account? CICTO can create one through City accounts.';
           } else {
             const signupUrl = pill.href.includes('?') ? pill.href + '&mode=signup' : pill.href + '?mode=signup';
-            switchP.innerHTML = `New to LOCUS-SF? <a href="${signupUrl}">Create account</a>`;
+            switchP.innerHTML = `New to wELYU? <a href="${signupUrl}">Create account</a>`;
           }
         }
 
@@ -366,11 +366,11 @@
   // Handle new user vs returning user heading text
   const welcomeHeading = document.querySelector('[data-welcome-heading]');
   if (welcomeHeading) {
-    let isReturning = document.cookie.includes('sfc_returning_user=1');
-    try { isReturning ||= localStorage.getItem('sfc_user_returning') === '1'; } catch { /* Storage is optional. */ }
+    let isReturning = document.cookie.includes('well_yu_returning_user=1');
+    try { isReturning ||= localStorage.getItem('well_yu_user_returning') === '1'; } catch { /* Storage is optional. */ }
     const role = document.querySelector('.account-auth')?.dataset.accountRole || 'investor';
-    if (role !== 'admin') {
-      welcomeHeading.textContent = isReturning ? 'WELCOME BACK!' : 'WELCOME!';
+    if (role !== 'admin' && !document.querySelector('.account-shell.is-registering')) {
+      welcomeHeading.textContent = isReturning ? 'Welcome back.' : 'Welcome.';
     }
   }
 
@@ -378,8 +378,8 @@
   document.querySelectorAll('form[data-account-form]').forEach(form => {
     form.addEventListener('submit', event => {
       if (event.defaultPrevented) return;
-      try { localStorage.setItem('sfc_user_returning', '1'); } catch { /* Storage is optional. */ }
-      document.cookie = 'sfc_returning_user=1; path=/; max-age=31536000; SameSite=Lax';
+      try { localStorage.setItem('well_yu_user_returning', '1'); } catch { /* Storage is optional. */ }
+      document.cookie = 'well_yu_returning_user=1; path=/WELL-YU/; max-age=31536000; SameSite=Lax';
     });
   });
 })();

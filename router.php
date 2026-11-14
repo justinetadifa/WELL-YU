@@ -2,6 +2,10 @@
 declare(strict_types=1);
 // Access rules for the PHP development server, which does not read .htaccess.
 $path = rawurldecode((string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'));
+if (preg_match('/\.(?:sql|log|bak|pem|key|p12|pfx)$/iD', $path)) {
+    http_response_code(404);
+    exit('Not found.');
+}
 $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $path)), static fn (string $part): bool => $part !== ''));
 foreach ($segments as $segment) {
     if ($segment[0] === '.') {

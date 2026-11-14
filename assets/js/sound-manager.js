@@ -7,9 +7,9 @@
 (function (window, document) {
   'use strict';
 
-  const STORAGE_KEY = 'locus_sound_preferences';
-  const PENDING_LOGIN_KEY = 'locus_pending_login_sound';
-  const APPROVED_HISTORY_KEY = 'locus_played_approvals';
+  const STORAGE_KEY = 'well_yu_sound_preferences';
+  const PENDING_LOGIN_KEY = 'well_yu_pending_login_sound';
+  const APPROVED_HISTORY_KEY = 'well_yu_played_approvals';
 
   // Default Sound Preferences
   const defaults = {

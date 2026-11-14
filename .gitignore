@@ -1,6 +1,5 @@
 app/config.local.php
 app/admin-access.local.php
-app/admin-access.local.php
 vendor/
 !assets/vendor/
 assets/vendor/*
@@ -13,6 +12,7 @@ Thumbs.db
 Desktop.ini
 
 .ui-audit/
+real-estate-listing-template-main/
 scratch/
 scratch_*.php
 cookies.txt
@@ -28,3 +28,18 @@ backup_*
 assets/uploads/profiles/*
 !assets/uploads/profiles/.htaccess
 *.pdf
+
+# WELL-YU private settings and runtime files (keep templates and access rules).
+.env
+.env.*
+!.env.example
+app/*.local.php
+data/sessions/
+data/wellness-documents/
+assets/uploads/*/**
+!assets/uploads/**/.htaccess
+*.pem
+*.key
+*.p12
+*.pfx
+database/backups/

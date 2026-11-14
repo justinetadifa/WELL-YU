@@ -1,6 +1,15 @@
 Options -Indexes
 DirectoryIndex index.php
 
+<FilesMatch "(?i)^(?:\.env(?:\..*)?|.*\.(?:sql|log|bak|pem|key|p12|pfx)|config\.local\.php(?:\..*)?)$">
+Require all denied
+</FilesMatch>
+
+# Protect Git metadata even when Apache's global dotfile rule is absent.
+<IfModule mod_alias.c>
+RedirectMatch 404 (?i)/\.git(?:/|$)
+</IfModule>
+
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteRule ^signout/?$ logout.php [L,QSA]

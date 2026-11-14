@@ -106,7 +106,7 @@ const vm = require('node:vm');
   // Test Enable & Persistence
   sound.setEnabled(true);
   assert.equal(sound.isEnabled(), true, 'Should be enabled after setEnabled(true)');
-  assert(storage.has('locus_sound_preferences'), 'Preferences must be saved to storage');
+  assert(storage.has('well_yu_sound_preferences'), 'Preferences must be saved to storage');
 
   sound.setVolume(0.45);
   assert.equal(sound.getVolume(), 0.45, 'Volume must update correctly');
@@ -129,9 +129,9 @@ const vm = require('node:vm');
 
   // Test login pending sound
   sound.markPendingLogin();
-  assert.equal(mockStorage.getItem('locus_pending_login_sound'), '1', 'Pending login must be marked in sessionStorage');
+  assert.equal(mockStorage.getItem('well_yu_pending_login_sound'), '1', 'Pending login must be marked in sessionStorage');
   assert.doesNotThrow(() => sound.playLoginSuccess(), 'playLoginSuccess must consume without throwing');
-  assert.equal(mockStorage.getItem('locus_pending_login_sound'), null, 'Pending login must be consumed once and cleared');
+  assert.equal(mockStorage.getItem('well_yu_pending_login_sound'), null, 'Pending login must be consumed once and cleared');
 
   // 2. Verify CityShell.php and HelpCenter.php integration
   const cityShell = readFileSync('app/Support/CityShell.php', 'utf8');

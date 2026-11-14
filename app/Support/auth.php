@@ -10,6 +10,13 @@ require_once __DIR__ . '/auth-validation.php';
 function sfc_start_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
+        $security = sfc_security_config()['security'];
+        $sessionPath = (string) $security['session_save_path'];
+        if (!is_dir($sessionPath) && !mkdir($sessionPath, 0700, true) && !is_dir($sessionPath)) {
+            throw new RuntimeException('Unable to create the WELL-YU session directory.');
+        }
+        session_name((string) $security['session_name']);
+        session_save_path($sessionPath);
         $secure = sfc_request_is_https();
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
@@ -17,7 +24,7 @@ function sfc_start_session(): void
         ini_set('session.cookie_samesite', 'Lax');
         session_set_cookie_params([
             'lifetime' => 0,
-            'path' => '/',
+            'path' => (string) $security['session_cookie_path'],
             'domain' => '',
             'secure' => $secure,
             'httponly' => true,

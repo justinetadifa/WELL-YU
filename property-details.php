@@ -15,6 +15,7 @@ sfc_render_header($context, 'explorer');
 <main class="city-container city-workspace">
     <div class="property-page-toolbar no-print print:tw-hidden">
         <p class="city-back-nav"><a class="city-link" href="<?= htmlspecialchars(sfc_path('/property-explorer.php'), ENT_QUOTES, 'UTF-8') ?>">← Properties</a></p>
+        <a class="city-link" href="<?= htmlspecialchars(sfc_path('/wellness.php') . '?propertyId=' . max(0, (int) ($_GET['id'] ?? 0)) . '#plan', ENT_QUOTES, 'UTF-8') ?>">Plan a wellness investment</a>
         <?php sfc_investor_view_control($context); ?>
     </div>
     <div id="cityPropertyDetails" aria-live="polite"><div class="city-loading">Loading property…</div></div>

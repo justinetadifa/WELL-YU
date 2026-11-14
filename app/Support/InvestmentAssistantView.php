@@ -16,7 +16,7 @@ function sfc_render_investment_assistant(array $context): void
         <p class="ia-description">Explore published properties through guided search.</p>
       </header>
       <div class="ia-conversation-body" id="iaConversationBody">
-        <div class="ia-messages" id="iaMessages" role="log" aria-label="Your conversation with the Property Assistant" aria-live="polite" aria-relevant="additions text"><div class="ia-message ia-message-assistant"><span class="ia-message-label">LOCUS-SF</span><p>Start with a location, property type, or budget. Are you looking to buy or lease?</p></div></div>
+        <div class="ia-messages" id="iaMessages" role="log" aria-label="Your conversation with the Property Assistant" aria-live="polite" aria-relevant="additions text"><div class="ia-message ia-message-assistant"><span class="ia-message-label">wELYU</span><p>Start with a location, property type, or budget. Are you looking to buy or lease?</p></div></div>
         <div class="ia-starters" id="iaStarters" aria-label="Start a property search">
           <?php foreach (['Show published properties', 'Buy a property', 'Lease a space', 'Find a commercial lot'] as $prompt): ?>
           <button type="button" data-ia-prompt="<?= $e($prompt) ?>" disabled><?= $e($prompt) ?></button>

@@ -1,20 +1,31 @@
 <?php
 return [
     'app' => [
-        'name' => 'LOCUS-SF',
+        'name' => 'wELYU',
+        'url' => 'http://localhost/WELL-YU/',
         'environment' => 'local',
         'debug' => true,
-        'auto_migrate' => true,
-        'auto_seed' => true,
+        'auto_migrate' => false,
+        'auto_seed' => false,
     ],
     'db' => [
         'host' => '127.0.0.1',
         'port' => 3306,
-        'name' => 'sfcelerate_bizstart',
+        'name' => 'well_yu_db',
         'user' => 'root',
         'pass' => '',
     ],
+    'mail' => [
+        'smtp_host' => '',
+        'smtp_username' => '',
+        'smtp_password' => '',
+        'from_email' => '',
+        'from_name' => 'wELYU',
+    ],
     'services' => [
+        'maps' => [
+            'locationiq_key' => '',
+        ],
         'location' => [
             'locationiq_key' => '',
         ],
@@ -37,7 +48,7 @@ return [
                 'cloud_name' => '',
                 'api_key' => '',
                 'api_secret' => '',
-                'folder' => 'sfcelerate-bizstart/properties',
+                'folder' => 'well-yu/properties',
             ],
         ],
         'weather' => [

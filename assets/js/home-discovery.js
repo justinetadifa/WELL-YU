@@ -8,7 +8,7 @@ export function setupHomeDiscovery() {
   const status = section.querySelector('[data-discovery-status]');
   const next = section.querySelector('[data-discovery-continue]');
   const steps = [...section.querySelectorAll('[data-discovery-step]')];
-  const storageKey = 'locus.city-discovery.v1';
+  const storageKey = 'well-yu.city-discovery.v1';
   const visited = new Set();
   const reduceMotion = () => document.documentElement.dataset.homeMotion !== 'on'
     && matchMedia('(prefers-reduced-motion: reduce)').matches;

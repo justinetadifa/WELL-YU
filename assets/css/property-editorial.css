@@ -4,14 +4,14 @@
   @media screen {
     body[data-property-style="editorial"],
     body[data-page="city-landing"] #properties {
-      --pe-canvas: #f5f4f0;
-      --pe-surface: #fff;
-      --pe-ink: #171918;
-      --pe-muted: #656861;
-      --pe-line: #deded6;
-      --pe-accent: #8b1e24;
-      --pe-radius: 12px;
-      --pe-font: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --pe-canvas: #fbfbf9;
+      --pe-surface: #ffffff;
+      --pe-ink: #111417;
+      --pe-muted: #5d6761;
+      --pe-line: #e3e8de;
+      --pe-accent: #223f31;
+      --pe-radius: 20px;
+      --pe-font: 'Clash Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     body[data-property-style="editorial"] {

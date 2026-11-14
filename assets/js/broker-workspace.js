@@ -280,7 +280,7 @@ function renderListings() {
   const own = ownProperties();
   const approvedListings = own.filter((p) => p.approvalState === 'approved');
   const newlyApproved = approvedListings.find((p) => {
-    try { return !sessionStorage.getItem(`locus.acknowledged_approval_${p.id}`); }
+    try { return !sessionStorage.getItem(`well-yu.acknowledged_approval_${p.id}`); }
     catch { return false; }
   });
 
@@ -1188,7 +1188,7 @@ byId('brokerListings')?.addEventListener('click', (event) => {
   const dismissBtn = event.target.closest('[data-dismiss-approval]');
   if (dismissBtn) {
     const propId = dismissBtn.dataset.dismissApproval;
-    try { sessionStorage.setItem(`locus.acknowledged_approval_${propId}`, '1'); } catch {}
+    try { sessionStorage.setItem(`well-yu.acknowledged_approval_${propId}`, '1'); } catch {}
     const banner = dismissBtn.closest('.broker-approval-banner');
     if (banner) {
       banner.style.transition = 'opacity 200ms ease, max-height 200ms ease';

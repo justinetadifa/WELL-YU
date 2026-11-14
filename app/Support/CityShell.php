@@ -41,9 +41,15 @@ function sfc_render_head(string $title, array $context, array $bodyData = []): v
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= $e($title) ?></title>
+  <title><?= $e(str_replace('LOCUS-SF', $context['appName'], $title)) ?></title>
+  <meta name="description" content="wELYU brings local property and investment context together for healthier places in San Fernando, La Union.">
   <base href="<?= $e(($context['basePath'] ?: '') . '/') ?>">
-  <link rel="icon" href="<?= $e($context['assetBase']) ?>/images/logoLocusRedBlue.png">
+  <link rel="icon" type="image/png" href="<?= $e($context['assetBase']) ?>/images/welyu-shield.png">
+  <link rel="apple-touch-icon" href="<?= $e($context['assetBase']) ?>/images/welyu-shield.png">
+  <link rel="preload" href="<?= $e($context['assetBase']) ?>/fonts/clash-display_JTSL5QESUXATU47LCPUNHZQBDDIWDOSW.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="<?= $e($context['assetBase']) ?>/fonts/cabinet-grotesk_NXM4Z4TDCMYWBZ7AVI2N6DQ5VMWNENMU.woff2" as="font" type="font/woff2" crossorigin>
+  <style>@layer welyu-theme;</style>
+  <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/fonts.css<?= sfc_asset_version('css/fonts.css') ?>">
   <script>window.SFC_APP_CONFIG = <?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>;</script>
   <?php if (in_array($page, ['admin-workspace', 'broker-workspace'], true)): ?>
   <script defer src="<?= $e($context['assetBase']) ?>/js/mce-active-weights.js<?= sfc_asset_version('js/mce-active-weights.js') ?>"></script>
@@ -56,7 +62,7 @@ function sfc_render_head(string $title, array $context, array $bodyData = []): v
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/<?= $style ?>.css">
   <?php endif; endforeach; endif; ?>
   <?php if ($page === 'decision-reports'): ?><link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/reports-polish.css<?= sfc_asset_version('css/reports-polish.css') ?>"><?php endif; ?>
-  <?php if (in_array($page, ['city-explorer', 'city-details', 'admin-workspace', 'admin-dashboard', 'broker-workspace'], true)): ?>
+  <?php if (in_array($page, ['city-explorer', 'city-details', 'city-wellness', 'admin-workspace', 'admin-dashboard', 'broker-workspace'], true)): ?>
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/vendor/leaflet/MarkerCluster.css">
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/city-map-crexi.css<?= sfc_asset_version('css/city-map-crexi.css') ?>">
@@ -103,6 +109,7 @@ function sfc_render_head(string $title, array $context, array $bodyData = []): v
   <?php endif; ?>
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/locus-interactions.css<?= sfc_asset_version('css/locus-interactions.css') ?>">
   <?php if ($page === 'city-landing'): ?><link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/home-experience.css<?= sfc_asset_version('css/home-experience.css') ?>"><?php endif; ?>
+  <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/welyu-theme.css<?= sfc_asset_version('css/welyu-theme.css') ?>">
   <script defer src="<?= $e($context['assetBase']) ?>/js/sound-manager.js<?= sfc_asset_version('js/sound-manager.js') ?>"></script>
   <script defer src="<?= $e($context['assetBase']) ?>/js/locus-hud.js<?= sfc_asset_version('js/locus-hud.js') ?>"></script>
   <script defer src="<?= $e($context['assetBase']) ?>/js/password-visibility.js<?= sfc_asset_version('js/password-visibility.js') ?>"></script>
@@ -110,7 +117,7 @@ function sfc_render_head(string $title, array $context, array $bodyData = []): v
   <script defer src="<?= $e($context['assetBase']) ?>/js/city-shell.js<?= sfc_asset_version('js/city-shell.js') ?>"></script>
   <script defer src="<?= $e($context['assetBase']) ?>/js/locus-motion.js<?= sfc_asset_version('js/locus-motion.js') ?>"></script>
   <?php if ($page === 'city-landing'): ?><script defer src="<?= $e($context['assetBase']) ?>/js/home-glance.js<?= sfc_asset_version('js/home-glance.js') ?>"></script><?php endif; ?>
-  <?php if ($page === 'city-landing'): ?><script defer src="<?= $e($context['assetBase']) ?>/js/home-hero.js<?= sfc_asset_version('js/home-hero.js') ?>"></script><?php endif; ?>
+  <script defer src="<?= $e($context['assetBase']) ?>/js/welyu-interface.js<?= sfc_asset_version('js/welyu-interface.js') ?>"></script>
   <?php if ($page === 'city-landing'): ?><script defer src="<?= $e($context['assetBase']) ?>/js/home-experience.js<?= sfc_asset_version('js/home-experience.js') ?>"></script><?php endif; ?>
 </head>
 <body <?php foreach ($bodyData as $key => $value): ?>data-<?= $e((string) $key) ?>="<?= $e((string) $value) ?>" <?php endforeach; ?>>
@@ -143,16 +150,17 @@ function sfc_render_header(array $context, string $active = ''): void
         'admin' => [['Overview', '/admin-dashboard.php', 'admin'], ['Listings', '/admin-properties.php', 'admin-properties'], ['Priority board', '/property-ranking.php', 'ranking'], ['Map', '/property-explorer.php', 'explorer'], ['Intelligence & Reports', '/city-intelligence.php', 'intelligence']],
         'seller' => [['My listings', '/seller-dashboard.php', 'seller'], ['Priority board', '/property-ranking.php', 'ranking'], ['Map', '/property-explorer.php', 'explorer']],
         'investor' => [['Properties', '/investor-dashboard.php', 'investor'], ['Find Agent', '/investor-dashboard.php?view=agents', 'agents'], ['Priority board', '/property-ranking.php', 'ranking'], ['Map', '/property-explorer.php', 'explorer'], ['Compare', '/compare-decision.php', 'compare'], ['Saved', '/investor-dashboard.php?view=saved', 'saved']],
-        default => [['Properties', '/index.php#properties', 'properties'], ['Why San Fernando', '/index.php#why-invest', 'why'], ['About', '/index.php#about', 'about']],
+        default => [['Explore places', '/index.php#properties', 'properties'], ['Our city', '/index.php#at-a-glance', 'why'], ['About wELYU', '/index.php#about', 'about']],
     };
+    array_unshift($items, ['Wellness', '/wellness.php', 'wellness']);
     $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     ?>
   <div class="city-top-accent-line" aria-hidden="true"></div>
   <header class="city-header">
     <div class="city-container city-nav">
       <a class="city-brand" href="<?= $e(sfc_path($home)) ?>">
-        <span class="city-brand-badge"><img src="<?= $e($context['assetBase']) ?>/images/logoLocusRedBlue.png" alt="LOCUS-SF" width="38" height="38"></span>
-        <span class="city-brand-text"><strong>LOCUS<span>-SF</span></strong><small>San Fernando, La Union</small></span>
+        <span class="city-brand-badge"><img src="<?= $e($context['assetBase']) ?>/images/welyu-shield.png" alt="wELYU" width="40" height="39"></span>
+        <span class="city-brand-text"><strong>wELYU<span class="welyu-brand-dot">.</span></strong><small>Wellness, rooted in place.</small></span>
       </a>
       <button type="button" class="city-menu-button" id="cityMenuButton" aria-controls="cityNavigation" aria-expanded="false" aria-label="Open navigation"><?= sfc_icon('menu') ?></button>
       <div class="city-navigation max-[850px]:tw-max-h-[calc(100svh-100px)] max-[850px]:tw-overflow-y-auto max-[850px]:tw-overscroll-contain [&>nav]:tw-shrink-0 [&>.city-account-links]:tw-shrink-0" id="cityNavigation">
@@ -176,12 +184,20 @@ function sfc_render_header(array $context, string $active = ''): void
 function sfc_render_footer(array $context): void
 {
     $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    $user = $context['user'] ?? null;
+    $role = $user['role'] ?? 'guest';
+    $home = match ($role) { 'admin' => '/admin-dashboard.php', 'seller' => '/seller-dashboard.php', 'investor' => '/investor-dashboard.php', default => '/index.php' };
     ?>
   <footer class="city-footer">
     <div class="city-container city-footer-inner">
       <div class="city-footer-brand">
-        <strong class="city-footer-logo">LOCUS-SF</strong>
-        <span class="city-footer-location">San Fernando, La Union</span>
+        <a class="city-footer-brand-link" href="<?= $e(sfc_path($home)) ?>">
+          <img src="<?= $e($context['assetBase']) ?>/images/welyu-shield.png" alt="wELYU" class="city-footer-logo-mark" width="36" height="35">
+          <div class="city-footer-brand-text">
+            <strong class="city-footer-logo">wELYU<span class="welyu-brand-dot">.</span></strong>
+            <span class="city-footer-location">San Fernando, La Union</span>
+          </div>
+        </a>
       </div>
       <div class="city-footer-concierge-meta">
         <span class="city-footer-concierge-venue">Permanent Business One Stop Shop Building, City of San Fernando, La Union</span>
@@ -208,7 +224,7 @@ function sfc_render_footer(array $context): void
           </svg>
         </button>
       </div>
-      <p class="city-updates-subtitle">Stay up to date with the latest activity in LOCUS-SF.</p>
+      <p class="city-updates-subtitle">Stay up to date with the latest activity in wELYU.</p>
       <button class="city-updates-read-all-btn" type="button" id="cityUpdatesRead">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>

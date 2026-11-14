@@ -12,7 +12,7 @@ function sfc_web_context(): array
     }
 
     $config = require dirname(__DIR__) . '/config.php';
-    $appName = (string) ($config['app']['name'] ?? 'LOCUS-SF');
+    $appName = (string) ($config['app']['name'] ?? 'wELYU');
     $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
     $basePath = rtrim(str_replace('\\', '/', dirname($scriptName)), '/.');
     if (preg_match('#/(admin-dashboard|seller-dashboard|investor-dashboard|admin-login|seller-login|investor-login|property-explorer|property-ranking|voting-dashboard|property-details|compare-decision|admin-properties|admin-showcase|offer-board|city-pipeline|simulator|reports|logout)\.php$#', $scriptName, $matches) === 1) {

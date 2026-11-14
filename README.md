@@ -1,143 +1,233 @@
-<img src="assets/images/logoLocusRedBlue.png" alt="LOCUS-SF logo" width="80" />
+<p align="center">
+  <img src="assets/images/welyu-logo-clean.png" alt="wELYU Logo" width="130" />
+</p>
 
-# LOCUS-SF
+<h1 align="center">wELYU (WELL-YU)</h1>
+<p align="center">
+  <strong>Wellness &amp; Land Intelligence Platform · City of San Fernando, La Union</strong><br>
+  <em>Connecting community wellness needs, spatial property intelligence, and municipal investment facilitation.</em>
+</p>
 
-**Investment properties in San Fernando City, La Union**
+---
 
-LOCUS-SF helps investors discover properties, compare sites, and contact brokers. The interface uses the city palette: `#F8F9FA`, `#9E1B22`, `#11224D`, and `#2A603B`.
+## 1. Executive Overview: What Does This System Do?
 
-## Workspaces
+**wELYU** (`WELL-YU`) is a web-based **Wellness & Land Intelligence Decision-Support System** tailored for the **City of San Fernando, La Union**. Built upon the **LOCUS-SF / BIZSTART** spatial real-estate foundation, wELYU bridges three critical domains in local economic and health-focused development:
 
-Guests see three approved property previews. Signing in unlocks the full property catalog, map, priority board, comparisons, and saved properties.
+1. **Community Need & Service Gap Intelligence (`wellness.php`)**: Identifies where health, wellness, preventive care, active-living, and community support services already exist across San Fernando’s **59 barangays**—and where residents face documented barriers in affordability, travel distance, operating hours, capacity, or physical accessibility.
+2. **Spatial Property & Parcel Evaluation (`property-explorer.php`, `property-ranking.php`)**: Helps capital investors, healthcare operators, and wellness developers discover available land parcels and commercial buildings, inspect 500-meter surroundings and 10-kilometer service catchments, screen against **CLUP zoning eligibility**, and evaluate sites through transparent **Multi-Criteria Evaluation (MCE)** and **Investment Attractiveness Index (IAI)** methodologies.
+3. **Statutory Incentives & Municipal Concierge Facilitation (`index.php`, `city-pipeline.php`)**: Connects investors directly to the City of San Fernando’s **Investments and Incentives Code (Ordinance No. 2024-41)**, RTWPB Region I operating cost benchmarks, BPLO unified permitting templates, **PRC-verified property brokers**, and the **Local Economic and Business Development Office (LEBDO)** concierge desk.
 
-| Account | Access |
-| --- | --- |
-| Investor | Available area and site visits, property search, maps, MCE/IAI rankings, saved properties, comparison, broker contacts, messages, documents, and visits |
-| Broker | PRC application, own listing submissions, accepted/declined/pending totals, investor saves, CICTO review messages, and investor coordination |
-| ICT / CICTO | Technical administration, role and reviewer-permission management, listing approval or decline, and city listing entry |
-| CAO / ASSESSOR | Property entry, departmental assessment, and broker review when explicitly authorized |
-| LEBDO | Property entry, departmental assessment, and broker review when explicitly authorized |
+---
 
-All accounts can update their profile and photo through [profile.php](profile.php). Public registration creates investor or broker accounts. CICTO provisions city staff accounts.
+## 2. Core System Modules & Capabilities
 
-CICTO can create ASSESSOR, LEBDO, or additional CICTO access through **City accounts** on the city overview. Existing account passwords are preserved during upgrades.
+### A. Wellness Investment & Community Need Workspace ([`wellness.php`](wellness.php) · [`api/wellness.php`](api/wellness.php))
+Powered by the 10-table additive wellness schema (`welyu_*`) and [`app/Support/WellnessEngine.php`](app/Support/WellnessEngine.php):
+- **Recorded Service Directory & 10 km Context Radar**: Maps existing health facilities, clinics, wellness operators, nonprofits, and free public alternatives on an interactive Leaflet map. Distinguishes between *recorded services* and *missing records* (never falsely claiming an unrecorded service does not exist), and computes straight-line distances within a 10 km radius.
+- **Barangay Community Needs Registry**: Captures and tracks barangay-specific service gaps and access barriers (affordability, travel, hours, capacity, accessibility) with source attribution, collection dates, and reviewer verification states.
+- **Proposal Planning (Open · Improve · Partner)**: Allows investors and operators to model a new venture from an identified community need, a listed property parcel, or a standalone concept across three modes:
+  - **Opening** a new wellness/community facility
+  - **Improving** an existing owned service with documented barrier responses
+  - **Partnering** with existing local providers or public programs
+- **Versioned 6-Criterion Wellness Assessment (`welyu-wellness-1.0`)**:
+  | Criterion Key | Evaluation Scope |
+  | :--- | :--- |
+  | `access_affordability` | Community pricing accessibility and affordability alignment |
+  | `health_access` | Proximity and complementarity to relevant health facilities |
+  | `active_mobility` | Walking, wheeling, transit, and entrance accessibility |
+  | `operating_readiness` | Utility, facility, and operational readiness |
+  | `cost_feasibility` | Property acquisition/lease and implementation cost feasibility |
+  | `market_context` | Existing service density, competition, and demand evidence |
+  - **Strict Evidence & Readiness Gates**: All six criteria require a raw value, source, and valid observation date (incomplete criteria withhold the composite score rather than redistributing weights or substituting zero). The **Wellness IAI** composite is unlocked only after **zoning, permit, sanitation, environment, and hazard** clearances each have reviewed, dated evidence and zero critical restrictions.
+- **Break-Even Financial Scenarios & Side-by-Side Comparison**:
+  - Models baseline and alternative scenarios for operating hours, capacity, pricing, fixed monthly costs, startup CAPEX, and explicit customer assumptions, computing monthly break-even visits via exact integer-cent arithmetic:
+    $$\text{Break-Even Visits/Month} = \left\lceil \frac{\text{Fixed Monthly Cost}}{\text{Positive Per-Visit Margin}} \right\rceil$$
+  - Compares **2 to 5 frozen assessment versions** side by side and exports a deterministic, downloadable **Private PDF Brief** ([`app/Support/WellnessBrief.php`](app/Support/WellnessBrief.php)).
+- **Implementation & Follow-Up Desk**: Tracks post-assessment pipeline stages, site visits, confirmed inquiries, implementation evidence, and operator follow-up observations separately from projected outputs.
 
-Staff can also use **Activate account** with a city passkey issued by CICTO. Production activation requires `SFC_CITY_STAFF_PASSKEY` and an official email allowlist: set `SFC_CITY_STAFF_EMAILS` to comma-separated authorized addresses, or `SFC_CITY_STAFF_EMAIL_DOMAINS` to exact authorized domains. Optional `SFC_CITY_STAFF_PASSKEY_EXPIRES_AT` accepts an ISO 8601 timestamp with timezone (for example, `2026-12-31T23:59:59+08:00`) or a date valid through that day in Manila. Invalid or expired dates reject activation. The equivalent private configuration lives under `security.city_staff` using `passkey`, `authorized_emails`, `authorized_email_domains`, and `passkey_expires_at`; environment settings take precedence. Configured keys and allowlists replace local development defaults. With no allowlist, local demo activation only accepts `@sfcelerate.local` addresses. Passkeys are never displayed on the access screen.
+---
 
-**Updates** opens messages, document requests, and site visit notices in the appropriate workspace. City departments respond to document requests under **Listings → Document requests**. Visits use the broker assigned to the investor's conversation, including city listings with a verified broker contact; reassigning a listing preserves existing private conversations.
+### B. Curated Property Collection, Spatial Explorer & MCE/IAI Ranking
+- **Interactive Spatial Explorer ([`property-explorer.php`](property-explorer.php))**: Split-pane map and catalog supporting 13 commercial and land categories (*Land, Hospitality, Senior Living, Special Purpose, Medical/Office, Retail, Mixed Use, Multifamily, Industrial, Self Storage, Mobile Home Park, Note/Loan, Business for Sale*) with parcel boundary polygons, satellite/street map layers, and barangay filters.
+- **Priority Board & Site Comparison ([`property-ranking.php`](property-ranking.php), [`site-comparison.php`](site-comparison.php))**: Ranks fully assessed listings by their composite score and allows side-by-side comparison of parcel metrics, pricing, hazards, and criteria breakdowns.
+- **Basic vs. Advanced Investor Lens ([`assets/js/investor-view.js`](assets/js/investor-view.js))**:
+  - **Basic View**: Surfaces essential price, area, barangay location, broker contact, and hazard notices first.
+  - **Advanced View**: Unlocks full MCE/IAI criterion weights, calculation formulas, 500-meter competitor/complement radar, and supporting evidence attachments.
+- **5-Step Property & Evidence Wizard ([`docs/property-wizard.md`](docs/property-wizard.md))**: Used by brokers and city departments (*Basics $\rightarrow$ Parcel Boundary $\rightarrow$ Site Evidence $\rightarrow$ 500m Surroundings Radar $\rightarrow$ Review*), supporting separate survey vs. polygon-calculated areas and private document uploads.
 
-Brokers provide their complete name, address, contact number, PRC registration number, expiration date, and private front/back ID images. Authorized CAO/Assessor and LEBDO personnel review credentials. Broker privileges require separate email ownership verification and application approval. ICT assigns reviewer grants without receiving broker review access itself. New and edited broker listings return to the city listing review queue. Changes to reviewed credentials require another review. See [Batch B migration and workflow setup](docs/batch-b-brokers.md) and [SMTP configuration](docs/broker-mail.md).
+---
 
-Registration records the submitted privacy consent, version, and time. The consent text identifies the City Government of San Fernando, RA 10173, and LOCUS-SF.
+### C. Investor Signal Atlas & City Pipeline ([`city-pipeline.php`](city-pipeline.php) · [`voting-dashboard.php`](voting-dashboard.php))
+- **Dual-Lens Opportunity Atlas**: Separates **Whitespace Gaps** (validated unmet community/investor demand) from **Projects in Motion** (active commercial and wellness developments already underway) across San Fernando’s primary growth corridors (**Poro Point Special Economic & Freeport Zone** and **Barangay Biday Commercial Growth Center**), preventing duplicate-build saturation.
 
-Investor registration also records an explicit age confirmation and optional contact, profession, and city details. All access forms show validation below the affected field and validate again on the server. Email and PRC uniqueness are enforced in the database; PRC numbers retain their submitted zero padding while comparing the same numeric registration. Investors and brokers see a personal welcome after registration and a welcome-back greeting after sign-in.
+---
 
-## Listings and rankings
+### D. Municipal Investment Concierge & Statutory Framework ([`index.php`](index.php))
+- **Ordinance No. 2024-41 (Investments and Incentives Code)**: Interactive showcase of the City of San Fernando’s 7 Priority Investment Sectors (*Agriculture/Fishery, Agro-Support Facilities, Tourism & Transportation, ICT/BPM, Manufacturing/Processing, Infrastructure/Water/Sanitation/Property Development, and Ecological Solid Waste Management*).
+- **Catalyst Locator Registry**: Profiles major incentive recipients (**TaskUs La Union**, **Robinsons La Union**, **La Union Cultural Institute / LUCS**, and **SM City La Union**) with approved business tax holiday timelines (4–6 years).
+- **Cost of Doing Business Guidance**: Interactive Region I statutory cost reference covering RTWPB Wage Order No. RB1-23 (`₱468.00/day` non-agriculture; `₱435.00/day` agriculture/micro), commercial lease rates, power, water, and telco parameters.
+- **BPLO Unified Permitting & Downloadable Forms**: Direct links to 5 official city permitting guides and 10 downloadable statutory forms (Unified Business Permit, Building, Architectural, Civil/Structural, Sanitary/Plumbing, Electrical, Mechanical, Electronics, Demolition, and Individual Work Permits).
+- **Direct LEBDO Concierge**: Connects investors to City Investment Officers (**Rizalyn D. Medrano, EnP** and **Irish Dominique D. Halabaso**), the direct trunkline `(072) 619 - 7170`, and the **Permanent Business One Stop Shop (BOSS) Building**.
 
-Listings support separate sale and rental asks, unknown prices, distinct Sold/Leased states, reversible archives and soft deletion. See [Batch A changes, migration and verification](docs/batch-a-listings.md). Existing deployments can inspect and apply the targeted upgrade with `php database/migrate-listing-batch-a.php --dry-run` and `--apply`.
+---
 
-The catalog supports 13 property categories and their subcategories: Retail, Multifamily, Office, Industrial, Hospitality, Mixed Use, Land, Self Storage, Mobile Home Park, Senior Living, Special Purpose, Note/Loan, and Business for Sale.
+### E. Role-Based Governance, Security & Data Privacy
+| Role | Primary Capabilities & Access Scope |
+| :--- | :--- |
+| **Guest** | Landing discovery, 3-property preview, public wellness directory/needs browsing, pipeline signal overview, and statutory guides |
+| **Investor** | Full property catalog & map, Basic/Advanced MCE view, saved sites, comparisons, wellness proposal/scenario modeling, PDF brief export, broker messaging, document requests, and site-visit booking |
+| **Broker (`seller`)** | PRC credential submission (front/back ID + registration number), two-stage email + CAO/LEBDO approval workflow, own listing management, and investor inquiry/visit coordination |
+| **CICTO (`admin`)** | Technical administration, staff account provisioning & passkey onboarding, reviewer permission grants, and listing approval/decline |
+| **CAO / City Assessor** | Departmental property entry, 7-criterion spatial/hazard assessment, wellness scoring configuration, and authorized broker review |
+| **LEBDO** | Investment facilitation, priority sector alignment, wellness need/service review, departmental assessment, and authorized broker review |
 
-City assessors record seven criteria: spatial accessibility, infrastructure readiness, economic viability, nearby businesses, zoning compatibility, risk constraints, and environmental safety. Site tags such as beach or agricultural support the assessment. Listings can use an open listing contact or a verified broker.
+---
 
-The city **Add property** editor follows five steps: Basics, Boundary, Site evidence, Surroundings, and Review. It supports editable parcel boundaries, separate calculated and survey areas, private evidence attachments, a 500-meter surroundings radar, and local drafts. Missing authoritative hazard data is **Not assessed**; business matches remain pending until source evidence and scoring profiles are approved. See [property editor documentation](docs/property-wizard.md).
+## 3. Current Weaknesses & Roadmap for Refinement into a Full Wellness Investment Website
 
-MCE (Multi-Criteria Evaluation) and IAI (Investment Attractiveness Index) scores remain pending until all seven city criteria are recorded. Scores and rankings are decision aids based on the recorded assessment. Sample listings are unassessed; existing legacy scores are not official MCE/IAI assessments.
+> [!IMPORTANT]
+> This section documents the **current architectural and product limitations** of the prototype so they can be systematically addressed in the next phase of turning **wELYU** into a dedicated, end-to-end **Wellness Investment Platform**.
 
-Investors start in **Basic** view, with price, area, location, contact and hazard information visible. **Advanced** reveals the recorded assessment, calculations, evidence, radar and business context. The preference persists in the browser during navigation. Property details and shared backgrounds use the existing map artwork with opaque content panels. See [Batch C behavior and verification](docs/batch-c-investor-view.md); no additional database migration is required.
+### 1. Dual-Track Separation Between Property Listings and Wellness Intelligence
+- **Current State**: The property catalog ([`property-explorer.php`](property-explorer.php), [`property-ranking.php`](property-ranking.php)) still evaluates parcels using generic commercial real-estate criteria inherited from LOCUS-SF, while [`wellness.php`](wellness.php) operates as a separate workspace tab.
+- **Refinement Opportunity**: Deeply unify the two engines so every property card and detail page natively displays a **Wellness Suitability Profile**—such as proximity to hospitals/clinics, barangay unmet health/wellness needs, active-mobility/walkability scores, coastal/green-space environmental quality, and recommended wellness asset classes (e.g., *Preventive Care Clinic, Boutique Recovery Resort, Senior Active-Living, Fitness & Rehab Hub, or Farm-to-Table Wellness Center*).
 
-The site visit counter uses persisted visits, counted once per browser session in each 30-minute window. It is not a unique-person count. Available area totals use approved, available listings.
+### 2. Cold-Start / Empty Public Experience on Unseeded Databases
+- **Current State**: Because `auto_migrate` and `auto_seed` are strictly disabled for database isolation and `welyu_configurations` starts empty until a city reviewer manually defines weights, a fresh checkout displays `0 Active Listings`, `0 Live Signals`, and `No properties match your search` on the public homepage and pipeline. Furthermore, testing the wellness scoring engine requires manually typing all 6 raw criteria and dates.
+- **Refinement Opportunity**: Provide curated, clearly badged **Wellness Investment Benchmark Showcases & Templates** (e.g., pre-built wellness resort, diagnostic center, and senior-living investment packages in Poro Point and Biday) and one-click **"Load Sample Wellness Scenario"** presets so prospective investors immediately see rich data, scored comparisons, and realistic financial models on their first visit.
 
-CLUP results are preliminary planning screens. The repository does not contain an authenticated official zoning map or cadastral parcel crosswalk. Final zoning compatibility and locational clearance require the authorized offices. See [CLUP governance](docs/CLUP_GOVERNANCE.md).
+### 3. Straight-Line Distance vs. Demographic & Catchment Intelligence
+- **Current State**: Both the 500-meter property surroundings radar and the 10-kilometer wellness service radar rely on straight-line coordinates and manual evidence uploads, without demographic overlays or road-network travel times.
+- **Refinement Opportunity**: Layer barangay-level **population density, age cohorts (e.g., senior population, families, workforce), tourism footfall, and 5/10/15-minute drive/walk catchment rings** onto the map so wellness investors can quantify underserved patient or guest demand per barangay.
 
-## Run locally
+### 4. Simplistic Financial Modeling for Capital-Intensive Wellness Real Estate
+- **Current State**: The financial calculator in [`app/Support/WellnessEngine.php`](app/Support/WellnessEngine.php) computes a single-tier monthly visit break-even (`Fixed Monthly Cost / Per-Visit Margin`), which suits a small outpatient clinic but does not model multi-stream wellness real estate (room keys/beds, membership tiers, ancillary spa/diagnostics revenue, land lease vs. purchase CAPEX, or multi-year payback).
+- **Refinement Opportunity**: Upgrade the scenario simulator into a **Wellness Capital & ROI Modeler** that calculates:
+  - **Ordinance No. 2024-41 Tax Holiday Savings** (estimating 4–6 years of local business tax and real property tax exemptions)
+  - **CAPEX / OPEX per sqm** using San Fernando’s RTWPB Region I wage and utility rates
+  - **5-Year Cash Flow, Net Operating Income (NOI), Cap Rate, and Payback Period** across clinic, hospitality-wellness, and active-living typologies.
 
-The application uses PHP, PDO, MySQL/MariaDB, and JavaScript modules. No Composer or npm installation is required. Enable `pdo_mysql`, `mbstring`, and `fileinfo`; optional integrations can use `curl`.
+### 5. Fragmented Investor Conversion Funnel Across Pages
+- **Current State**: An investor must navigate across four separate pages (`city-pipeline.php` $\rightarrow$ `property-explorer.php` $\rightarrow$ `wellness.php` $\rightarrow$ `index.php#investment-concierge`) to move from discovering a demand gap to booking a site consultation.
+- **Refinement Opportunity**: Build a guided **"Wellness Investment Concierge Flow"** (*1. Select a Wellness Sector & Barangay Gap $\rightarrow$ 2. Match a Zoning-Cleared Site $\rightarrow$ 3. Simulate ROI & Tax Incentives $\rightarrow$ 4. Export Brief & Schedule a LEBDO/Broker Site Visit*).
 
-1. Put the repository in `C:\xampp\htdocs\sfcelerate-bizstart`.
-2. Start MySQL and Apache in XAMPP.
-3. Copy `app/config.local.php.example` to `app/config.local.php` and set your database credentials.
-4. Open [http://localhost/sfcelerate-bizstart/](http://localhost/sfcelerate-bizstart/).
+---
 
-Local defaults use `127.0.0.1:3306`, database `sfcelerate_bizstart`, user `root`, and an empty password. Local configuration is ignored by Git. With `auto_migrate` and `auto_seed` enabled, initialization creates missing tables and local sample data. Configuration lives in [app/config.php](app/config.php).
+## 4. Visual Design System & Brand Identity
 
-For the PHP development server, run from the repository root while MySQL is running:
+The interface has been redesigned around the **wELYU** brand crest ([`assets/images/welyu-logo-clean.png`](assets/images/welyu-logo-clean.png) and [`assets/images/welyu-shield.png`](assets/images/welyu-shield.png)) and an architectural **Gallery Wall** aesthetic ([`assets/css/welyu-theme.css`](assets/css/welyu-theme.css)):
 
-```powershell
-C:\xampp\php\php.exe -S 127.0.0.1:8088 router.php
+- **Typography ([`assets/css/fonts.css`](assets/css/fonts.css))**:
+  - **Display Headlines (`h1`, `h2`)**: `Clash Display` (`font-weight: 500`, `letter-spacing: -0.015em`, `word-spacing: 0.1em`)
+  - **Editorial Serifs & Accents**: `Zodiak` & `Sentient` italic
+  - **UI, Cards, Controls & Body (`h3`–`h6`, `p`, `button`)**: `Cabinet Grotesk`
+- **Color Palette**:
+  | Token | Hex | Role |
+  | :--- | :--- | :--- |
+  | `--wy-paper` | `#FBFBF9` | Warm alabaster gallery canvas |
+  | `--wy-white` | `#FFFFFF` | Elevated card & modal surfaces |
+  | `--wy-navy` | `#011944` | Deep brand navy (shield crest, primary metrics, active toggles) |
+  | `--wy-blue` | `#0056FD` | Royal blue brand accent |
+  | `--wy-forest` | `#223F31` | Architectural forest green (chapter kickers, tags, verified badges) |
+  | `--wy-lime` | `#E5FBB9` | Signature pale-lime primary action pills & highlights |
+  | `--wy-ink` | `#111417` | High-contrast primary typography |
+  | `--wy-muted` | `#5D6761` | Secondary editorial copy & captions |
+
+---
+
+## 5. System Architecture & Directory Structure
+
+```text
+WELL-YU/
+├── api/                          # JSON REST endpoints (health, properties, wellness, messages, visits)
+│   └── wellness.php              # Wellness directory, needs, proposals, assessments, scenarios & PDF brief API
+├── app/
+│   ├── Core/                     # Database connection (PDO) & SchemaManager
+│   ├── Repositories/             # Data access layer (WellnessRepository.php, property & user queries)
+│   ├── Support/                  # Core domain services & shared layout shell
+│   │   ├── CityShell.php         # Shared header, footer, navigation, font preloads & asset versioning
+│   │   ├── PropertyAssessmentService.php # MCE & IAI property scoring engine
+│   │   ├── WellnessEngine.php    # Pure 6-criterion wellness scoring, normalization & break-even engine
+│   │   ├── WellnessBrief.php     # Deterministic PDF brief generator for multi-version comparisons
+│   │   ├── WellnessPolicy.php    # Role & ownership access-control rules for wellness records
+│   │   └── WellnessRecords.php   # Input validation, fingerprinting & normalization
+│   ├── Views/
+│   │   └── welyu-home-hero.php   # Cinematic chapter 01 hero component with live listing & city stats
+│   └── config.php                # Environment-prefixed (WELL_YU_) application & database configuration
+├── assets/
+│   ├── css/                      # Modular stylesheets (fonts.css, welyu-theme.css, wellness.css, etc.)
+│   ├── fonts/                    # Self-hosted WOFF2 Fontshare families (Clash Display, Cabinet Grotesk, Zodiak)
+│   ├── images/                   # Brand assets (welyu-shield.png, welyu-logo-clean.png) & San Fernando media
+│   └── js/                       # ES module frontend controllers (wellness.js, city-workspace.js, etc.)
+├── database/
+│   └── well-yu/                  # Isolated WELL-YU SQL schemas (setup.sql, 01-wellness.sql, wellness-completion.sql)
+├── docs/                         # Technical, governance, setup & visual design documentation
+├── scripts/                      # Read-only DB & schema inspection utilities
+├── tests/                        # Offline PHP unit tests & Playwright headless browser QA suites
+├── index.php                     # Public landing page (Chapters 01–07)
+├── wellness.php                  # Connected Wellness Intelligence Workspace
+├── city-pipeline.php             # Investor Signal Atlas & City Pipeline
+├── property-explorer.php         # Interactive Leaflet Map & Property Catalogue
+├── property-ranking.php          # MCE / IAI Priority Board
+└── property-details.php          # Deep property assessment & surroundings radar view
 ```
 
-Use `router.php` so development requests follow the same private-directory restrictions as Apache. PHP also needs a writable `session.save_path` for login and CSRF tokens.
+---
 
-[api/health.php](api/health.php) reports database connectivity. Map tiles and some frontend assets require internet access.
+## 6. Local Setup & Database Isolation (`well_yu_db`)
 
-## Database setup and upgrades
+The application uses **PHP 8+**, **PDO (MySQL/MariaDB)**, and native **ES Modules** (no Composer or npm build step required at runtime).
 
-[database/setup.sql](database/setup.sql) combines the current schema and development seed for a **fresh, empty database**. [schema.sql](database/schema.sql) and [seed.sql](database/seed.sql) are also available separately. The seed does not delete existing data; do not import demo seeds into an existing deployment.
+1. **Place Repository in XAMPP**:
+   Clone or place the project inside `C:\xampp\htdocs\WELL-YU` and start **Apache** and **MySQL** in XAMPP.
+2. **Database Target (`well_yu_db` only)**:
+   - Default local connection: `127.0.0.1:3306`, database `well_yu_db`, user `root`, empty password.
+   - Local overrides live in gitignored `app/config.local.php` (copy from [`app/config.local.php.example`](app/config.local.php.example)).
+   - Automatic migration (`auto_migrate`) and automatic seeding (`auto_seed`) are **disabled by default** to guarantee data safety.
+   - With the base schema (35 tables, 53 foreign keys) and the 10-table wellness extension (`welyu_*`), the complete database contains **45 tables and 79 foreign keys**.
+3. **Read-Only Database Verification**:
+   ```powershell
+   C:\xampp\php\php.exe scripts/verify-well-yu.php --database
+   C:\xampp\php\php.exe scripts/inspect-well-yu-database.php
+   C:\xampp\php\php.exe scripts/inspect-welyu-wellness.php --plan
+   ```
+   See [`docs/well-yu-setup.md`](docs/well-yu-setup.md) and [`docs/welyu-wellness.md`](docs/welyu-wellness.md) for full schema management details.
+4. **Open in Browser**:
+   - Landing Page: [http://localhost/WELL-YU/](http://localhost/WELL-YU/)
+   - Wellness Workspace: [http://localhost/WELL-YU/wellness.php](http://localhost/WELL-YU/wellness.php)
+   - City Pipeline: [http://localhost/WELL-YU/city-pipeline.php](http://localhost/WELL-YU/city-pipeline.php)
+   - Property Explorer: [http://localhost/WELL-YU/property-explorer.php](http://localhost/WELL-YU/property-explorer.php)
 
-For an existing database, inspect and apply the idempotent application schema update without demo seeding:
+---
 
-```powershell
-C:\xampp\php\php.exe database/migrate-city-workspaces.php --dry-run
-C:\xampp\php\php.exe database/migrate-city-workspaces.php --apply
-```
+## 7. Automated Testing & Visual QA
 
-The dry run checks city workspace columns and the unique PRC index without changing records. The migration adds profile, consent, PRC, assessment, contact, provenance, and metric fields through `SchemaManager`. Legacy administrators with missing or old default departments become CICTO. It does not invent PRC registrations, consent, or city assessments.
-
-## Local demo accounts
-
-For hosted administrator access, follow [the private account upload steps](docs/hosted-admin-login.md). The one-time `app/admin-access.local.php` file is excluded from Git, so include it explicitly in your upload. Remove it from the server after the first successful sign-in.
-
-| Account | Email | Password |
-| --- | --- | --- |
-| CICTO | `admin@sfcelerate.local` | `Admin123!` |
-| Broker | `seller@sfcelerate.local` | `Seller123!` |
-| Investor | `investor@sfcelerate.local` | `Investor123!` |
-
-Demo access is for local development. The broker starts unverified, with no invented PRC credentials. Complete a valid application and city review to submit listings. ASSESSOR and LEBDO accounts are provisioned by CICTO.
-
-## Optional services
-
-Keys can be supplied in `app/config.local.php` or environment variables.
-
-| Service | Environment variables |
-| --- | --- |
-| LocationIQ | `LOCATIONIQ_KEY` |
-| OpenWeather | `OPENWEATHER_API_KEY` |
-| NewsAPI | `NEWSAPI_KEY` |
-| Alpha Vantage | `ALPHA_VANTAGE_KEY` |
-| Gemini or OpenRouter | `AI_PROVIDER`, `GEMINI_API_KEY` or `OPENROUTER_API_KEY` |
-| Cloudinary | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
-
-Without keys, supported features use local uploads, stored context, or fallback responses. Sample context is demonstration data.
-
-## Project and documentation
-
-The revision was checked in a real browser at desktop, 390px, and 320px widths. Checked flows include the three-listing guest preview, full investor catalogue, maps and satellite tiles, saves, comparison, profiles, departmental access, document responses, broker replies, and visit confirmation. Disposable browser accounts and records are removed after verification.
-
-Repository checks can be run from the project root:
+Run the offline PHP verification suites and Playwright visual/responsive checks from the repository root:
 
 ```powershell
-C:\xampp\php\php.exe tests/api-security.test.php
-C:\xampp\php\php.exe tests/upload-security.test.php
+# Safe offline PHP unit & regression checks (no database writes)
+C:\xampp\php\php.exe tests/well-yu-setup-safety.test.php
+C:\xampp\php\php.exe tests/wellness-engine.test.php
+C:\xampp\php\php.exe tests/wellness-permissions.test.php
+C:\xampp\php\php.exe tests/wellness-persistence-plan.test.php
 C:\xampp\php\php.exe tests/account-workflow.test.php
-C:\xampp\php\php.exe tests/staff-onboarding-policy.test.php
-C:\xampp\php\php.exe tests/staff-activation.test.php
-C:\xampp\php\php.exe tests/security/verify-admin-auth.php
-C:\xampp\php\php.exe tests/security/verify-auth-validation.php --integration
-C:\xampp\php\php.exe tests/security/verify-listing-workflow.php --integration --write
-C:\xampp\php\php.exe tests/message-workflow.test.php --integration
-C:\xampp\php\php.exe tests/visit-workflow.test.php --integration
-node tests/competitor-radar.test.js
+C:\xampp\php\php.exe tests/landing-concierge.test.php
+C:\xampp\php\php.exe tests/business-opportunities.test.php
+
+# Headless Chromium visual & responsive QA across 1440px, 768px, and 390px viewports
+$env:PLAYWRIGHT_MODULE = "C:\xampp\htdocs\WELL-YU\.ui-audit\tooling\node_modules\playwright-core"
+node tests/welyu-visual.browser.cjs
 ```
 
-The integration checks require the local database and clean their own temporary records.
+---
 
-PHP pages are at the repository root. JSON endpoints are in `api/`; repositories, authentication, and scoring are in `app/`; frontend assets are in `assets/`.
+## 8. Documentation Index
 
-- [System documentation](docs/system-manuscript-documentation.md)
-- [CLUP governance](docs/CLUP_GOVERNANCE.md)
-- [Acceptance audit](docs/uat-audit.md) — some findings predate these revisions
-- [Interface audit](docs/interface-audit.md)
-
-The project is an Information Technology capstone at DMMMSU-MLUC. Complete author and external adviser names have not been supplied for the revised public credits. CICTO, the City Assessor's Office, and LEBDO are identified by office; individual identities and endorsements must be supplied before publication.
+- **[Wellness Workflows & Methodology (`welyu-wellness-1.0`)](docs/welyu-wellness.md)**
+- **[Visual Design Notes](docs/welyu-visual-design.md)**
+- **[Database Setup & Isolation Review](docs/well-yu-setup.md)**
+- **[Database Import Recovery Procedure](docs/well-yu-import-recovery.md)**
+- **[Property Editor & 5-Step Wizard](docs/property-wizard.md)**
+- **[CLUP Zoning Governance](docs/CLUP_GOVERNANCE.md)**
+- **[System Architecture & Manuscript Documentation](docs/system-manuscript-documentation.md)**

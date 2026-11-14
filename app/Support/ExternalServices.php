@@ -403,7 +403,7 @@ final class ExternalServices
         }
 
         $cloud = $this->services['media']['cloudinary'];
-        $folder = trim((string) ($cloud['folder'] ?? 'sfcelerate-bizstart/properties'));
+        $folder = trim((string) ($cloud['folder'] ?? 'well-yu/properties'));
         $timestamp = time();
         $signature = sha1(sprintf('folder=%s&timestamp=%d%s', $folder, $timestamp, (string) $cloud['api_secret']));
 

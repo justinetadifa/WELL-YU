@@ -6,7 +6,8 @@ const source = fs.readFileSync('assets/js/property-wizard.js','utf8');
 const start = source.indexOf('  function normalizeClassification(');
 const end = source.indexOf('  window.SFCPropertyWizard',start);
 assert(start > 0 && end > start);
-const context = vm.createContext({});
+// The extracted browser section also registers its submission helper.
+const context = vm.createContext({window:{}});
 vm.runInContext(source.slice(start,end) + '; globalThis.normalize = normalizeClassification;',context);
 const php = process.env.PHP_BINARY || (process.platform === 'win32' ? 'C:/xampp/php/php.exe' : 'php');
 const catalog = JSON.parse(execFileSync(php,['-r',"require 'app/Support/PropertyCatalog.php'; echo json_encode(App\\Support\\PropertyCatalog::classificationCatalog());"],{encoding:'utf8'}));

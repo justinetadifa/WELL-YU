@@ -65,16 +65,16 @@ export const DEFAULT_LAB_INPUTS = {
 };
 
 export const STORAGE_KEYS = {
-  compare: "sfc.compare",
-  viewMode: "sfc.viewMode",
-  filters: "sfc.filters",
-  weights: "sfc.weights",
-  scenario: "sfc.scenario",
-  selectedProperty: "sfc.selectedProperty",
-  decisionInputs: "sfc.decisionInputs",
-  labInputs: "sfc.labInputs",
-  chatRole: "sfc.chatRole",
-  chatSenderName: "sfc.chatSenderName",
+  compare: "well-yu.compare",
+  viewMode: "well-yu.viewMode",
+  filters: "well-yu.filters",
+  weights: "well-yu.weights",
+  scenario: "well-yu.scenario",
+  selectedProperty: "well-yu.selectedProperty",
+  decisionInputs: "well-yu.decisionInputs",
+  labInputs: "well-yu.labInputs",
+  chatRole: "well-yu.chatRole",
+  chatSenderName: "well-yu.chatSenderName",
 };
 
 export const DEFAULT_INVESTMENT_LENS = "logistics";

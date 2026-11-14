@@ -281,7 +281,7 @@
     window.SFC_APP_CONFIG.mceWeights = { ...weights };
     window.SFC_APP_CONFIG.mceVersion = data.version;
     window.dispatchEvent(new CustomEvent('locus:mce-weights-updated', { detail: { weights: { ...weights }, version: data.version, configuration } }));
-    try { localStorage.setItem('locus:mce-weights-updated', JSON.stringify({ version: data.version, changedAt: Date.now() })); } catch (_) { /* Private browsing may disable storage. */ }
+    try { localStorage.setItem('well-yu:mce-weights-updated', JSON.stringify({ version: data.version, changedAt: Date.now() })); } catch (_) { /* Private browsing may disable storage. */ }
     configData.history.unshift({ version: data.version, weights, reason: data.reason, source_reference: data.source_reference, timestamp: data.applied_at, is_baseline: data.is_baseline, actor_name: 'Current administrator' });
   }
 

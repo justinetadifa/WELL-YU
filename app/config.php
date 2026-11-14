@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Apache and MySQL are shared with the thesis. Read only WELL-YU environment
+// variables so a server-level BIZSTART setting cannot configure this application.
+$getenv = static fn (string $name): string|false => getenv('WELL_YU_' . $name);
+
 $normalizeBoolean = static function (mixed $value, bool $fallback): bool {
     if (is_bool($value)) {
         return $value;
@@ -24,22 +28,25 @@ if (!$isLocalRequest) {
 
 $defaults = [
     'app' => [
-        'name' => 'LOCUS-SF',
-        'environment' => getenv('APP_ENV') ?: ($isLocalRequest ? 'local' : 'production'),
-        'url' => getenv('APP_URL') ?: '',
+        'name' => 'wELYU',
+        'environment' => $getenv('APP_ENV') ?: ($isLocalRequest ? 'local' : 'production'),
+        'url' => $isLocalRequest ? 'http://localhost/WELL-YU/' : '',
     ],
     'security' => [
-        'force_https' => $normalizeBoolean(getenv('APP_FORCE_HTTPS'), false),
-        'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', getenv('APP_TRUSTED_PROXIES') ?: '')))),
+        'force_https' => $normalizeBoolean($getenv('APP_FORCE_HTTPS'), false),
+        'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', $getenv('APP_TRUSTED_PROXIES') ?: '')))),
         'hsts_max_age' => 31536000,
         'rate_limit_path' => dirname(__DIR__) . '/data/cache/rate-limits',
+        'session_name' => 'WELL_YU_SESSION',
+        'session_cookie_path' => '/WELL-YU/',
+        'session_save_path' => dirname(__DIR__) . '/data/sessions',
     ],
     'db' => [
-        'host' => getenv('DB_HOST') ?: '127.0.0.1',
-        'port' => (int) (getenv('DB_PORT') ?: 3306),
-        'name' => getenv('DB_NAME') ?: 'sfcelerate_bizstart',
-        'user' => getenv('DB_USER') ?: 'root',
-        'pass' => getenv('DB_PASS') ?: '',
+        'host' => $getenv('DB_HOST') ?: '127.0.0.1',
+        'port' => (int) ($getenv('DB_PORT') ?: 3306),
+        'name' => $getenv('DB_NAME') ?: 'well_yu_db',
+        'user' => $getenv('DB_USER') ?: 'root',
+        'pass' => $getenv('DB_PASS') ?: '',
         'charset' => 'utf8mb4',
     ],
     'mail' => [
@@ -50,7 +57,7 @@ $defaults = [
         'smtp_encryption' => 'tls',
         'smtp_auth' => true,
         'from_email' => '',
-        'from_name' => 'LOCUS-SF',
+        'from_name' => 'wELYU',
         'support_contact' => '',
         'verification_ttl_seconds' => 86400,
         'max_attempts' => 6,
@@ -62,36 +69,36 @@ $defaults = [
         'maps' => [
             'tile_url' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             'tile_attribution' => '&copy; CARTO &copy; OpenStreetMap contributors',
-            'locationiq_key' => getenv('LOCATIONIQ_KEY') ?: '',
+            'locationiq_key' => $getenv('LOCATIONIQ_KEY') ?: '',
         ],
         'location' => [
-            'locationiq_key' => getenv('LOCATIONIQ_KEY') ?: '',
+            'locationiq_key' => $getenv('LOCATIONIQ_KEY') ?: '',
         ],
         'market' => [
-            'alpha_vantage_key' => getenv('ALPHA_VANTAGE_KEY') ?: '',
+            'alpha_vantage_key' => $getenv('ALPHA_VANTAGE_KEY') ?: '',
         ],
         'news' => [
-            'newsapi_key' => getenv('NEWSAPI_KEY') ?: '',
-            'query' => getenv('NEWSAPI_QUERY') ?: '("San Fernando" OR "La Union" OR Philippines) AND (business OR investment OR property OR infrastructure)',
+            'newsapi_key' => $getenv('NEWSAPI_KEY') ?: '',
+            'query' => $getenv('NEWSAPI_QUERY') ?: '("San Fernando" OR "La Union" OR Philippines) AND (business OR investment OR property OR infrastructure)',
         ],
         'ai' => [
-            'provider' => getenv('AI_PROVIDER') ?: '',
-            'gemini_key' => getenv('GEMINI_API_KEY') ?: '',
-            'gemini_model' => getenv('GEMINI_MODEL') ?: 'gemini-2.5-flash',
-            'openrouter_key' => getenv('OPENROUTER_API_KEY') ?: '',
-            'openrouter_model' => getenv('OPENROUTER_MODEL') ?: '',
+            'provider' => $getenv('AI_PROVIDER') ?: '',
+            'gemini_key' => $getenv('GEMINI_API_KEY') ?: '',
+            'gemini_model' => $getenv('GEMINI_MODEL') ?: 'gemini-2.5-flash',
+            'openrouter_key' => $getenv('OPENROUTER_API_KEY') ?: '',
+            'openrouter_model' => $getenv('OPENROUTER_MODEL') ?: '',
         ],
         'media' => [
             'cloudinary' => [
-                'cloud_name' => getenv('CLOUDINARY_CLOUD_NAME') ?: '',
-                'api_key' => getenv('CLOUDINARY_API_KEY') ?: '',
-                'api_secret' => getenv('CLOUDINARY_API_SECRET') ?: '',
-                'folder' => getenv('CLOUDINARY_FOLDER') ?: 'sfcelerate-bizstart/properties',
+                'cloud_name' => $getenv('CLOUDINARY_CLOUD_NAME') ?: '',
+                'api_key' => $getenv('CLOUDINARY_API_KEY') ?: '',
+                'api_secret' => $getenv('CLOUDINARY_API_SECRET') ?: '',
+                'folder' => $getenv('CLOUDINARY_FOLDER') ?: 'well-yu/properties',
             ],
         ],
         'weather' => [
-            'openweather_key' => getenv('OPENWEATHER_API_KEY') ?: '',
-            'units' => getenv('OPENWEATHER_UNITS') ?: 'metric',
+            'openweather_key' => $getenv('OPENWEATHER_API_KEY') ?: '',
+            'units' => $getenv('OPENWEATHER_UNITS') ?: 'metric',
         ],
     ],
     'policy' => require __DIR__ . '/investment-policy.php',
@@ -118,8 +125,8 @@ $defaults['app']['environment'] = $environment;
 
 $appFlagDefaults = [
     'debug' => $environment !== 'production',
-    'auto_migrate' => $environment !== 'production',
-    'auto_seed' => $environment === 'local',
+    'auto_migrate' => false,
+    'auto_seed' => false,
 ];
 $appFlagEnvironmentVariables = [
     'debug' => 'APP_DEBUG',
@@ -133,7 +140,7 @@ foreach ($appFlagDefaults as $flag => $fallback) {
         $defaults['app'][$flag] = false;
         continue;
     }
-    $environmentValue = getenv($appFlagEnvironmentVariables[$flag]);
+    $environmentValue = $getenv($appFlagEnvironmentVariables[$flag]);
     if ($environmentValue !== false && trim((string) $environmentValue) !== '') {
         $defaults['app'][$flag] = $normalizeBoolean($environmentValue, $fallback);
         continue;
@@ -158,25 +165,29 @@ foreach ([
     'verification_ttl_seconds' => 'EMAIL_VERIFICATION_TTL_SECONDS',
     'max_attempts' => 'BROKER_MAIL_MAX_ATTEMPTS',
 ] as $key => $variable) {
-    $value = getenv($variable);
+    $value = $getenv($variable);
     if ($value === false) { continue; }
     $defaults['mail'][$key] = $key === 'smtp_auth' ? $normalizeBoolean($value, true)
         : (in_array($key, ['smtp_port', 'verification_ttl_seconds', 'max_attempts'], true) ? (int) $value : $value);
 }
 
 foreach (['url' => 'APP_URL'] as $key => $variable) {
-    $value = getenv($variable);
+    $value = $getenv($variable);
     if ($value !== false && trim($value) !== '') {
         $defaults['app'][$key] = trim($value);
     }
 }
-$forceHttps = getenv('APP_FORCE_HTTPS');
+$forceHttps = $getenv('APP_FORCE_HTTPS');
 if ($forceHttps !== false && trim($forceHttps) !== '') {
     $defaults['security']['force_https'] = $normalizeBoolean($forceHttps, false);
 }
-$trustedProxies = getenv('APP_TRUSTED_PROXIES');
+$trustedProxies = $getenv('APP_TRUSTED_PROXIES');
 if ($trustedProxies !== false) {
     $defaults['security']['trusted_proxies'] = array_values(array_filter(array_map('trim', explode(',', $trustedProxies))));
+}
+
+if (($defaults['db']['name'] ?? null) !== 'well_yu_db') {
+    throw new RuntimeException('WELL-YU may connect only to well_yu_db. Check its private configuration.');
 }
 
 return $defaults;

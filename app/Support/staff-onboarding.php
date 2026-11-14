@@ -7,7 +7,7 @@ require_once __DIR__ . '/auth-validation.php';
 /** Environment values override the server's private configuration. */
 function sfc_city_staff_setting(string $environmentVariable, string $configKey): mixed
 {
-    $environment = getenv($environmentVariable);
+    $environment = getenv('WELL_YU_' . $environmentVariable);
     if ($environment !== false) {
         return $environment;
     }

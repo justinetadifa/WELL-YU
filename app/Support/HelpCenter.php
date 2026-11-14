@@ -9,7 +9,7 @@ class HelpCenter
     {
         ?>
         <!-- Floating (?) Help Center trigger -->
-        <button type="button" class="locus-floating-help-btn no-print" data-locus-help-trigger data-locus-help-tab="scores" aria-haspopup="dialog" aria-controls="locusHelpDialog" aria-label="Open LOCUS-SF Help &amp; FAQs" title="Help &amp; FAQs">
+        <button type="button" class="locus-floating-help-btn no-print" data-locus-help-trigger data-locus-help-tab="scores" aria-haspopup="dialog" aria-controls="locusHelpDialog" aria-label="Open wELYU Help &amp; FAQs" title="Help &amp; FAQs">
             <svg class="locus-floating-help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -26,7 +26,7 @@ class HelpCenter
 
                 <div class="locus-help-top-bar">
                     <div class="locus-help-breadcrumb">
-                        <strong>LOCUS-SF</strong>
+                        <strong>wELYU</strong>
                         <span aria-hidden="true">/</span>
                         <span>Help center</span>
                     </div>
@@ -64,7 +64,7 @@ class HelpCenter
                         </button>
                         <button type="button" class="locus-help-tab-btn" role="tab" id="locusTabUsing" data-locus-tab="using" aria-selected="false" aria-controls="locusPanelUsing">
                             <svg class="locus-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                            <span class="locus-tab-label"><span class="locus-tab-text-full">Using LOCUS-SF</span><span class="locus-tab-text-short">Guide</span></span>
+                            <span class="locus-tab-label"><span class="locus-tab-text-full">Using wELYU</span><span class="locus-tab-text-short">Guide</span></span>
                         </button>
                         <button type="button" class="locus-help-tab-btn" role="tab" id="locusTabSounds" data-locus-tab="sounds" aria-selected="false" aria-controls="locusPanelSounds">
                             <svg class="locus-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -376,7 +376,7 @@ class HelpCenter
                     <!-- TAB 2: Using LOCUS-SF Panel -->
                     <div class="locus-help-tab-panel" id="locusPanelUsing" data-locus-panel="using" role="tabpanel" aria-labelledby="locusTabUsing" hidden>
                         <div class="locus-help-header-wrap">
-                            <h2 class="locus-help-title">Using LOCUS-SF</h2>
+                            <h2 class="locus-help-title">Using wELYU</h2>
                             <p class="locus-help-subtitle">Answers to practical questions about property data, map tools, and boundaries.</p>
                         </div>
 

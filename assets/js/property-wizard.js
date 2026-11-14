@@ -51,7 +51,7 @@
   Object.values(businessRoles).forEach(b => { if (!b.competitors) b.competitors = b.direct; });
 
   const PropertyDraftStorage = (() => {
-    const DB_NAME = 'sfc_property_drafts';
+    const DB_NAME = 'well_yu_property_drafts';
     const DB_VERSION = 1;
     const STORE_NAME = 'draft_media';
 
@@ -4844,7 +4844,7 @@
       });
     }
 
-    const RECENT_BARANGAYS_KEY = 'sfc_recent_barangays';
+    const RECENT_BARANGAYS_KEY = 'well_yu_recent_barangays';
     function getRecentBarangayList() {
       try {
         const stored = localStorage.getItem(RECENT_BARANGAYS_KEY);
@@ -6900,7 +6900,7 @@
       updateMceConfiguration(event.detail);
     });
     window.addEventListener('storage', event => {
-      if (event.key === 'locus:mce-weights-updated' && dialog.open) refreshMceConfiguration();
+      if (event.key === 'well-yu:mce-weights-updated' && dialog.open) refreshMceConfiguration();
     });
     window.addEventListener('focus', () => { if (dialog.open) refreshMceConfiguration(); });
     dialog.addEventListener('close', () => { if (!dialog.open) { mceController?.abort(); mceRevision++; } });
@@ -7212,7 +7212,7 @@
           field('reference_label').value='entrance';
           dirtyReference=false;
         }
-        draftKey = `locus:property-draft:${config.user?.id || 'staff'}:${property?.id || 'new'}`;
+        draftKey = `well-yu:property-draft:${config.user?.id || 'staff'}:${property?.id || 'new'}`;
         let restored = null;
         try {
           const saved = localStorage.getItem(draftKey);

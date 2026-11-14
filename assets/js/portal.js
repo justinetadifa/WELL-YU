@@ -38,10 +38,10 @@ function activePropertyList(properties) {
 }
 
 const STORAGE_KEYS = {
-  compare: "sfc.portal.compare",
-  favorites: "sfc.portal.favorites",
-  investmentLens: "sfc.portal.investmentLens",
-  decisionPersona: "sfc.portal.decisionPersona",
+  compare: "well-yu.portal.compare",
+  favorites: "well-yu.portal.favorites",
+  investmentLens: "well-yu.portal.investmentLens",
+  decisionPersona: "well-yu.portal.decisionPersona",
 };
 
 const FALLBACK_DECISION_PERSONAS = [

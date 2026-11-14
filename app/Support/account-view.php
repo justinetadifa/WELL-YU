@@ -112,8 +112,8 @@ function sfc_render_account_page(array $context, string $role, string $mode, str
     $label = match ($role) { 'seller' => 'Broker', 'admin' => 'City staff', default => 'Investor' };
     $route = '/' . ($role === 'seller' ? 'seller' : ($role === 'admin' ? 'admin' : 'investor')) . '-login.php';
     $GLOBALS['sfc_account_field_errors'] = $fieldErrors;
-    $isReturning = !empty($_COOKIE['sfc_returning_user']) || !empty($_SESSION['sfc_account_greeting']);
-    $loginWelcomeText = $isReturning ? 'WELCOME BACK!' : 'WELCOME!';
+    $isReturning = !empty($_COOKIE['well_yu_returning_user']) || !empty($_SESSION['sfc_account_greeting']);
+    $loginWelcomeText = $isReturning ? 'Welcome back.' : 'Welcome.';
     sfc_render_head($label . ($signup ? ' registration' : ' sign in') . ' | LOCUS-SF', $context, ['page' => $role . '-login', 'role' => $role]);
     sfc_account_assets($context);
     sfc_render_header($context);
@@ -125,29 +125,29 @@ function sfc_render_account_page(array $context, string $role, string $mode, str
           <div class="auth-flight-orbit" aria-hidden="true">
             <span class="auth-flight-ring auth-flight-ring-one"></span><span class="auth-flight-ring auth-flight-ring-two"></span>
             <span class="auth-flight-ring auth-flight-ring-three"></span>
-            <img src="<?= sfc_account_escape($context['assetBase']) ?>/images/logoLocusRedBlue.png" width="76" height="76" alt="">
+            <img src="<?= sfc_account_escape($context['assetBase']) ?>/images/welyu-logo-clean.png" width="76" height="92" alt="wELYU">
           </div>
-          <p class="auth-flight-brand" aria-hidden="true">LOCUS<span>—</span>SF</p>
+          <p class="auth-flight-brand" aria-hidden="true">wELYU</p>
           <h2 data-auth-flight-label>Signing in…</h2>
           <p class="auth-flight-copy">Your next move starts here.</p>
           <span class="auth-flight-line" aria-hidden="true"></span>
           <p class="auth-flight-note">Connecting to your workspace</p>
         </div>
-        <aside class="account-scene" aria-label="LOCUS-SF, San Fernando City">
+        <aside class="account-scene" aria-label="wELYU, San Fernando City">
           <div class="hero-stage">
             <div class="hero-glow-wrap" aria-hidden="true">
               <img src="<?= sfc_account_escape($context['assetBase']) ?>/images/blueGlow.png" alt="" class="hero-glow-img">
             </div>
             <div class="hero-emblem-wrap" aria-hidden="true">
-              <img src="<?= sfc_account_escape($context['assetBase']) ?>/images/locuslogobluesmallopacity.png" alt="" class="hero-emblem-img">
+              <img src="<?= sfc_account_escape($context['assetBase']) ?>/images/welyu-logo-clean.png" alt="wELYU" class="hero-emblem-img">
             </div>
             <div class="hero-poster-copy">
               <p class="hero-poster-kicker"><?= match ($role) { 'seller' => 'LOCAL EXPERTISE', 'admin' => 'ONE CITY', default => 'YOUR NEXT MOVE' } ?></p>
-              <h2 class="hero-poster-title"><?= match ($role) { 'seller' => '<span>NEW</span><span>HORIZONS.</span>', 'admin' => '<span>SHARED</span><span>VISION.</span>', default => '<span>STARTS</span><span>HERE.</span>' } ?></h2>
+              <h2 class="hero-poster-title"><?= match ($role) { 'seller' => '<span>Good places.</span><span>Shared possibilities.</span>', 'admin' => '<span>Local insight.</span><span>Better decisions.</span>', default => '<span>A fresh start.</span><span>A thoughtful move.</span>' } ?></h2>
             </div>
             <div class="hero-tagline-container" aria-hidden="true">
               <p class="hero-tagline-script" data-hero-script><?= match ($role) { 'seller' => 'Connect spaces, empower clients', 'admin' => 'Informed decisions, seamless data', default => 'Discover spaces, explore opportunities' } ?></p>
-              <p class="hero-tagline-action" data-hero-action><?= match ($role) { 'seller' => 'AND SHAPE THE CITY!', 'admin' => 'FOR THE CITY WE SERVE!', default => 'AND INVEST IN THE CITY!' } ?></p>
+              <p class="hero-tagline-action" data-hero-action><?= match ($role) { 'seller' => 'Find the right place for the next idea.', 'admin' => 'For the community we serve.', default => 'Invest with a little more perspective.' } ?></p>
             </div>
           </div>
         </aside>
@@ -169,9 +169,9 @@ function sfc_render_account_page(array $context, string $role, string $mode, str
             </div>
           </nav>
           <div class="account-roles-divider" aria-hidden="true"></div>
-          <p class="account-eyebrow"><?= $role === 'admin' ? 'CITY WORKSPACE' : ($signup ? 'GET STARTED' : 'YOUR LOCUS-SF ACCOUNT') ?></p>
+          <p class="account-eyebrow"><?= $role === 'admin' ? 'CITY WORKSPACE' : ($signup ? 'GET STARTED' : 'YOUR wELYU ACCOUNT') ?></p>
           <h1 id="accountTitle" class="account-title" data-welcome-heading><?= $role === 'admin' ? 'City staff access' : ($signup ? ($role === 'seller' ? 'Broker registration' : 'Create your account') : $loginWelcomeText) ?></h1>
-          <p class="account-intro"><?= match (true) { $role === 'admin' => 'CICTO · City Assessor · LEBDO', $role === 'seller' && $signup => 'Submit your PRC credentials for review by authorized CAO or LEBDO personnel.', $role === 'seller' => 'Sign in to your listings and verification status.', $signup => 'A few details to make your next move.', default => 'SIGN IN TO EXPLORE YOUR NEXT OPPORTUNITY.' } ?></p>
+          <p class="account-intro"><?= match (true) { $role === 'admin' => 'CICTO · City Assessor · LEBDO', $role === 'seller' && $signup => 'Submit your PRC credentials for review by authorized CAO or LEBDO personnel.', $role === 'seller' => 'Sign in to your listings and verification status.', $signup => 'A few details to make your next move.', default => 'Sign in to explore your next opportunity.' } ?></p>
           <?php if (($_GET['reason'] ?? '') === 'timeout'): ?><p class="account-message" role="status">Your session expired. Sign in again.</p><?php endif; ?>
           <?php if ($error !== ''): ?><p class="account-message is-error" role="alert"><?= sfc_account_escape($error) ?></p><?php endif; ?>
           <p class="account-validation-summary account-sr-only" data-validation-summary role="alert"><?= $fieldErrors !== [] ? 'Please check the highlighted fields.' : '' ?></p>
@@ -220,7 +220,7 @@ function sfc_render_account_page(array $context, string $role, string $mode, str
             <?php sfc_account_submit($signup ? ($role === 'seller' ? 'Submit for verification' : 'Create account') : 'Sign in', $signup ? ($role === 'seller' ? 'Submitting application…' : 'Creating your account…') : 'Signing in…'); ?>
           </form>
           <?php if ($role !== 'admin'): ?>
-          <p class="account-switch"><?= $signup ? 'Already have an account?' : 'New to LOCUS-SF?' ?> <a href="<?= sfc_account_escape(sfc_path($route . ($signup ? '' : '?mode=signup'))) ?>"><?= $signup ? 'Sign in' : 'Create account' ?></a></p>
+          <p class="account-switch"><?= $signup ? 'Already have an account?' : 'New to wELYU?' ?> <a href="<?= sfc_account_escape(sfc_path($route . ($signup ? '' : '?mode=signup'))) ?>"><?= $signup ? 'Sign in' : 'Create account' ?></a></p>
           <?php else: ?>
           <p class="account-staff-note">Need a city staff account? CICTO can create one through City accounts.</p>
           </div>
