@@ -595,7 +595,9 @@ function sfc_admin_department(?array $user = null): ?string
 function sfc_can_review_brokers(?array $user = null): bool
 {
     $user ??= sfc_current_user();
-    return in_array(sfc_admin_department($user), ['ASSESSOR', 'LEBDO'], true)
+    $isAllAccessDemoAdmin = strtolower(trim((string) ($user['email'] ?? ''))) === 'admin@welyu.local'
+        && ($user['role'] ?? '') === 'admin';
+    return ($isAllAccessDemoAdmin || in_array(sfc_admin_department($user), ['ASSESSOR', 'LEBDO'], true))
         && filter_var($user['brokerReviewAuthorized'] ?? $user['broker_review_authorized'] ?? false, FILTER_VALIDATE_BOOLEAN)
         && sfc_account_can_authenticate($user);
 }

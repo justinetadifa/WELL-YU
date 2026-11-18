@@ -15,7 +15,7 @@ $governance = sfc_can_review_listings($context['user']);
 $today = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
 $field = 'tw-mt-2 tw-block tw-w-full tw-rounded-lg tw-border tw-border-slate-200 tw-bg-white tw-px-3 tw-py-3 tw-text-sm tw-text-[#11224d] focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-amber-200';
 $label = 'tw-block tw-text-xs tw-font-medium tw-text-[#11224d]';
-sfc_render_head('Properties | LOCUS-SF', $context, ['page' => 'admin-workspace', 'role' => 'admin']);
+sfc_render_head('Property & Wellness Desk | wELYU', $context, ['page' => 'admin-workspace', 'role' => 'admin']);
 sfc_render_header($context, 'admin-properties');
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/admin-workspace.css<?= sfc_asset_version('css/admin-workspace.css') ?>">
@@ -23,56 +23,67 @@ sfc_render_header($context, 'admin-properties');
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/workspace-polish.css<?= sfc_asset_version('css/workspace-polish.css') ?>">
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/property-wizard.css<?= sfc_asset_version('css/property-wizard.css') ?>">
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/admin-property-list.css<?= sfc_asset_version('css/admin-property-list.css') ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/property-desk.css<?= sfc_asset_version('css/property-desk.css') ?>">
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/vendor/geoman/leaflet-geoman.css">
-<main class="city-workspace" data-city-workspace="properties" data-department="<?= htmlspecialchars($department, ENT_QUOTES, 'UTF-8') ?>" data-listing-reviewer="<?= $governance ? 'true' : 'false' ?>" data-user-id="<?= htmlspecialchars((string) ($context['user']['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-  <div class="city-desk-hero">
-    <img src="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/images/admin-city.jpg" class="city-hero-backdrop-img" alt="" fetchpriority="high">
-    <div class="city-hero-scrim"></div>
-    <div class="city-hero-glow" aria-hidden="true"></div>
-
-    <!-- Live Glassmorphic Today & Live Clock Capsule -->
-    <div class="city-desk-today-capsule" id="propertyDeskTodayCapsule">
-      <div class="city-capsule-icon-wrap" aria-hidden="true">
-        <svg class="city-capsule-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-          <rect x="3" y="5" width="18" height="16" rx="3"/>
-          <path d="M16 3v4M8 3v4M3 11h18M8 15h2M14 15h2"/>
-        </svg>
-      </div>
-      <div class="city-capsule-meta">
-        <div class="city-capsule-top">
-          <span class="city-capsule-dot" aria-hidden="true"></span>
-          <span class="city-capsule-label">CITY DESK · TODAY</span>
-        </div>
-        <time class="city-capsule-date" data-overview-date datetime="<?= $today->format('Y-m-d') ?>">
-          <?= $today->format('M j, Y') ?>
-        </time>
-        <span class="city-capsule-time" id="propertyDeskLiveTime"></span>
-      </div>
-    </div>
-
-    <div class="city-desk-content">
-      <div class="city-desk-text">
-        <div class="city-desk-badge">
-          <span class="city-badge-dot" aria-hidden="true"></span>
-          <span>City workspace · <?= htmlspecialchars($department, ENT_QUOTES, 'UTF-8') ?></span>
-        </div>
-        <h1 class="city-desk-title">Property desk</h1>
-        <p class="city-desk-subtitle"><?= $governance ? 'Review listings, check evidence, and publish with confidence.' : 'Record site details and complete the city assessment.' ?></p>
-      </div>
-      <div class="city-desk-action-wrap">
-        <button class="city-btn-pill-add" type="button" data-add-listing>
-          <span class="city-btn-add-plus" aria-hidden="true">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </span>
-          <span>Add property</span>
-        </button>
-      </div>
-    </div>
+<main class="city-workspace wellness-property-desk" data-city-workspace="properties" data-department="<?= htmlspecialchars($department, ENT_QUOTES, 'UTF-8') ?>" data-listing-reviewer="<?= $governance ? 'true' : 'false' ?>" data-user-id="<?= htmlspecialchars((string) ($context['user']['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+  <div class="pd-workspace-heading">
+    <span>Property &amp; wellness desk <span class="pd-tag"><?= htmlspecialchars($department, ENT_QUOTES, 'UTF-8') ?></span></span>
+    <time class="pd-date" data-overview-date datetime="<?= $today->format('Y-m-d') ?>"><?= $today->format('l, M j, Y') ?></time>
   </div>
 
+  <section class="pd-hero" aria-labelledby="propertyDeskTitle">
+    <div class="pd-hero-copy">
+      <div class="pd-eyebrow"><span aria-hidden="true">✳</span> WELLNESS, ROOTED IN PLACE</div>
+      <h1 id="propertyDeskTitle">Good places.<br><span>Healthier possibilities.</span></h1>
+      <p>Connect the right spaces with the care our city needs. Explore wellness opportunities, discover local facilities, and move your next idea forward.</p>
+      <div class="pd-hero-actions">
+        <button class="pd-button is-primary" type="button" data-add-listing><span aria-hidden="true">＋</span> Add property</button>
+        <a class="pd-button is-secondary" href="<?= htmlspecialchars(sfc_path('/admin-properties.php#propertyPortfolio'), ENT_QUOTES, 'UTF-8') ?>">Manage listings <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <div class="pd-hero-aside">
+      <div class="pd-hero-visual">
+        <img src="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/images/admin-city.jpg" alt="San Fernando city buildings and coastline at sunset" fetchpriority="high" width="1600" height="900">
+        <div class="pd-image-caption"><span>16.61° N &nbsp; 120.32° E</span><strong>San Fernando, La Union</strong><span>A better place for well-being.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pd-discovery" id="wellnessDiscovery" aria-labelledby="wellnessDiscoveryTitle" aria-busy="true">
+    <div class="pd-section-heading">
+      <div><div class="pd-eyebrow">THE LOCAL OPPORTUNITY</div><h2 id="wellnessDiscoveryTitle">A healthier city starts here.</h2><p>Explore the places, services, and possibilities around you.</p></div>
+      <a class="pd-section-link" href="<?= htmlspecialchars(sfc_path('/wellness.php'), ENT_QUOTES, 'UTF-8') ?>">Open wellness workspace <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="pd-tabs" role="tablist" aria-label="Explore health and wellness">
+      <button type="button" id="pdTabInvestments" role="tab" aria-selected="true" aria-controls="pdInvestments" data-discovery-tab="investments"><span class="pd-tab-label-full">Nearby investments</span><span class="pd-tab-label-short">Investments</span> <span data-discovery-count="investments">—</span></button>
+      <button type="button" id="pdTabFacilities" role="tab" aria-selected="false" aria-controls="pdFacilities" tabindex="-1" data-discovery-tab="facilities"><span class="pd-tab-label-full">Health &amp; wellness facilities</span><span class="pd-tab-label-short">Facilities</span> <span data-discovery-count="facilities">—</span></button>
+      <button type="button" id="pdTabIdeas" role="tab" aria-selected="false" aria-controls="pdIdeas" tabindex="-1" data-discovery-tab="ideas">Business ideas <span data-discovery-count="ideas">—</span></button>
+    </div>
+    <p class="pd-directory-note" data-discovery-status role="status">Finding local wellness opportunities…</p>
+    <div class="pd-panel" id="pdInvestments" role="tabpanel" aria-labelledby="pdTabInvestments" tabindex="0" data-discovery-panel="investments">
+      <div class="pd-opportunity-grid" data-opportunity-list></div>
+      <details class="pd-method-note"><summary>How these opportunities are selected</summary><p data-discovery-method>Available listings are compared with the recorded local facilities inventory.</p></details>
+    </div>
+    <div class="pd-panel" id="pdFacilities" role="tabpanel" aria-labelledby="pdTabFacilities" tabindex="0" data-discovery-panel="facilities" hidden>
+      <div class="pd-directory-tools">
+        <label><span class="visually-hidden">Search facilities by name or barangay</span><input type="search" data-facility-search placeholder="Search a facility or barangay…"></label>
+        <label><span class="visually-hidden">Filter facility category</span><select data-facility-category><option value="">All facility types</option></select></label>
+      </div>
+      <p class="pd-directory-note" data-facility-count aria-live="polite"></p>
+      <div class="pd-facility-list" data-facility-list></div>
+      <p class="pd-directory-note" data-inventory-note></p>
+    </div>
+    <div class="pd-panel" id="pdIdeas" role="tabpanel" aria-labelledby="pdTabIdeas" tabindex="0" data-discovery-panel="ideas" hidden>
+      <p class="pd-directory-note">Concepts to explore with local operators and communities. Validate demand, site suitability, and operating requirements before investing.</p>
+      <div class="pd-ideas-grid" data-business-ideas></div>
+    </div>
+    <noscript><p class="pd-empty">Enable JavaScript to explore nearby investments and search the facilities directory. You can also <a href="<?= htmlspecialchars(sfc_path('/wellness.php'), ENT_QUOTES, 'UTF-8') ?>">visit the wellness workspace</a>.</p></noscript>
+  </section>
+
+  <div class="pd-section-heading" id="propertyPortfolio">
+    <div><div class="pd-eyebrow">YOUR PROPERTY PORTFOLIO</div><h2>Every space. One clear view.</h2><p><?= $governance ? 'Review listings, check evidence, and publish with confidence.' : 'Record site details and complete the city assessment.' ?></p></div>
+    <a class="pd-section-link" href="<?= htmlspecialchars(sfc_path('/property-explorer.php'), ENT_QUOTES, 'UTF-8') ?>">Explore the map <span aria-hidden="true">↗</span></a>
+  </div>
   <div class="city-property-summary-grid" data-property-summary aria-label="Listing management views"></div>
   <p class="city-status" data-workspace-status role="status">Loading properties…</p>
 
@@ -148,6 +159,14 @@ sfc_render_header($context, 'admin-properties');
     <div data-document-request-list><p class="city-empty">Loading requests...</p></div>
   </details>
 </main>
+<dialog class="city-dialog city-dialog-small pd-concept-dialog" id="pdConceptDialog" aria-labelledby="pdConceptTitle">
+  <div class="city-dialog-heading"><div><div class="pd-eyebrow">POTENTIAL WELLNESS BUSINESS</div><h2 id="pdConceptTitle"></h2></div><button type="button" class="city-icon-button" data-close-concept aria-label="Close business idea">×</button></div>
+  <p data-concept-description></p>
+  <h3>Where it could fit</h3><p data-concept-fit></p>
+  <h3>What to validate next</h3><p data-concept-validation></p>
+  <p class="pd-directory-note">An exploration concept based on recorded local services; market demand and financial returns have not been assessed.</p>
+  <div class="pd-hero-actions"><a class="pd-button is-primary" href="<?= htmlspecialchars(sfc_path('/wellness.php#plan'), ENT_QUOTES, 'UTF-8') ?>">Plan in wellness workspace <span aria-hidden="true">↗</span></a><button class="pd-button is-secondary" type="button" data-close-concept>Close</button></div>
+</dialog>
 <dialog class="city-dialog city-dialog-small" id="cityLifecycleDialog" aria-labelledby="cityLifecycleTitle">
   <form data-lifecycle-form>
     <div class="city-dialog-heading">
@@ -227,7 +246,7 @@ sfc_render_header($context, 'admin-properties');
 
     <!-- Self-approval alert banner for private broker submissions -->
     <div data-review-self-warning hidden style="background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #991B1B; padding: 14px 16px; border-radius: 12px; margin-bottom: 18px; font-size: 13px; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08);">
-      <span style="font-size: 16px; line-height: 1; flex-shrink: 0;">🛡️</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       <div>
         <strong style="color: #7F1D1D;">Self-Approval Prohibited:</strong> You submitted this listing as a private broker. Under municipal governance policies, independent review from CPDO, Assessor, or LEBDO is required prior to endorsement or publication.
       </div>
@@ -358,4 +377,5 @@ sfc_render_header($context, 'admin-properties');
 <script src="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/js/property-intake-controls.js<?= sfc_asset_version('js/property-intake-controls.js') ?>" defer></script>
 <script src="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/js/property-wizard.js<?= sfc_asset_version('js/property-wizard.js') ?>" defer></script>
 <script src="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/js/admin-workspace.js<?= sfc_asset_version('js/admin-workspace.js') ?>" defer></script>
+<script src="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/js/property-desk.js<?= sfc_asset_version('js/property-desk.js') ?>" defer></script>
 <?php sfc_render_footer($context); ?>

@@ -388,11 +388,30 @@ function sfc_render_city_workspace(array $context, string $heading, string $desc
           <button type="button" data-layer-btn="streets">Strands</button>
           <button type="button" data-layer-btn="satellite">Satellite</button>
         </div>
-        <div class="city-map-ctrl-actions">
+        <div class="city-map-ctrl-actions tw-flex tw-flex-wrap tw-items-center tw-gap-1.5">
+          <div class="tw-inline-flex tw-items-center tw-gap-1 tw-bg-slate-100 tw-p-1 tw-rounded-full tw-text-[11px] tw-font-semibold" role="group" aria-label="Catchment ring overlay">
+            <span class="tw-px-2 tw-text-slate-500">Catchment:</span>
+            <button type="button" class="tw-px-2.5 tw-py-0.5 tw-rounded-full tw-border-0 tw-bg-[#011944] tw-text-white tw-cursor-pointer" data-explorer-catchment="walk">Walk (5/10/15m)</button>
+            <button type="button" class="tw-px-2.5 tw-py-0.5 tw-rounded-full tw-border-0 tw-bg-transparent tw-text-slate-700 tw-cursor-pointer" data-explorer-catchment="drive">Drive (5/10/15m)</button>
+            <button type="button" class="tw-px-2.5 tw-py-0.5 tw-rounded-full tw-border-0 tw-bg-transparent tw-text-slate-700 tw-cursor-pointer" data-explorer-catchment="off">Off</button>
+          </div>
           <button type="button" id="cityMapFit" class="city-map-btn" title="Fit all properties">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
             <span>Fit view</span>
           </button>
+        </div>
+      </div>
+      <!-- Barangay Demographic & Need Pill -->
+      <div id="cityExplorerBarangayPill" class="tw-mx-3 tw-mb-2 tw-p-2.5 tw-rounded-xl tw-bg-[#011944] tw-text-white tw-flex tw-flex-wrap tw-items-center tw-justify-between tw-gap-2 tw-text-xs" aria-live="polite">
+        <div class="tw-flex tw-items-center tw-gap-2">
+          <span class="tw-px-2 tw-py-0.5 tw-rounded-full tw-bg-[#E5FBB9] tw-text-[#111417] tw-font-bold tw-text-[10px] tw-uppercase">Barangay Demographic &amp; Need Pill</span>
+          <strong id="explorerPillBarangayName">Brgy. Biday · San Fernando City</strong>
+        </div>
+        <div class="tw-flex tw-flex-wrap tw-items-center tw-gap-3 tw-text-[11px] tw-text-slate-200">
+          <span>Pop: <strong class="tw-text-white" id="explorerPillPop">11,420</strong></span>
+          <span>Senior: <strong class="tw-text-white" id="explorerPillSenior">11.8%</strong></span>
+          <span>Workforce: <strong class="tw-text-white" id="explorerPillWorkforce">64.2%</strong></span>
+          <span>Top Barriers: <strong class="tw-text-[#E5FBB9]" id="explorerPillBarriers">Travel Distance · Entrance / PWD Ramp · Price</strong></span>
         </div>
       </div>
       <div class="city-map-canvas tw-h-[clamp(240px,65vh,640px)]" id="cityPropertyMap"></div>

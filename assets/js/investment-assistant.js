@@ -136,12 +136,17 @@ if (root) {
   }
 
   function safeImage(value) {
-    if (typeof value !== 'string' || !value.trim()) return null;
+    if (typeof value !== 'string' || !value.trim()) return route('assets/images/landing-Property1.jpg');
+    let clean = value.trim();
+    if (clean.includes('properties/biday-commercial-lot')) clean = 'assets/images/landing-Property1.jpg';
+    else if (clean.includes('properties/catbangen-retail-hub')) clean = 'assets/images/landing-FabroBldg.jpg';
+    else if (clean.includes('properties/poro-tourism-lot')) clean = 'assets/images/landing-LaFinns.jpg';
+    else if (clean.includes('assets/images/properties/')) clean = 'assets/images/landing-city.jpg';
     try {
-      const url = new URL(value, `${location.origin}${config.basePath || ''}/`);
+      const url = new URL(clean, `${location.origin}${config.basePath || ''}/`);
       if ((url.origin === location.origin && ['http:', 'https:'].includes(url.protocol)) || url.protocol === 'https:') return url.href;
-    } catch { /* Invalid and active URLs receive a neutral placeholder. */ }
-    return null;
+    } catch { /* Invalid and active URLs receive a local fallback image. */ }
+    return route('assets/images/landing-Property1.jpg');
   }
 
   function optionElement(value, label) {
@@ -319,10 +324,9 @@ if (root) {
     byId('iaResultStatus').textContent = cards.length ? (total > cards.length ? `Showing ${cards.length} of ${number(total)} matching published listings. Refine your filters to narrow the results.` : `${number(total)} published ${total === 1 ? 'listing matches' : 'listings match'} your filters.`) : 'No published properties match your current filters.';
     byId('iaResultList').innerHTML = cards.length ? cards.map(cardMarkup).join('') : '<div class="ia-empty"><h3>No published properties match your current filters.</h3><p>Adjust a selected filter or clear your filters to explore more published properties.</p></div>';
     byId('iaResultList').querySelectorAll('img').forEach(image => image.addEventListener('error', () => {
-      const fallback = document.createElement('span');
-      fallback.className = 'ia-image-fallback';
-      fallback.textContent = 'Photo unavailable';
-      image.replaceWith(fallback);
+      if (image.dataset.iaFallback) return;
+      image.dataset.iaFallback = '1';
+      image.src = route('assets/images/landing-Property1.jpg');
     }, { once: true }));
     const suggestions = Array.isArray(data.suggestions) ? data.suggestions.filter(item => typeof item?.label === 'string' && item.patch && typeof item.patch === 'object') : [];
     byId('iaSuggestions').replaceChildren();
@@ -769,6 +773,17 @@ if (root) {
   byId('iaComposerFilters').addEventListener('click', () => openFilters('category'));
   byId('iaCloseFilters').addEventListener('click', () => closeFilters());
   byId('iaDismissFilters').addEventListener('click', () => closeFilters());
+  byId('iaToggleAssistant')?.addEventListener('click', () => {
+    const workbench = byId('iaWorkbench');
+    const collapsed = workbench.classList.toggle('is-assistant-collapsed');
+    byId('iaToggleAssistant').setAttribute('aria-expanded', String(!collapsed));
+    if (!collapsed) byId('iaMessage')?.focus({ preventScroll: true });
+  });
+  byId('iaCloseAssistant')?.addEventListener('click', () => {
+    byId('iaWorkbench')?.classList.add('is-assistant-collapsed');
+    byId('iaToggleAssistant')?.setAttribute('aria-expanded', 'false');
+    byId('iaToggleAssistant')?.focus({ preventScroll: true });
+  });
   byId('iaListView').addEventListener('click', () => switchView(false));
   byId('iaMapView').addEventListener('click', () => switchView(true));
   byId('iaMapFit').addEventListener('click', () => fitMapListings());

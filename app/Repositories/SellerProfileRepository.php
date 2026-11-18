@@ -827,6 +827,7 @@ final class SellerProfileRepository
             'businessRegistrationNo' => $row['business_registration_no'] !== null ? (string) $row['business_registration_no'] : null,
             'governmentIdNo' => $row['government_id_no'] !== null ? (string) $row['government_id_no'] : null,
             'prcRegistrationNo' => $row['prc_registration_no'] ?? null,
+            'prcRegistrationNumber' => $row['prc_registration_no'] ?? null,
             'prcValidUntil' => $row['prc_valid_until'] ?? null,
             'frontDocument' => $this->documents->publicMetadata($this->decodeDocument($row['prc_front_json'] ?? null)),
             'backDocument' => $this->documents->publicMetadata($this->decodeDocument($row['prc_back_json'] ?? null)),

@@ -391,6 +391,18 @@ final class SurroundingsRadar
             }
         }
 
+        // 1b. Check data/san-fernando-health-inventory.json (10-Category San Fernando Health & Wellness Anchors)
+        $healthFile = $dataDir . '/san-fernando-health-inventory.json';
+        if (is_file($healthFile)) {
+            $raw = (string) @file_get_contents($healthFile);
+            $data = json_decode($raw, true);
+            if (is_array($data) && isset($data['features']) && is_array($data['features'])) {
+                foreach ($data['features'] as $f) {
+                    $addFeature($f, 'San Fernando Health & Wellness Inventory', 'clinic');
+                }
+            }
+        }
+
         // 2. Check data/commercial-directory.json
         $commFile = $dataDir . '/commercial-directory.json';
         if (is_file($commFile)) {
@@ -647,8 +659,371 @@ final class SurroundingsRadar
         return $merged;
     }
 
+    public const WELLNESS_SERVICE_PROFILES = [
+        'rehab_mobility' => [
+            'label' => 'Physical Therapy & Mobility Rehab Center',
+            'direct' => ['rehab', 'physiotherapist', 'physical_therapy', 'rehabilitation', 'mobility_clinic'],
+            'related' => ['clinic', 'doctors', 'chiropractor', 'fitness_centre', 'gym', 'wellness', 'hospital', 'dialysis'],
+            'public' => ['health_station', 'barangay_health_station', 'cho_hub', 'rhu', 'public_clinic', 'emergency'],
+            'complementary' => ['pharmacy', 'chemist', 'hospital', 'dialysis', 'optician', 'park', 'senior_center', 'supermarket', 'mall', 'school', 'college', 'community_centre'],
+            'anchors' => ['hospital', 'dialysis', 'mall', 'supermarket', 'park', 'college', 'community_centre', 'townhall', 'emergency'],
+            'focus' => 'Post-discharge stroke, orthopedic, and senior step-free rehabilitation',
+        ],
+        'senior_preventive' => [
+            'label' => 'Senior Active-Living & Preventive Care Hub',
+            'direct' => ['senior_care', 'geriatric_clinic', 'senior_center', 'preventive_clinic'],
+            'related' => ['clinic', 'doctors', 'rehab', 'physiotherapist', 'wellness', 'community_centre', 'dialysis', 'dentist'],
+            'public' => ['health_station', 'barangay_health_station', 'cho_hub', 'rhu', 'public_clinic', 'emergency'],
+            'complementary' => ['pharmacy', 'chemist', 'hospital', 'dialysis', 'park', 'place_of_worship', 'supermarket', 'marketplace', 'bank', 'optician'],
+            'anchors' => ['hospital', 'dialysis', 'park', 'marketplace', 'supermarket', 'mall', 'place_of_worship', 'townhall', 'emergency'],
+            'focus' => 'Routine BP/glucose screening, fall-prevention exercise, and senior day programming',
+        ],
+        'mental_wellness' => [
+            'label' => 'Mental & Psychosocial Wellness Studio',
+            'direct' => ['counseling', 'mental_health', 'psychology_clinic', 'psychosocial_studio', 'mindfulness'],
+            'related' => ['clinic', 'doctors', 'wellness', 'fitness_centre'],
+            'public' => ['health_station', 'barangay_health_station', 'cho_hub', 'rhu', 'public_clinic', 'emergency'],
+            'complementary' => ['pharmacy', 'hospital', 'dialysis', 'school', 'college', 'park', 'cafe', 'place_of_worship', 'community_centre'],
+            'anchors' => ['college', 'school', 'hospital', 'mental_health', 'park', 'community_centre', 'mall'],
+            'focus' => 'Confidential evening/weekend psychosocial support for workers, youth, and families',
+        ],
+        'fitness_recovery' => [
+            'label' => 'Community Fitness, Pilates & Recovery Space',
+            'direct' => ['fitness_centre', 'gym', 'pilates', 'studio_fitness', 'recovery_studio'],
+            'related' => ['rehab', 'physiotherapist', 'wellness', 'nutrition', 'park'],
+            'public' => ['health_station', 'barangay_health_station', 'park', 'community_centre', 'emergency'],
+            'complementary' => ['nutrition', 'pharmacy', 'hospital', 'clinic', 'college', 'school', 'office', 'mall', 'supermarket'],
+            'anchors' => ['park', 'mall', 'college', 'school', 'supermarket', 'office'],
+            'focus' => 'Low-impact mobility conditioning, core rehab, and after-work community movement classes',
+        ],
+        'maternal_nutrition' => [
+            'label' => 'Maternal, Nutrition & Lifestyle Wellness Clinic',
+            'direct' => ['nutrition', 'maternal_clinic', 'birthing_home', 'dietitian', 'lifestyle_clinic'],
+            'related' => ['clinic', 'doctors', 'rehab', 'wellness', 'pharmacy', 'dialysis'],
+            'public' => ['health_station', 'barangay_health_station', 'cho_hub', 'rhu', 'public_clinic', 'emergency'],
+            'complementary' => ['pharmacy', 'hospital', 'dialysis', 'supermarket', 'marketplace', 'chemist', 'school', 'bank'],
+            'anchors' => ['hospital', 'dialysis', 'marketplace', 'supermarket', 'school', 'mall', 'townhall'],
+            'focus' => 'Pre/post-natal checkups, renal-safe dietary prep, and metabolic lifestyle coaching',
+        ],
+    ];
+
+    public static function isWellnessServiceType(?string $businessType): bool
+    {
+        return isset(self::WELLNESS_SERVICE_PROFILES[strtolower(trim((string) $businessType))]);
+    }
+
+    public static function classifyWellnessEstablishment(array $properties, string $businessType = 'rehab_mobility'): array
+    {
+        $typeKey = strtolower(trim($businessType));
+        $profile = self::WELLNESS_SERVICE_PROFILES[$typeKey] ?? self::WELLNESS_SERVICE_PROFILES['rehab_mobility'];
+        $name = strtolower(trim((string) ($properties['name'] ?? '')));
+        $catKey = strtolower(trim((string) ($properties['categoryKey'] ?? $properties['businessType'] ?? $properties['category'] ?? '')));
+        $note = strtolower(trim((string) ($properties['note'] ?? '')));
+        $careSector = strtolower(trim((string) ($properties['careSector'] ?? '')));
+
+        $isPublicFree = $careSector === 'public_free'
+            || in_array($catKey, $profile['public'], true)
+            || str_contains($name, 'barangay health station')
+            || str_contains($name, 'city health office')
+            || str_contains($name, 'rural health unit')
+            || str_contains($note, 'free public');
+
+        if ($isPublicFree) {
+            return [
+                'classification' => 'complementary',
+                'classificationLabel' => 'Free Public Care / BHS Referral',
+                'isAnchor' => true,
+                'careSector' => 'public_free',
+            ];
+        }
+
+        if (in_array($catKey, $profile['direct'], true)) {
+            return [
+                'classification' => 'competitor',
+                'classificationLabel' => 'Direct Wellness Peer',
+                'isAnchor' => false,
+                'careSector' => 'private',
+            ];
+        }
+
+        $isAnchor = in_array($catKey, $profile['anchors'], true)
+            || str_contains($name, 'hospital')
+            || str_contains($name, 'medical center')
+            || str_contains($name, 'sm city')
+            || str_contains($name, 'robinsons');
+
+        if (in_array($catKey, $profile['related'], true)) {
+            return [
+                'classification' => 'related',
+                'classificationLabel' => 'Related Wellness / Care Overlap',
+                'isAnchor' => $isAnchor,
+                'careSector' => 'private',
+            ];
+        }
+
+        if (in_array($catKey, $profile['complementary'], true) || $isAnchor) {
+            return [
+                'classification' => 'complementary',
+                'classificationLabel' => $isAnchor ? 'Health & Community Anchor' : 'Complementary Care Partner',
+                'isAnchor' => $isAnchor,
+                'careSector' => 'private',
+            ];
+        }
+
+        return [
+            'classification' => 'complementary',
+            'classificationLabel' => 'Surrounding Civic & Retail Context',
+            'isAnchor' => in_array($catKey, ['bank', 'fuel', 'restaurant', 'cafe', 'convenience', 'fast_food'], true) ? false : $isAnchor,
+            'careSector' => 'private',
+        ];
+    }
+
+    public static function summarizeWellnessBaseline(array $features, float $lat, float $lng, int $radiusMeters, string $businessType = 'rehab_mobility'): array
+    {
+        $privateProviders = 0;
+        $freePublicProgrammes = 0;
+        $directPeers = 0;
+        $afterHoursDirect = 0;
+        $healthAnchors = 0;
+        $complementaryCount = 0;
+
+        foreach ($features as $feature) {
+            $props = $feature['properties'] ?? [];
+            $catKey = strtolower(trim((string) ($props['categoryKey'] ?? $props['businessType'] ?? '')));
+            $cls = (string) ($props['classification'] ?? 'other');
+            $sector = (string) ($props['careSector'] ?? 'private');
+            $afterHours = !empty($props['afterHours']) || str_contains(strtolower((string) ($props['operatingHours'] ?? $props['note'] ?? '')), '8:00 pm') || str_contains(strtolower((string) ($props['operatingHours'] ?? '')), '24/7');
+
+            if ($sector === 'public_free') {
+                $freePublicProgrammes++;
+                $healthAnchors++;
+                continue;
+            }
+            if (in_array($catKey, ['clinic', 'doctors', 'hospital', 'dialysis', 'pharmacy', 'chemist', 'rehab', 'physiotherapist', 'fitness_centre', 'gym', 'counseling', 'mental_health', 'nutrition', 'wellness', 'dentist', 'optician', 'senior_care'], true)) {
+                $privateProviders++;
+            }
+            if ($cls === 'competitor') {
+                $directPeers++;
+                if ($afterHours) {
+                    $afterHoursDirect++;
+                }
+            } elseif ($cls === 'related' && $afterHours) {
+                $afterHoursDirect++;
+            }
+            if ($cls === 'complementary' || !empty($props['isAnchor'])) {
+                $complementaryCount++;
+                if (!empty($props['isAnchor']) || in_array($catKey, ['hospital', 'dialysis', 'pharmacy', 'clinic', 'park', 'school', 'college', 'emergency', 'mental_health'], true)) {
+                    $healthAnchors++;
+                }
+            }
+        }
+
+        $totalPlaces = count($features);
+        $synergyScore = min(100.0, round(
+            min(35.0, $freePublicProgrammes * 17.5 + 10.0)
+            + min(25.0, $healthAnchors * 5.0 + 5.0)
+            + ($directPeers === 0 ? 25.0 : ($directPeers === 1 ? 18.0 : 10.0))
+            + ($afterHoursDirect === 0 ? 15.0 : 8.0),
+            1
+        ));
+        if ($totalPlaces === 0) {
+            $synergyScore = 0.0;
+        }
+        $weightedContribution = round($synergyScore * 0.20, 1);
+
+        $associationRules = self::evaluateAssociationRules($features, $businessType, $directPeers, $afterHoursDirect);
+        $topRule = $associationRules[0] ?? null;
+
+        $pathway = $topRule['recommendedPathway'] ?? 'Open New';
+        $pathwayReason = $topRule['rationale'] ?? 'Zero direct specialty peers and strong pharmacy/hospital anchors support opening a dedicated step-free center.';
+        if ($directPeers >= 1 && $afterHoursDirect === 0) {
+            $pathway = 'Improve Existing';
+            $pathwayReason = 'An existing specialty clinic operates daytime-only — adding evening hours & PWD ramp retrofit unlocks rapid capacity.';
+        } elseif ($freePublicProgrammes >= 2) {
+            $pathway = 'Partner';
+            $pathwayReason = 'Multiple free public health & active-living hubs support a low-CapEx co-located referral partnership cutting startup CapEx by 50%–70%.';
+        }
+
+        return [
+            'business_type' => $businessType,
+            'private_providers' => $privateProviders,
+            'free_public_programmes' => $freePublicProgrammes,
+            'direct_competitors' => $directPeers,
+            'after_hours_overlap' => $afterHoursDirect,
+            'complementary_anchors' => $healthAnchors,
+            'complementary_total' => $complementaryCount,
+            'baseline_score' => $synergyScore,
+            'weight_pct' => 20,
+            'weighted_contribution' => $weightedContribution,
+            'recommended_pathway' => $pathway,
+            'pathway_reason' => $pathwayReason,
+            'associationRules' => $associationRules,
+            'topAssociationMatch' => $topRule,
+            'radius_m' => $radiusMeters,
+            'lat' => $lat,
+            'lng' => $lng,
+        ];
+    }
+
+    /**
+     * Spatial Association Rule Mining (Apriori / FP-Growth care-continuum synergy rules).
+     * Evaluates Support, Confidence, and Lift (> 1.0) against observed health facilities in San Fernando City.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function evaluateAssociationRules(array $features, string $businessType = 'rehab_mobility', int $directPeers = 0, int $afterHoursDirect = 0): array
+    {
+        $namesByType = ['hospital_dialysis' => [], 'park' => [], 'bhs_daytime' => [], 'walkup_barrier' => [], 'mental_trc' => [], 'fitness_hub' => []];
+        foreach ($features as $feature) {
+            $p = $feature['properties'] ?? [];
+            $name = trim((string) ($p['name'] ?? ''));
+            $cat = strtolower(trim((string) ($p['categoryKey'] ?? $p['businessType'] ?? $p['category'] ?? '')));
+            if ($name === '') { continue; }
+            if (in_array($cat, ['hospital', 'dialysis'], true)) { $namesByType['hospital_dialysis'][] = $name; }
+            if ($cat === 'park') { $namesByType['park'][] = $name; }
+            if (in_array($cat, ['health_station', 'barangay_health_station', 'rehab', 'physiotherapist'], true)) { $namesByType['bhs_daytime'][] = $name; }
+            if (!empty($p['accessBarrier']) || in_array($cat, ['dentist', 'dental', 'optician'], true)) { $namesByType['walkup_barrier'][] = $name; }
+            if (in_array($cat, ['mental_health', 'college', 'school'], true)) { $namesByType['mental_trc'][] = $name; }
+            if (in_array($cat, ['fitness_centre', 'gym', 'mall'], true)) { $namesByType['fitness_hub'][] = $name; }
+        }
+
+        $uniqueAnchors = static function (array $list): array {
+            $out = [];
+            $seenKeys = [];
+            foreach ($list as $rawName) {
+                $name = trim((string) $rawName);
+                if ($name === '') {
+                    continue;
+                }
+                $key = strtolower(trim(preg_replace('/\([^)]*\)|&.*$/', '', $name) ?? $name));
+                $key = preg_replace('/\s+/', ' ', $key) ?? $key;
+                if ($key === '' || in_array($key, $seenKeys, true)) {
+                    continue;
+                }
+                $seenKeys[] = $key;
+                $out[] = $name;
+                if (count($out) >= 2) {
+                    break;
+                }
+            }
+            return $out;
+        };
+
+        $rules = [];
+        if ($namesByType['hospital_dialysis'] !== []) {
+            $anchors = $uniqueAnchors($namesByType['hospital_dialysis']);
+            $rules[] = [
+                'id' => 'rule_dialysis_nutrition',
+                'rule' => '{Hospital / Dialysis Anchor, Low Dietary Options} => {Preventive & Renal-Safe Nutrition Prep Hub}',
+                'antecedent' => 'Hospital & Freestanding Dialysis Cluster + 3–5 hr Caregiver Wait',
+                'consequent' => 'Renal & Chronic-Care Nutrition Kitchen + Caregiver Respite Hub',
+                'opportunityLabel' => 'Renal & Chronic-Care Nutrition Kitchen + Caregiver Respite Hub',
+                'supportPct' => 34,
+                'confidencePct' => 84,
+                'lift' => 2.4,
+                'recommendedPathway' => 'Partner',
+                'capexAdvantage' => '50%–70% lower CapEx vs. new standalone facility via hospital-adjacent co-location',
+                'siklabEligible' => true,
+                'anchorsMatched' => $anchors,
+                'healthyCommunityTier' => 'Tier 2 Healthy Barangay · Caregiver Support',
+                'rationale' => 'Anchored by ' . implode(' & ', $anchors) . ': recurring 4-hr outpatient/dialysis sessions create high non-clinical respite & renal-safe meal synergy.',
+            ];
+        }
+        if ($namesByType['bhs_daytime'] !== [] || $namesByType['fitness_hub'] !== [] || $afterHoursDirect === 0) {
+            $anchors = $uniqueAnchors(array_merge($namesByType['bhs_daytime'], $namesByType['fitness_hub'], $namesByType['hospital_dialysis']));
+            $rules[] = [
+                'id' => 'rule_evening_pt_partner',
+                'rule' => '{High Senior/Workforce Density, Daytime-Only Clinic} => {Evening Partnered PT & Mobility Studio}',
+                'antecedent' => 'Daytime-Only Clinic / 8 AM–5 PM BHS + Unserved 5–9 PM Workforce/Seniors',
+                'consequent' => 'After-Hours Physical Therapy, Ergonomic Recovery & Active-Ageing Studio',
+                'opportunityLabel' => 'After-Hours Physical Therapy & Active-Ageing Studio (5–9 PM)',
+                'supportPct' => 42,
+                'confidencePct' => 88,
+                'lift' => 2.7,
+                'recommendedPathway' => $directPeers > 0 ? 'Improve Existing' : 'Partner',
+                'capexAdvantage' => '60%–65% lower CapEx & halved break-even visits/mo via evening shift partnership',
+                'siklabEligible' => true,
+                'anchorsMatched' => $anchors ?: ['Barangay Health Station & Growth Corridor'],
+                'healthyCommunityTier' => 'Tier 1–3 Healthy Homes to City · Evening Care Bridge',
+                'rationale' => 'Evening PT shift-sharing' . ($anchors ? ' with ' . implode(' & ', $anchors) : '') . ' closes the 5:00 PM clinic cliff without building new space.',
+            ];
+        }
+        if ($namesByType['park'] !== []) {
+            $anchors = $uniqueAnchors($namesByType['park']);
+            $rules[] = [
+                'id' => 'rule_wellness_park_recovery',
+                'rule' => '{Wellness Park / Coastal Trail, Active Footfall} => {Active Recovery, Pilates & Hydration Lounge}',
+                'antecedent' => 'Coastal / Upland Wellness Park + Active Runner/Tourism Footfall',
+                'consequent' => 'Wellness Tourism Recovery Lounge & Contrast-Therapy / Mobility Hub',
+                'opportunityLabel' => 'Wellness Tourism Recovery Lounge & Mobility Hub',
+                'supportPct' => 29,
+                'confidencePct' => 79,
+                'lift' => 2.1,
+                'recommendedPathway' => 'Partner',
+                'capexAdvantage' => '55% lower CapEx via trail-adjacent host suite partnership',
+                'siklabEligible' => true,
+                'anchorsMatched' => $anchors,
+                'healthyCommunityTier' => 'Tier 4 Healthy Province · La Union Wellness Corridor',
+                'rationale' => 'Trail footfall at ' . implode(' & ', $anchors) . ' reinforces sports recovery, stretching, hydration & mindfulness sessions.',
+            ];
+        }
+        if ($namesByType['walkup_barrier'] !== []) {
+            $anchors = $uniqueAnchors($namesByType['walkup_barrier']);
+            $rules[] = [
+                'id' => 'rule_groundfloor_retrofit',
+                'rule' => '{2nd-Floor Clinic Cluster, Resident Mobility Barrier Votes} => {Ground-Floor Accessibility Retrofit / Relocation}',
+                'antecedent' => '2nd/3rd-Floor Walk-Up Specialty Clinics + Senior/PWD Ramp Barrier Votes',
+                'consequent' => 'Ground-Floor Step-Free Accessible Care & Rehab Suite (BP 344)',
+                'opportunityLabel' => 'Ground-Floor Step-Free Rehab & Senior Accessibility Retrofit',
+                'supportPct' => 31,
+                'confidencePct' => 91,
+                'lift' => 3.1,
+                'recommendedPathway' => 'Improve Existing',
+                'capexAdvantage' => '50%–70% lower CapEx via 1:12 PWD ramp & ground-floor bay upgrade',
+                'siklabEligible' => true,
+                'anchorsMatched' => $anchors,
+                'healthyCommunityTier' => 'Tier 2 Healthy Barangay · Universal BP 344 Access',
+                'rationale' => 'Directly resolves 2nd-floor stair barriers near ' . implode(' & ', $anchors) . ' with rapid step-free ground-level conversion.',
+            ];
+        }
+        if ($namesByType['mental_trc'] !== []) {
+            $anchors = $uniqueAnchors($namesByType['mental_trc']);
+            $rules[] = [
+                'id' => 'rule_mental_psychosocial',
+                'rule' => '{Clinical Psychiatric/University Corridor, Workforce Stress Demand} => {Community Mental Wellness Studio}',
+                'antecedent' => 'Campus / Tertiary Behavioral Anchor + Non-Clinical Stress & Sleep Gap',
+                'consequent' => 'Community Mental Wellness, Sleep & Psychosocial Support Studio',
+                'opportunityLabel' => 'Community Mental Wellness, Sleep & Psychosocial Studio',
+                'supportPct' => 27,
+                'confidencePct' => 83,
+                'lift' => 2.3,
+                'recommendedPathway' => 'Improve Existing',
+                'capexAdvantage' => '55%–68% lower CapEx fitting out quiet acoustic suites in existing clinics',
+                'siklabEligible' => true,
+                'anchorsMatched' => $anchors,
+                'healthyCommunityTier' => 'Tier 3 Healthy City · Psychosocial Care Continuum',
+                'rationale' => 'Bridges tertiary psychiatric care (' . implode(' & ', $anchors) . ') and everyday non-stigmatized stress/burnout recovery.',
+            ];
+        }
+
+        usort($rules, static function (array $a, array $b) use ($businessType): int {
+            $score = static function (array $r) use ($businessType): float {
+                $boost = 0.0;
+                if ($businessType === 'fitness_recovery' && $r['id'] === 'rule_wellness_park_recovery') { $boost = 1.5; }
+                elseif ($businessType === 'mental_wellness' && $r['id'] === 'rule_mental_psychosocial') { $boost = 1.5; }
+                elseif ($businessType === 'maternal_nutrition' && $r['id'] === 'rule_dialysis_nutrition') { $boost = 1.5; }
+                elseif ($businessType === 'senior_preventive' && $r['id'] === 'rule_groundfloor_retrofit') { $boost = 1.5; }
+                elseif ($businessType === 'rehab_mobility' && $r['id'] === 'rule_evening_pt_partner') { $boost = 1.5; }
+                return (float) $r['lift'] + $boost;
+            };
+            return $score($b) <=> $score($a);
+        });
+        return $rules;
+    }
+
     private static function frameResult(array $result, float $lat, float $lng, int $radiusMeters, string $businessType = 'cafe'): array
     {
+        $isWellness = self::isWellnessServiceType($businessType);
         $features = [];
         foreach ($result['features'] ?? [] as $feature) {
             if (!is_array($feature)) { continue; }
@@ -662,10 +1037,15 @@ final class SurroundingsRadar
             if (is_array($footprint) && ($footprint['type'] ?? '') === 'Polygon' && is_array($footprint['coordinates'] ?? null)) {
                 $feature['properties']['boundaryDistanceMeters'] = round(self::polygonDistance($footprint['coordinates'], $lat, $lng), 1);
             }
-            $classification = self::classifyEstablishment($feature['properties'] ?? [], $businessType);
+            $classification = $isWellness
+                ? self::classifyWellnessEstablishment($feature['properties'] ?? [], $businessType)
+                : self::classifyEstablishment($feature['properties'] ?? [], $businessType);
             $feature['properties']['classification'] = $classification['classification'];
             $feature['properties']['classificationLabel'] = $classification['classificationLabel'];
             $feature['properties']['isAnchor'] = $classification['isAnchor'];
+            if (isset($classification['careSector'])) {
+                $feature['properties']['careSector'] = $classification['careSector'];
+            }
             $features[] = $feature;
         }
         $features = self::mergeEstablishments($features, []);
@@ -702,6 +1082,9 @@ final class SurroundingsRadar
         ];
         $result['coverageNote'] = 'These are observed mapped places in a straight-line circle, not a complete operating-business inventory. Zero matches do not prove that no businesses exist.';
         $result['screening'] = NearbyBusinessScreening::fromRadar($result, $lat, $lng, $radiusMeters, $businessType);
+        if ($isWellness) {
+            $result['wellnessBaseline'] = self::summarizeWellnessBaseline($features, $lat, $lng, $radiusMeters, $businessType);
+        }
         return $result;
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 require_once __DIR__ . '/NearbyBusinesses.php';
+require_once __DIR__ . '/SurroundingsRadar.php';
 require_once __DIR__ . '/ZoningRulesEngine.php';
 
 /**
@@ -25,6 +26,7 @@ final class BusinessOpportunities
      * Sectors definition.
      */
     public const SECTORS = [
+        'health_wellness' => 'Health & Wellness (SIKLAB Eligible)',
         'everyday_services' => 'Everyday Services',
         'food_retail' => 'Food & Retail',
         'professional_services' => 'Professional Services',
@@ -448,6 +450,98 @@ final class BusinessOpportunities
                 'prohibitedZonings' => ['Low Density Residential', 'Strict Ecological Protection', 'Commercial Zone 1'],
                 'explanationTemplate' => 'Proximity to wholesale trade and marketplace flow near {anchors} reduces post-harvest losses and preserves produce value.',
                 'mainUnresolvedNotice' => 'Requires three-phase electrical service and heavy vehicle loading dock.',
+                'ruleSource' => self::RULE_SOURCE,
+                'reviewStatus' => 'draft',
+                'version' => self::RULE_VERSION,
+            ],
+            [
+                'id' => 'renal_nutrition_hub',
+                'label' => 'Renal Nutrition Kitchen & Caregiver Respite Hub',
+                'sector' => 'health_wellness',
+                'sectorLabel' => 'Health & Wellness (SIKLAB Eligible)',
+                'zoningActivityCode' => 'food_cafe',
+                'description' => 'Low-sodium renal & therapeutic meal prep café paired with shaded waiting respite for outpatient dialysis families (non-pharmaceutical nutrition & caregiver support).',
+                'activityCenters' => ['dialysis', 'hospital', 'pharmacy', 'clinic'],
+                'areaGuideline' => 'Typically 40–100 sqm ground-floor bay near hospital or freestanding dialysis cluster',
+                'minAreaSqm' => 35,
+                'maxAreaSqm' => 180,
+                'requiredUtilities' => ['electricity', 'water'],
+                'roadAccess' => 'all_weather',
+                'competitorCategories' => ['nutrition', 'dietary'],
+                'complementaryCategories' => ['dialysis', 'hospital', 'pharmacy', 'clinic'],
+                'allowedZonings' => ['Commercial', 'General Commercial', 'Mixed Use', 'Institutional', 'C-1', 'C-2'],
+                'prohibitedZonings' => ['Heavy Industrial', 'Hazardous Industrial', 'Strict Forest Protection'],
+                'explanationTemplate' => 'Association rule match near {anchors} (Support 34% · Confidence 84% · Lift 2.4×): 4-hour dialysis & hospital stays create steady caregiver nutrition demand without pharmaceutical competition.',
+                'mainUnresolvedNotice' => 'Verify CHO sanitation permit and partner referral desk protocol (50%–70% lower CapEx via Partner/Improve vs. Open New).',
+                'ruleSource' => self::RULE_SOURCE,
+                'reviewStatus' => 'draft',
+                'version' => self::RULE_VERSION,
+            ],
+            [
+                'id' => 'evening_pt_mobility',
+                'label' => 'After-Hours Physical Therapy & Step-Free Mobility Studio',
+                'sector' => 'health_wellness',
+                'sectorLabel' => 'Health & Wellness (SIKLAB Eligible)',
+                'zoningActivityCode' => 'clinic_wellness',
+                'description' => 'BP 344 step-free ground-floor outpatient physiotherapy, pain recovery, and active-ageing clinic operating 7 AM–9 PM for seniors and working adults.',
+                'activityCenters' => ['hospital', 'clinic', 'health_station', 'dental', 'office', 'residential'],
+                'areaGuideline' => 'Typically 55–140 sqm ground-floor space with 1:12 non-slip ramp and ambulance/tricycle drop-off',
+                'minAreaSqm' => 45,
+                'maxAreaSqm' => 300,
+                'requiredUtilities' => ['electricity', 'water'],
+                'roadAccess' => 'all_weather',
+                'competitorCategories' => ['rehab', 'physiotherapist'],
+                'complementaryCategories' => ['hospital', 'health_station', 'pharmacy', 'dialysis'],
+                'allowedZonings' => ['Commercial', 'General Commercial', 'Mixed Use', 'Institutional', 'C-1', 'C-2', 'Residential Zone 2'],
+                'prohibitedZonings' => ['Heavy Industrial', 'Forest Reserve', 'Hazardous Industrial'],
+                'explanationTemplate' => 'Association rule match near {anchors} (Support 42% · Confidence 88% · Lift 2.7×): resolves daytime-only PT cutoff and 2nd-floor walk-up clinic barriers with evening shift capacity.',
+                'mainUnresolvedNotice' => 'Confirm BP 344 ground-floor entrance compliance and host-clinic revenue-share MOA to halve break-even visits.',
+                'ruleSource' => self::RULE_SOURCE,
+                'reviewStatus' => 'draft',
+                'version' => self::RULE_VERSION,
+            ],
+            [
+                'id' => 'coastal_recovery_lounge',
+                'label' => 'Wellness Trail Recovery & Contrast-Therapy Lounge',
+                'sector' => 'health_wellness',
+                'sectorLabel' => 'Health & Wellness (SIKLAB Eligible)',
+                'zoningActivityCode' => 'tour_recreation',
+                'description' => 'Cold plunge, sports mobility stretching, electrolyte hydration, and active-ageing movement studio anchored to public wellness parks and trails.',
+                'activityCenters' => ['park', 'fitness_centre', 'gym', 'hotel', 'tourism'],
+                'areaGuideline' => 'Typically 60–200 sqm trail-adjacent ground-floor bay with natural cross-ventilation',
+                'minAreaSqm' => 40,
+                'maxAreaSqm' => 400,
+                'requiredUtilities' => ['electricity', 'water'],
+                'roadAccess' => 'all_weather',
+                'competitorCategories' => ['sports_centre'],
+                'complementaryCategories' => ['park', 'gym', 'fitness_centre', 'hotel'],
+                'allowedZonings' => ['Tourism', 'Commercial', 'Mixed Use', 'Special Commercial', 'General Commercial'],
+                'prohibitedZonings' => ['Heavy Industrial', 'Watershed Protected'],
+                'explanationTemplate' => 'Association rule match near {anchors} (Support 29% · Confidence 79% · Lift 2.1×): pairs morning/sunset wellness walkers with low-impact recovery and hydration.',
+                'mainUnresolvedNotice' => 'Verify shower drainage/backflow trap and coastal buffer setback compliance.',
+                'ruleSource' => self::RULE_SOURCE,
+                'reviewStatus' => 'draft',
+                'version' => self::RULE_VERSION,
+            ],
+            [
+                'id' => 'mental_psychosocial_studio',
+                'label' => 'Mental Wellness, Sleep & Psychosocial Support Studio',
+                'sector' => 'health_wellness',
+                'sectorLabel' => 'Health & Wellness (SIKLAB Eligible)',
+                'zoningActivityCode' => 'clinic_wellness',
+                'description' => 'Acoustic-buffered, non-stigmatized counseling, breathwork, occupational stress recovery, and sleep-hygiene coaching suite (Tier 3 Healthy City psychosocial bridge).',
+                'activityCenters' => ['college', 'school', 'hospital', 'mental_health', 'office', 'health_station'],
+                'areaGuideline' => 'Typically 35–100 sqm quiet interior rooms (<= 48 dB ambient noise target)',
+                'minAreaSqm' => 30,
+                'maxAreaSqm' => 220,
+                'requiredUtilities' => ['electricity', 'water', 'telecom'],
+                'roadAccess' => 'all_weather',
+                'competitorCategories' => ['mental_health'],
+                'complementaryCategories' => ['hospital', 'college', 'school', 'office'],
+                'allowedZonings' => ['Commercial', 'Institutional', 'Mixed Use', 'General Commercial', 'C-1', 'C-2'],
+                'prohibitedZonings' => ['Heavy Industrial', 'Light Industrial'],
+                'explanationTemplate' => 'Association rule match near {anchors} (Support 27% · Confidence 83% · Lift 2.3×): bridges tertiary DOH-TRC/ITRMC behavioral care to accessible barangay psychosocial rooms.',
+                'mainUnresolvedNotice' => 'Confirm quiet acoustic buffer (<= 48 dB) and PRC psychologist/counselor supervision credentials.',
                 'ruleSource' => self::RULE_SOURCE,
                 'reviewStatus' => 'draft',
                 'version' => self::RULE_VERSION,
@@ -901,6 +995,15 @@ final class BusinessOpportunities
         }
         unset($item);
 
+        // Spatial Association Rule Mining strictly over observed nearby places (never fabricated on empty radius)
+        $associationRules = [];
+        $topAssociationMatch = null;
+        if ($hasCoords && !empty($deduped)) {
+            $assocFeatures = array_map(static fn(array $place): array => ['properties' => $place], $deduped);
+            $associationRules = SurroundingsRadar::evaluateAssociationRules($assocFeatures, 'rehab_mobility');
+            $topAssociationMatch = $associationRules[0] ?? null;
+        }
+
         // Explanation if recommendations are unavailable
         $unavailableReason = '';
         if (empty($supportedMatches)) {
@@ -932,6 +1035,8 @@ final class BusinessOpportunities
             'reviewNotice' => 'Recommendations are screening suggestions requiring local validation by City Planning and LEBDO before official development approval. Suggestions do not claim profitability or guaranteed unmet demand.',
             'supportedMatches' => $supportedMatches,
             'supportedCount' => count($supportedMatches),
+            'associationRules' => $associationRules,
+            'topAssociationMatch' => $topAssociationMatch,
             'confirmedConflicts' => $excludedConflicts,
             'allCatalogCount' => count($catalog),
             'catalogSectors' => self::SECTORS,

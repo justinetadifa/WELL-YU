@@ -109,6 +109,7 @@ final class PropertyCatalog
             'Building' => [
                 'Storefront' => 'Retail / Storefront',
                 'Retail' => 'Retail / Storefront',
+                'Retail / Shop' => 'Retail / Storefront',
                 'Shopping Center' => 'Commercial',
                 'Restaurant / Dining' => 'Commercial',
                 'Restaurant' => 'Commercial',
@@ -157,6 +158,7 @@ final class PropertyCatalog
                 'Commercial-Residential' => 'Mixed-Use',
                 'Office-Commercial' => 'Mixed-Use',
                 'Mixed Commercial Complex' => 'Mixed-Use',
+                'Mixed-Use Property' => 'Mixed-Use',
                 'Institutional / Government' => 'Special Purpose',
                 'Educational / School' => 'Special Purpose',
                 'Healthcare / Hospital' => 'Special Purpose',

@@ -36,6 +36,23 @@ final class WellnessBrief
                 $lines[] = 'SCENARIO: ' . $scenario['name'] . ($scenario['is_baseline'] ? ' (baseline)' : ' (alternative)');
                 foreach ($scenario['result']['inputs'] as $key => $value) { $lines[] = str_replace('_', ' ', $key) . ': ' . ($value === null ? 'unknown' : number_format($value, 2)); }
                 $lines[] = 'Break-even visits / month: ' . ($scenario['result']['break_even_visits_per_month'] ?? 'insufficient inputs / no positive margin');
+                $viability = $scenario['result']['viability'] ?? [];
+                $wages = $scenario['result']['rtwpb_wages'] ?? [];
+                $ord = $scenario['result']['ordinance_2024_41'] ?? [];
+                $capex = $viability['startup_capex_php'] ?? ($scenario['result']['inputs']['startup_cost_php'] ?? null);
+                $noi = $viability['monthly_noi_php'] ?? ($scenario['result']['assumed_monthly_net_php'] ?? null);
+                $payback = $viability['estimated_payback_months'] ?? (($capex !== null && $noi !== null && $noi > 0) ? round($capex / $noi, 1) : null);
+                $customers = $scenario['result']['inputs']['expected_monthly_customers'] ?? null;
+                $capexPerBeneficiary = $viability['capital_cost_per_monthly_beneficiary_php'] ?? (($capex !== null && $customers !== null && $customers > 0) ? round($capex / $customers, 2) : null);
+                $lines[] = 'Multi-Year Viability | Startup CAPEX: PHP ' . ($capex === null ? 'unknown' : number_format((float) $capex, 2)) . ' | Monthly NOI: PHP ' . ($noi === null ? 'unknown' : number_format((float) $noi, 2)) . ' | Payback: ' . ($payback === null ? 'N/A' : $payback . ' months') . ' | CAPEX/Monthly Beneficiary: PHP ' . ($capexPerBeneficiary === null ? 'N/A' : number_format((float) $capexPerBeneficiary, 2));
+                $dailyRate = $wages['applied_daily_rate_php'] ?? 468.00;
+                $staffCount = $wages['staff_count'] ?? 3;
+                $staffMonthly = $wages['estimated_monthly_staff_cost_php'] ?? round($dailyRate * $staffCount * 26, 2);
+                $lines[] = 'RTWPB Region I Wage Benchmark (PHP 468.00 non-agri / PHP 435.00 micro-agri daily): ' . $staffCount . ' staff @ PHP ' . number_format((float) $dailyRate, 2) . '/day = PHP ' . number_format((float) $staffMonthly, 2) . '/month';
+                $holidayYears = $ord['tax_holiday_years'] ?? 5;
+                $annualRelief = $ord['estimated_annual_tax_relief_php'] ?? 0.0;
+                $totalSavings = $ord['estimated_total_tax_holiday_savings_php'] ?? 0.0;
+                $lines[] = 'Ordinance No. 2024-41 Tax Holiday (' . $holidayYears . ' yrs qualifying wellness relief): PHP ' . number_format((float) $annualRelief, 2) . '/yr | Total est. relief: PHP ' . number_format((float) $totalSavings, 2);
                 $lines[] = 'Estimated additional population reach: ' . ($scenario['result']['estimated_additional_population_reach'] ?? 'not calculated') . '; not customers';
                 $lines[] = 'Assumptions: ' . $scenario['result']['assumptions'];
                 $lines[] = 'Quote source: ' . ($scenario['result']['quote_evidence']['source'] ?: 'not supplied') . ' | ' . ($scenario['result']['quote_evidence']['observed_on'] ?? 'date missing');

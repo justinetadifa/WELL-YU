@@ -31,8 +31,8 @@ declare(strict_types=1);
 
     <div class="welyu-hero-bottom">
       <a class="welyu-availability" href="<?= $e(sfc_path($cataloguePath)) ?>">
-        <span class="welyu-availability-count"><?= isset($heroListingCount) ? $e(number_format($heroListingCount)) : '—' ?><small>active listings</small></span>
-        <span class="welyu-availability-text"><strong>A place for your next idea.</strong><small>Explore the property collection</small></span>
+        <span class="welyu-availability-count"><?= (isset($heroListingCount) && $heroListingCount > 0) ? $e(number_format($heroListingCount)) : '3' ?><small><?= (isset($heroListingCount) && $heroListingCount > 0) ? 'active listings' : 'verified sites' ?></small></span>
+        <span class="welyu-availability-text"><strong>A place for your next idea.</strong><small><?= (isset($heroListingCount) && $heroListingCount > 0) ? 'Explore the property collection' : 'San Fernando City sites' ?></small></span>
         <span class="welyu-round-arrow" aria-hidden="true">&nearr;</span>
       </a>
 

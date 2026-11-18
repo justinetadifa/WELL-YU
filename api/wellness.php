@@ -13,17 +13,72 @@ api_handle(function (array $container): array {
     if (!in_array($method, ['GET', 'POST'], true)) { return [405, ['error' => 'Method not allowed.']]; }
     if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 120000 && $action !== 'upload') { return [413, ['error' => 'Keep request data below 120 KB.']]; }
     $repository = new WellnessRepository($container['pdo'], fn (int $id, ?array $user): array => $container['properties']->find($id, $user));
+    if ($method === 'GET' && $action === 'export_pilot_brief') {
+        $pilot = WellnessEngine::siklabPilotPresets();
+        $assessments = [];
+        $scenarios = [];
+        $idx = 1;
+        foreach ($pilot['pathways'] as $mode => $pathway) {
+            $pid = $idx++;
+            $assessments[] = [
+                'proposal_id' => $pid,
+                'methodology_version' => WellnessEngine::VERSION,
+                'snapshot' => [
+                    'proposal' => [
+                        'title' => $pathway['title'],
+                        'mode' => $mode,
+                        'review_status' => 'reviewed',
+                        'review' => ['scope' => 'San Fernando City Wellness Benchmark'],
+                        'payload' => [
+                            'concept' => $pathway['subtitle'],
+                            'intended_users' => $pathway['need_summary'],
+                            'location' => 'Brgy. ' . $pathway['barangay'] . ', San Fernando City, La Union',
+                            'source_need_id' => $pid,
+                        ],
+                    ],
+                    'configuration' => $pilot['configuration'],
+                ],
+                'result' => $pathway['assessment'],
+            ];
+            $scenarios[(string) $pid] = [[
+                'name' => strtoupper($mode) . ' Pathway Financial & Incentive Model',
+                'is_baseline' => $mode === 'open',
+                'input' => $pathway['scenario_input'],
+                'result' => $pathway['scenario'],
+            ]];
+        }
+        $comparisonPayload = [
+            'name' => $pilot['pilot_title'] . ' — 3-Way Pathway Comparison (Open vs. Improve vs. Partner)',
+            'created_at' => '2026-04-10T08:00:00Z',
+            'snapshot' => [
+                'methodology_version' => WellnessEngine::VERSION,
+                'assessments' => $assessments,
+                'scenarios' => $scenarios,
+            ],
+        ];
+        $comparisonPayload['snapshot_sha256'] = WellnessEngine::hash($comparisonPayload['snapshot']);
+        $pdf = WellnessBrief::pdf($comparisonPayload);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="welyu-wellness-comparison-brief.pdf"');
+        header('Content-Length: ' . strlen($pdf));
+        echo $pdf;
+        exit;
+    }
     if ($method === 'POST' && in_array($action, ['preview_assessment', 'preview_scenario'], true)) {
         $input = read_json_input();
         if ($action === 'preview_scenario') { return ['result' => WellnessEngine::scenario($input, isset($input['baseline']) && is_array($input['baseline']) ? $input['baseline'] : null)]; }
-        $configuration = WellnessEngine::object($input['configuration'] ?? []); $configuration['validation_status'] = 'provisional';
-        return ['result' => WellnessEngine::assess(WellnessRepository::scopeEvidence($input, false), WellnessEngine::configuration($configuration))];
+        $isPilotPreset = !empty($input['siklab_pilot_preset']) || WellnessPolicy::reviewer($actor);
+        $configuration = WellnessEngine::object($input['configuration'] ?? []);
+        if (empty($input['siklab_pilot_preset'])) {
+            $configuration['validation_status'] = 'provisional';
+        }
+        return ['result' => WellnessEngine::assess(WellnessRepository::scopeEvidence($input, $isPilotPreset), WellnessEngine::configuration($configuration))];
     }
     $readiness = $repository->readiness();
     if ($method === 'GET' && $action === 'bootstrap') {
         $barangays = PropertyCatalog::barangays(); $ready = $readiness['ready'];
-        $properties = array_map(static fn (array $p): array => array_intersect_key($p, array_flip(['id', 'name', 'barangay', 'lat', 'lng', 'area', 'category', 'price'])), $container['properties']->all($actor));
-        return ['workspace' => $readiness, 'signed_in' => $actor !== null, 'reviewer' => WellnessPolicy::reviewer($actor), 'corrections' => $ready ? $repository->corrections($actor) : [], 'criteria' => WellnessEngine::CRITERIA, 'methodology_version' => WellnessEngine::VERSION, 'categories' => WellnessEngine::CATEGORIES, 'barriers' => WellnessEngine::BARRIERS, 'readiness_keys' => WellnessEngine::READINESS, 'barangays' => WellnessEngine::isList($barangays) ? $barangays : array_keys($barangays), 'properties' => $properties,
+        $properties = array_map(static fn (array $p): array => array_intersect_key($p, array_flip(['id', 'name', 'barangay', 'lat', 'lng', 'area', 'category', 'subcategory', 'price', 'leasePrice', 'listingPurpose'])), $container['properties']->all($actor));
+        return ['workspace' => $readiness, 'signed_in' => $actor !== null, 'reviewer' => WellnessPolicy::reviewer($actor), 'corrections' => $ready ? $repository->corrections($actor) : [], 'criteria' => WellnessEngine::CRITERIA, 'criteria_metadata' => WellnessEngine::CRITERIA_METADATA, 'siklab_pilot' => WellnessEngine::siklabPilotPresets(), 'barangay_profiles' => WellnessEngine::barangayProfiles(), 'methodology_version' => WellnessEngine::VERSION, 'categories' => WellnessEngine::CATEGORIES, 'barriers' => WellnessEngine::BARRIERS, 'readiness_keys' => WellnessEngine::READINESS, 'barangays' => WellnessEngine::isList($barangays) ? $barangays : array_keys($barangays), 'properties' => $properties,
             'services' => $ready ? $repository->list('service', $actor) : [], 'needs' => $ready ? $repository->list('need', $actor) : [], 'proposals' => $ready && $actor ? $repository->list('proposal', $actor) : [], 'pipeline' => $ready ? $repository->pipeline($actor) : [], 'configurations' => $ready ? $repository->configurations() : [], 'assessments' => $ready && $actor ? $repository->assessments($actor) : [], 'comparisons' => $ready && $actor ? $repository->comparisons($actor) : []];
     }
     if (!$readiness['ready']) { return [503, ['error' => 'The wellness workspace is awaiting setup. You can explore the assessment and simulator without saving.', 'setup_pending' => true]]; }

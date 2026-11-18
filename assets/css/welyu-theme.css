@@ -249,7 +249,8 @@
   /* ============================================================
      PRIMARY BUTTONS & FORM CONTROLS
      ============================================================ */
-  body[data-page] :is(.city-button, .btn-primary, .btn-pipe-primary, .btn-card-primary, .account-submit, .account-submit-btn, .auth-submit, button[type=submit], .blue-button) {
+  body[data-page] :is(.city-button:not(.city-button-secondary):not(.city-button-ghost), .btn-primary, .btn-pipe-primary, .btn-card-primary, .account-submit, .account-submit-btn, .auth-submit, .blue-button),
+  body[data-page] button[type=submit] {
     color: #1a2f1b !important;
     background: var(--wy-lime) !important;
     background-image: none !important;
@@ -262,7 +263,8 @@
     letter-spacing: -0.01em !important;
     transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   }
-  body[data-page] :is(.city-button, .btn-primary, .btn-pipe-primary, .btn-card-primary, button[type=submit]):hover {
+  body[data-page] :is(.city-button:not(.city-button-secondary):not(.city-button-ghost), .btn-primary, .btn-pipe-primary, .btn-card-primary):hover,
+  body[data-page] button[type=submit]:hover {
     background: var(--wy-lime-hover) !important;
     transform: translateY(-1px) scale(1.015) !important;
     box-shadow: 0 6px 18px rgba(1, 25, 68, 0.08) !important;
@@ -270,11 +272,20 @@
   body[data-page] :is(.city-button-ghost, .city-button-secondary, .btn-secondary, .btn-pipe-secondary, .btn-card-secondary, .city-menu-button) {
     color: var(--wy-navy) !important;
     background: #ffffff !important;
+    background-image: none !important;
     border: 1px solid var(--wy-line) !important;
     border-radius: 999px !important;
     box-shadow: none !important;
     font-family: var(--wy-font-body) !important;
     font-weight: 600 !important;
+  }
+  body[data-page] :is(.city-button-ghost, .city-button-secondary, .btn-secondary, .btn-pipe-secondary, .btn-card-secondary):hover {
+    background: #f6f8f4 !important;
+    border-color: rgba(1, 25, 68, 0.2) !important;
+    color: var(--wy-navy) !important;
+  }
+  body[data-page] :is(.city-button-ghost, .city-button-secondary) svg {
+    stroke: var(--wy-navy) !important;
   }
   body[data-page] :is(.city-cta-button, .city-button-small) {
     padding: 11px 22px !important;
@@ -357,7 +368,8 @@
      HOMEPAGE CHAPTERS & GALLERY STYLING (lux.css inspired)
      ============================================================ */
   body[data-page="city-landing"] #main-content > section:not(.welyu-hero) {
-    margin-block: clamp(56px, 8vw, 108px) !important;
+    margin-block: clamp(20px, 3vw, 40px) !important;
+    padding-block: clamp(32px, 4vw, 56px) !important;
   }
   body[data-page="city-landing"] :is(.home-glance-panel, .glance-profile-header, .home-glance, .locator-section) {
     background: transparent !important;
@@ -698,29 +710,232 @@
   body[data-page] .investor-view-toolbar {
     background: #ffffff !important;
     border: 1px solid var(--wy-line) !important;
-    border-left: 3px solid var(--wy-forest) !important;
-    border-radius: 18px !important;
-    box-shadow: none !important;
+    border-radius: 999px !important;
+    padding: 5px 6px 5px 16px !important;
+    box-shadow: 0 1px 3px rgba(1, 25, 68, 0.04) !important;
+    gap: 12px !important;
   }
   body[data-page] .investor-view-label {
     font-family: var(--wy-font-body) !important;
-    color: var(--wy-ink) !important;
+    color: var(--wy-navy) !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+  body[data-page] .investor-view-intro p {
+    font-family: var(--wy-font-body) !important;
+    color: var(--wy-muted) !important;
+    font-size: 11.5px !important;
   }
   body[data-page] .investor-view-control {
-    background: #eef2ea !important;
-    border: 1px solid var(--wy-line) !important;
+    background: #f1f4f0 !important;
+    border: 1px solid rgba(1, 25, 68, 0.08) !important;
+    border-radius: 999px !important;
+    padding: 3px !important;
     box-shadow: none !important;
   }
   body[data-page] .investor-view-control .investor-view-pill {
-    background: var(--wy-navy) !important;
-    box-shadow: 0 2px 6px rgba(1, 25, 68, 0.16) !important;
+    display: none !important;
   }
   body[data-page] .investor-view-control button {
     font-family: var(--wy-font-body) !important;
-    color: var(--wy-navy) !important;
+    color: var(--wy-muted) !important;
+    background: transparent !important;
+    border-radius: 999px !important;
+    min-height: 30px !important;
+    padding: 4px 13px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
   }
   body[data-page] .investor-view-control button[aria-pressed="true"] {
+    background: var(--wy-navy) !important;
     color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+
+  /* Chapter 05b: Property Details Architectural Header, Summary Strip & Actions */
+  body[data-page="city-details"] .property-toolbar-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  body[data-page="city-details"] .property-page-toolbar .city-link {
+    background: #ffffff !important;
+    border: 1px solid var(--wy-line) !important;
+    color: var(--wy-navy) !important;
+    font-family: var(--wy-font-body) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    padding: 7px 15px !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+  }
+  body[data-page="city-details"] .property-page-toolbar .city-link:hover {
+    border-color: rgba(1, 25, 68, 0.22) !important;
+    background: #f6f8f4 !important;
+    transform: none !important;
+  }
+  body[data-page="city-details"] .welyu-site-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eef3eb;
+    color: var(--wy-forest);
+    border: 1px solid var(--wy-line);
+    font-family: var(--wy-font-body);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+  }
+  body[data-page="city-details"] #cityPropertyDetails .property-heading h1 {
+    font-family: var(--wy-font-display) !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: -0.02em !important;
+    word-spacing: 0.05em !important;
+    line-height: 1.12 !important;
+    color: var(--wy-navy) !important;
+    font-size: clamp(28px, 3vw, 40px) !important;
+  }
+  body[data-page="city-details"] .property-heading-actions .city-print-trigger-btn {
+    background: #ffffff !important;
+    color: var(--wy-navy) !important;
+    border: 1px solid var(--wy-line) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    min-height: 40px !important;
+    padding: 9px 18px !important;
+    font-family: var(--wy-font-body) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+  }
+  body[data-page="city-details"] .property-heading-actions .city-print-trigger-btn svg {
+    stroke: var(--wy-navy) !important;
+  }
+  body[data-page="city-details"] .property-heading-actions .city-print-trigger-btn:hover {
+    background: #f6f8f4 !important;
+    border-color: rgba(1, 25, 68, 0.22) !important;
+    color: var(--wy-navy) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  body[data-page="city-details"] .property-heading-actions a[href*="cao="] {
+    background: var(--wy-navy) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--wy-navy) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    min-height: 40px !important;
+    padding: 9px 18px !important;
+    font-family: var(--wy-font-body) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+  }
+  body[data-page="city-details"] .property-heading-actions a[href*="cao="] svg {
+    stroke: #ffffff !important;
+  }
+  body[data-page="city-details"] .property-heading-actions a[href*="cao="]:hover {
+    background: var(--wy-navy-soft) !important;
+    border-color: var(--wy-navy-soft) !important;
+    color: #ffffff !important;
+    transform: none !important;
+  }
+  body[data-page="city-details"] .property-interactive-view .property-summary-strip {
+    background: #ffffff !important;
+    border: 1px solid var(--wy-line) !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+  }
+  body[data-page="city-details"] .property-summary-strip strong {
+    font-family: var(--wy-font-body) !important;
+    color: var(--wy-navy) !important;
+    font-size: clamp(18px, 1.55vw, 22px) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em !important;
+    word-spacing: normal !important;
+    line-height: 1.3 !important;
+  }
+  body[data-page="city-details"] .property-section-nav {
+    background: var(--wy-paper) !important;
+    border-bottom: 1px solid var(--wy-line) !important;
+  }
+  body[data-page="city-details"] .property-section-nav a {
+    font-family: var(--wy-font-body) !important;
+    color: var(--wy-muted) !important;
+    border-radius: 999px !important;
+    min-height: 38px !important;
+    padding: 8px 14px !important;
+  }
+  body[data-page="city-details"] .property-section-nav a:is(:hover, :focus-visible) {
+    background: var(--wy-navy-light) !important;
+    color: var(--wy-navy) !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub {
+    background: #ffffff !important;
+    border: 1px solid var(--wy-line) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 12px 28px rgba(1, 25, 68, 0.05) !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub strong {
+    font-family: var(--wy-font-body) !important;
+    color: var(--wy-navy) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em !important;
+    word-spacing: normal !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .property-actions a[href*="wellness.php"] {
+    background: var(--wy-navy) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--wy-navy) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .property-actions a[href*="wellness.php"]:hover {
+    background: var(--wy-navy-soft) !important;
+    border-color: var(--wy-navy-soft) !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .property-actions .executive-inquire-btn {
+    background: var(--wy-lime) !important;
+    color: var(--wy-navy) !important;
+    border: 1px solid var(--wy-lime-border) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .property-actions .executive-inquire-btn:hover {
+    background: var(--wy-lime-soft) !important;
+    color: var(--wy-navy) !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .property-actions .city-button-opp-jump {
+    background: #ffffff !important;
+    color: var(--wy-navy) !important;
+    border: 1px solid var(--wy-line) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .property-actions .city-button-opp-jump:hover {
+    background: #f6f8f4 !important;
+    border-color: rgba(1, 25, 68, 0.22) !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .executive-action-row button {
+    background: #f6f8f4 !important;
+    color: var(--wy-navy) !important;
+    border: 1px solid var(--wy-line) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+  }
+  body[data-page="city-details"] #propertyExecutiveHub .executive-action-row button[aria-pressed="true"] {
+    background: var(--wy-navy) !important;
+    color: #ffffff !important;
+    border-color: var(--wy-navy) !important;
   }
   body[data-page] .city-account-gate {
     background: #ffffff !important;
@@ -1641,8 +1856,216 @@
   @media (prefers-reduced-motion: reduce) {
     .welyu-hero *, .welyu-discovery-strip * { animation: none !important; transition: none !important; }
   }
+  /* Subtle Editorial Role Switcher Strip (Aligned with Floating Header) */
+  .welyu-demo-switcher-bar {
+    width: min(1480px, calc(100% - 40px));
+    margin: 8px auto 0;
+    color: var(--wy-ink);
+    font-family: var(--wy-font-body);
+    position: relative;
+    z-index: 60;
+    box-sizing: border-box;
+  }
+  .welyu-demo-switcher-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+  }
+  .welyu-demo-switcher-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .welyu-demo-switcher-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--wy-muted);
+    white-space: nowrap;
+  }
+  .welyu-demo-switcher-sep {
+    color: rgba(1, 25, 68, 0.25);
+    font-size: 12px;
+  }
+  .welyu-demo-switcher-status {
+    font-size: 12px;
+    color: var(--wy-muted);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .welyu-demo-switcher-status strong {
+    color: var(--wy-navy);
+    font-weight: 600;
+  }
+  .welyu-demo-switcher-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: rgba(1, 25, 68, 0.04);
+    border: 1px solid rgba(1, 25, 68, 0.08);
+    border-radius: 999px;
+    flex-wrap: wrap;
+  }
+  .welyu-demo-role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-decoration: none !important;
+    color: var(--wy-muted) !important;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    white-space: nowrap;
+  }
+  .welyu-demo-role-pill:hover {
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--wy-navy) !important;
+  }
+  .welyu-demo-role-pill.is-active {
+    background: #ffffff !important;
+    color: var(--wy-navy) !important;
+    border-color: rgba(1, 25, 68, 0.1) !important;
+    box-shadow: 0 1px 3px rgba(1, 25, 68, 0.07);
+    font-weight: 700 !important;
+  }
+
+  /* Login Card Quick Workspace Access */
+  .welyu-login-instant-demo {
+    margin: 12px 0 18px;
+    padding: 14px;
+    background: #f7f8f6;
+    border: 1px solid var(--wy-line);
+    border-radius: 14px;
+    box-sizing: border-box;
+  }
+  .welyu-login-instant-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 10px;
+  }
+  .welyu-login-instant-kicker {
+    font-family: var(--wy-font-body);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--wy-navy);
+  }
+  .welyu-login-instant-sub {
+    font-family: var(--wy-font-body);
+    font-size: 12px;
+    color: var(--wy-muted);
+  }
+  .welyu-login-instant-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .welyu-login-instant-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid var(--wy-line);
+    text-decoration: none !important;
+    color: var(--wy-ink) !important;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    min-width: 0;
+  }
+  .welyu-login-instant-btn strong {
+    font-family: var(--wy-font-body);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--wy-navy);
+  }
+  .welyu-login-instant-btn small {
+    font-family: var(--wy-font-body);
+    font-size: 10.5px;
+    color: var(--wy-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .welyu-login-instant-btn.is-recommended {
+    background: #ffffff;
+    border-color: var(--wy-navy);
+    box-shadow: 0 0 0 0.5px var(--wy-navy);
+  }
+  .welyu-login-instant-btn:hover {
+    border-color: var(--wy-navy);
+    box-shadow: 0 3px 10px rgba(1, 25, 68, 0.06);
+  }
+  @media (max-width: 640px) {
+    .welyu-demo-switcher-inner {
+      padding-top: 6px;
+      padding-bottom: 6px;
+      gap: 6px;
+    }
+    .welyu-demo-switcher-status {
+      font-size: 11px;
+    }
+    .welyu-demo-role-pill {
+      padding: 3px 8px;
+      font-size: 10.5px;
+    }
+    .welyu-login-instant-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* About wELYU: connect the platform's purpose to everyday community wellbeing. */
+  body[data-page="city-landing"] #about .city-about {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+    gap: clamp(32px, 5vw, 72px) !important;
+  }
+  body[data-page="city-landing"] #about .city-about-title {
+    font-size: clamp(32px, 3.8vw, 54px) !important;
+    line-height: 1.08 !important;
+    margin-bottom: 22px !important;
+  }
+  body[data-page="city-landing"] #about .city-about-title span { color: var(--wy-forest) !important; }
+  body[data-page="city-landing"] #about .city-about-lead {
+    max-width: 590px !important;
+    font-size: 16px !important;
+    line-height: 1.75 !important;
+    color: #506356 !important;
+    margin-bottom: 18px !important;
+  }
+  body[data-page="city-landing"] #about .city-about-sub {
+    max-width: 550px !important;
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+    color: #647363 !important;
+  }
+  body[data-page="city-landing"] #about .city-about-sub strong { color: var(--wy-forest); font-weight: 650; }
+  body[data-page="city-landing"] #about .city-about-actions { display: flex; margin-top: 24px; }
+  body[data-page="city-landing"] #about .city-about-actions a { gap: 14px; font-size: 13px; }
+  @media (max-width: 850px) {
+    body[data-page="city-landing"] #about .city-about { grid-template-columns: minmax(0, 1fr) !important; gap: 32px !important; }
+  }
+  @media (max-width: 560px) {
+    body[data-page="city-landing"] #about .city-about-lead { font-size: 15px !important; }
+    body[data-page="city-landing"] #about .city-about-title { font-size: 33px !important; }
+  }
+
   @media print {
     body[data-page] { background: #ffffff !important; }
-    .city-header, .city-footer, .welyu-discovery-strip { display: none !important; }
+    .city-header, .city-footer, .welyu-discovery-strip, .welyu-demo-switcher-bar { display: none !important; }
   }
 }

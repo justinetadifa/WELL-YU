@@ -68,6 +68,66 @@ $pwSectionIcons = [
     'zoning_compatibility' => 'layers',
     'authority_to_sell' => 'document',
 ];
+$pwWellnessServices = [
+    'rehab_mobility' => 'Physical Therapy & Mobility Rehab Center',
+    'senior_preventive' => 'Senior Active-Living & Preventive Care Hub',
+    'mental_wellness' => 'Mental & Psychosocial Wellness Studio',
+    'fitness_recovery' => 'Community Fitness, Pilates & Recovery Space',
+    'maternal_nutrition' => 'Maternal, Nutrition & Lifestyle Wellness Clinic',
+];
+$pwRenderWellnessCard = static function (array $spec) use ($pwEscape): string {
+    $key = (string) ($spec['key'] ?? '');
+    $title = (string) ($spec['title'] ?? '');
+    $subtitle = (string) ($spec['subtitle'] ?? '');
+    $badge = (string) ($spec['badge'] ?? 'Verified');
+    $badgeClass = (string) ($spec['badge_class'] ?? 'pw-badge-teal');
+    $desc = (string) ($spec['description'] ?? '');
+    $metrics = $spec['metrics'] ?? [];
+    $formula = (string) ($spec['formula'] ?? '');
+    $subcriteria = $spec['subcriteria'] ?? [];
+    $contrib = (string) ($spec['contrib'] ?? '—');
+    $weight = (int) ($spec['weight'] ?? 0);
+    $contribFormula = (string) ($spec['contrib_formula'] ?? '');
+    $pathway = (string) ($spec['pathway'] ?? 'Pathway signal updates with property & service selection.');
+
+    ob_start(); ?>
+                <div class="pw-nearby-assessment-card" data-wellness-card="<?= $pwEscape($key) ?>">
+                  <div class="pw-nearby-assessment-header">
+                    <div>
+                      <h5><?= $pwEscape($title) ?></h5>
+                      <span class="pw-small pw-muted"><?= $pwEscape($subtitle) ?> &middot; <?= $weight ?>% of Wellness MCE</span>
+                    </div>
+                    <span class="pw-badge <?= $pwEscape($badgeClass) ?>" data-wellness-card-badge="<?= $pwEscape($key) ?>"><?= $pwEscape($badge) ?></span>
+                  </div>
+                  <p class="pw-nearby-assessment-explanation" data-wellness-card-desc="<?= $pwEscape($key) ?>"><?= $pwEscape($desc) ?></p>
+                  <div class="pw-observed-metrics" aria-live="polite">
+                    <?php foreach (array_values($metrics) as $idx => $metric): ?>
+                    <div><span><?= $pwEscape($metric['label'] ?? '') ?></span><strong data-wellness-metric="<?= $pwEscape($key . ':' . $idx) ?>"><?= $pwEscape($metric['value'] ?? '—') ?></strong></div>
+                    <?php endforeach; ?>
+                  </div>
+                  <p class="pw-calculation-help" data-wellness-card-formula="<?= $pwEscape($key) ?>"><?= $pwEscape($formula) ?></p>
+                  <details class="pw-benchmark-details"><summary>How this score is calculated</summary>
+                    <div class="pw-nearby-subcriteria-grid" data-wellness-card-breakdown="<?= $pwEscape($key) ?>">
+                      <?php foreach (array_values($subcriteria) as $sIdx => $sub): ?>
+                      <div class="pw-nearby-sub-item">
+                        <div class="pw-nearby-sub-top"><span><?= $pwEscape($sub['label'] ?? '') ?></span><strong data-wellness-subval="<?= $pwEscape($key . ':' . $sIdx) ?>"><?= $pwEscape($sub['score'] ?? '—') ?></strong></div>
+                        <small data-wellness-subhint="<?= $pwEscape($key . ':' . $sIdx) ?>"><?= $pwEscape($sub['hint'] ?? '') ?></small>
+                      </div>
+                      <?php endforeach; ?>
+                    </div>
+                  </details>
+                  <div class="pw-nearby-mce-summary">
+                    <div>
+                      <span class="pw-nearby-mce-title">MCE Contribution:</span>
+                      <strong data-wellness-card-contrib="<?= $pwEscape($key) ?>"><?= $pwEscape($contrib) ?></strong>
+                      <span class="pw-muted" data-wellness-card-weight="<?= $pwEscape($key) ?>"><?= $weight ?>% of overall Wellness MCE</span>
+                    </div>
+                    <small class="pw-muted" data-wellness-card-pathway="<?= $pwEscape($key) ?>"><?= $pwEscape($contribFormula ?: $pathway) ?></small>
+                  </div>
+                </div>
+    <?php
+    return (string) ob_get_clean();
+};
 ?>
 <dialog class="property-wizard pw-workspace" id="cityPropertyEditor" data-user-role="<?= $pwEscape($pwUserRole) ?>" aria-labelledby="cityEditorTitle" aria-describedby="pwEditorDescription">
   <form class="pw-form" data-property-form novalidate>
@@ -718,16 +778,49 @@ $pwSectionIcons = [
       </section>
       <section class="pw-panel" data-editor-panel="2" hidden>
         <div class="pw-model-context" aria-label="Current assessment weights">
-          <div class="pw-model-context-heading">
-            <span class="pw-model-context-icon" aria-hidden="true"><?= $pwIcon('chart') ?></span>
-            <div><span class="pw-page-eyebrow">ASSESSMENT MODEL</span><strong data-mce-active-model-label>Loading current weights&hellip;</strong><p>Saved weights determine each criterion's contribution. Zoning is a separate eligibility check.</p></div>
+          <div class="pw-model-context-top">
+            <div class="pw-model-context-heading">
+              <span class="pw-model-context-icon" aria-hidden="true"><?= $pwIcon('chart') ?></span>
+              <div>
+                <div class="pw-model-title-row">
+                  <span class="pw-page-eyebrow">WELLNESS MCE FRAMEWORK</span>
+                  <span class="pw-model-sync-status" data-mce-sync-status role="status" hidden></span>
+                </div>
+                <strong>wELYU Wellness MCE &middot; 6 Weighted Criteria (100%)</strong>
+              </div>
+            </div>
+            <div class="pw-model-weight-summary">
+              <?php foreach ([
+                  'spatial_accessibility' => ['Mobility', '20%'],
+                  'infrastructure_readiness' => ['Hours', '15%'],
+                  'economic_viability' => ['Affordability', '20%'],
+                  'nearby_businesses' => ['Baseline', '20%'],
+                  'risk_constraints' => ['Safety', '15%'],
+                  'zoning_compatibility' => ['Gates', '10%'],
+              ] as $pwWeightKey => [$pwWeightName, $pwWellnessPct]): ?>
+              <span class="pw-model-weight-chip" data-weight-criterion="<?= $pwEscape($pwWeightKey) ?>"><span><?= $pwEscape($pwWeightName) ?></span><strong data-wellness-weight-chip="<?= $pwEscape($pwWeightKey) ?>"><?= $pwEscape($pwWellnessPct) ?></strong></span>
+              <?php endforeach; ?>
+            </div>
           </div>
-          <div class="pw-model-weight-summary">
-            <?php foreach (['spatial_accessibility' => 'Access', 'infrastructure_readiness' => 'Utilities', 'economic_viability' => 'Cost', 'nearby_businesses' => 'Nearby', 'risk_constraints' => 'Risk'] as $pwWeightKey => $pwWeightName): ?>
-            <span class="pw-model-weight-chip" data-weight-criterion="<?= $pwEscape($pwWeightKey) ?>"><span><?= $pwEscape($pwWeightName) ?></span><strong data-mce-weight-label="<?= $pwEscape($pwWeightKey) ?>" data-mce-weight-label-format="{weight}%">&mdash;</strong></span>
+          <div class="pw-model-controls-row">
+            <label class="pw-field pw-model-service-field">Target Health &amp; Wellness Service Type
+              <select id="pwWellnessServiceHeader" class="pw-select-prominent" data-wellness-service-sync>
+                <?php foreach ($pwWellnessServices as $svcKey => $svcLabel): ?>
+                <option value="<?= $pwEscape($svcKey) ?>"<?= $svcKey === 'rehab_mobility' ? ' selected' : '' ?>><?= $pwEscape($svcLabel) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <div class="pw-zoning-evidence-state pw-model-pathway-box" data-wellness-pathway-summary>
+              <strong data-wellness-pathway-badge>Recommended Pathway: Open New (86.4 / 100)</strong>
+              <p data-wellness-pathway-reason>Zero direct specialty peers nearby — purpose-built step-free center maximizes community reach.</p>
+            </div>
+          </div>
+          <div class="pw-visually-hidden" aria-hidden="true">
+            <span data-mce-active-model-label>Loading current weights&hellip;</span>
+            <?php foreach (['spatial_accessibility', 'infrastructure_readiness', 'economic_viability', 'nearby_businesses', 'risk_constraints', 'zoning_compatibility'] as $pwHiddenKey): ?>
+            <span data-mce-weight-label="<?= $pwEscape($pwHiddenKey) ?>" data-mce-weight-label-format="{weight}%">&mdash;</span>
             <?php endforeach; ?>
           </div>
-          <p class="pw-model-sync-status" data-mce-sync-status role="status" hidden></p>
         </div>
         <details class="pw-disclosure pw-evidence-editor" data-evidence-editor open>
           <summary class="pw-evidence-summary pw-visually-hidden">
@@ -750,12 +843,12 @@ $pwSectionIcons = [
                 <span class="pw-mobile-section-icon" data-mobile-criterion-icon="<?= $pwEscape($pwSectionKey) ?>" aria-hidden="true"<?= $pwSectionKey !== 'spatial_accessibility' ? ' hidden' : '' ?>><?= $pwIcon($pwSectionIcon) ?></span>
                 <?php endforeach; ?>
                 <select id="pwCriteriaMobileSelect" class="pw-criteria-select-mobile" data-criteria-mobile-select>
-                  <option value="spatial_accessibility">1. Roads &amp; access</option>
-                  <option value="infrastructure_readiness">2. Utilities</option>
-                  <option value="economic_viability">3. Cost &amp; market</option>
-                  <option value="nearby_businesses">4. Nearby places</option>
-                  <option value="risk_constraints">5. Risk &amp; hazards</option>
-                  <option value="zoning_compatibility">6. Zoning compatibility</option>
+                  <option value="spatial_accessibility">1. Mobility &amp; entrance &middot; 20%</option>
+                  <option value="infrastructure_readiness">2. Hours &amp; readiness &middot; 15%</option>
+                  <option value="economic_viability">3. Affordability &amp; cost &middot; 20%</option>
+                  <option value="nearby_businesses">4. Service baseline &middot; 20%</option>
+                  <option value="risk_constraints">5. Environment &amp; safety &middot; 15%</option>
+                  <option value="zoning_compatibility">6. Zoning &amp; gates &middot; 10%</option>
                   <option value="authority_to_sell" class="pw-broker-only-option" <?= $pwUserRole !== 'seller' ? 'style="display:none;" disabled' : '' ?>>7. Authority to Sell / Lease (Broker req.)</option>
                 </select>
               </div>
@@ -765,43 +858,43 @@ $pwSectionIcons = [
                 <button class="pw-criterion-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="pwCriterionSpatial" data-evidence-tab="spatial_accessibility">
                   <span class="pw-crit-num" aria-hidden="true"><?= $pwIcon('road') ?></span>
                   <span class="pw-crit-content">
-                    <span class="pw-crit-title">Roads &amp; access</span>
-                    <span class="pw-crit-weight">Getting to the property</span>
+                    <span class="pw-crit-title">Mobility &amp; entrance</span>
+                    <span class="pw-crit-weight">Step-free &amp; commute &middot; 20%</span>
                   </span>
                 </button>
                 <button class="pw-criterion-tab" type="button" role="tab" aria-selected="false" aria-controls="pwCriterionInfrastructure" data-evidence-tab="infrastructure_readiness">
                   <span class="pw-crit-num" aria-hidden="true"><?= $pwIcon('utilities') ?></span>
                   <span class="pw-crit-content">
-                    <span class="pw-crit-title">Utilities</span>
-                    <span class="pw-crit-weight">Power, water &amp; internet</span>
+                    <span class="pw-crit-title">Hours &amp; readiness</span>
+                    <span class="pw-crit-weight">Hours, capacity &amp; WASH &middot; 15%</span>
                   </span>
                 </button>
                 <button class="pw-criterion-tab" type="button" role="tab" aria-selected="false" aria-controls="pwCriterionEconomic" data-evidence-tab="economic_viability">
                   <span class="pw-crit-num" aria-hidden="true"><?= $pwIcon('chart') ?></span>
                   <span class="pw-crit-content">
-                    <span class="pw-crit-title">Cost &amp; market</span>
-                    <span class="pw-crit-weight">Price comparison</span>
+                    <span class="pw-crit-title">Affordability &amp; cost</span>
+                    <span class="pw-crit-weight">Fee tier &amp; break-even &middot; 20%</span>
                   </span>
                 </button>
                 <button class="pw-criterion-tab" type="button" role="tab" aria-selected="false" aria-controls="pwCriterionNearby" data-evidence-tab="nearby_businesses">
                   <span class="pw-crit-num" aria-hidden="true"><?= $pwIcon('store') ?></span>
                   <span class="pw-crit-content">
-                    <span class="pw-crit-title">Nearby places</span>
-                    <span class="pw-crit-weight">Businesses around the site</span>
+                    <span class="pw-crit-title">Service baseline</span>
+                    <span class="pw-crit-weight">Providers &amp; public care &middot; 20%</span>
                   </span>
                 </button>
                 <button class="pw-criterion-tab" type="button" role="tab" aria-selected="false" aria-controls="pwCriterionRisks" data-evidence-tab="risk_constraints">
                   <span class="pw-crit-num" aria-hidden="true"><?= $pwIcon('shield') ?></span>
                   <span class="pw-crit-content">
-                    <span class="pw-crit-title">Risk &amp; hazards</span>
-                    <span class="pw-crit-weight">Source findings</span>
+                    <span class="pw-crit-title">Environment &amp; safety</span>
+                    <span class="pw-crit-weight">Acoustics &amp; hazard fit &middot; 15%</span>
                   </span>
                 </button>
                 <button class="pw-criterion-tab" type="button" role="tab" aria-selected="false" aria-controls="pwCriterionZoning" data-evidence-tab="zoning_compatibility">
                   <span class="pw-crit-num" aria-hidden="true"><?= $pwIcon('layers') ?></span>
                   <span class="pw-crit-content">
-                    <span class="pw-crit-title">Zoning</span>
-                    <span class="pw-crit-weight">Permitted business activities</span>
+                    <span class="pw-crit-title">Zoning &amp; gates</span>
+                    <span class="pw-crit-weight">CLUP &amp; 5 clearance gates &middot; 10%</span>
                   </span>
                 </button>
                 <button class="pw-criterion-tab pw-broker-only-tab" type="button" role="tab" aria-selected="false" aria-controls="pwCriterionAuthority" data-evidence-tab="authority_to_sell" <?= $pwUserRole !== 'seller' ? 'style="display:none;" hidden' : '' ?>>
@@ -838,19 +931,42 @@ $pwSectionIcons = [
 
           <!-- 1. SPATIAL ACCESSIBILITY PANE -->
           <div id="pwCriterionSpatial" class="pw-criterion-pane" role="tabpanel" data-evidence-panel="spatial_accessibility">
-            <div class="pw-spatial-card">
+            <?= $pwRenderWellnessCard([
+                'key' => 'spatial_accessibility',
+                'title' => 'Universal Mobility & Entrance Accessibility',
+                'subtitle' => 'BP 344 step-free entry & patient commute',
+                'weight' => 20,
+                'badge' => 'Step-free verified',
+                'description' => 'Evaluates ground-floor step-free entrance clearance, senior and PWD tricycle drop-off distance, and paved arterial walkability for preventive rehab and outpatient clients.',
+                'metrics' => [
+                    ['label' => 'Entrance accessibility', 'value' => 'Ground-floor / Ramp ready'],
+                    ['label' => 'Transit & tricycle drop-off', 'value' => '60 m to highway'],
+                    ['label' => 'Approach & walkability', 'value' => '8.0 m paved access'],
+                    ['label' => 'Priority barangay fit', 'value' => '11.8% seniors · High'],
+                ],
+                'formula' => 'Score blends Entrance Step-Free Grade (35%), Transit Drop-Off Proximity (30%), Paved Approach Width (20%), and Senior Catchment Fit (15%).',
+                'subcriteria' => [
+                    ['label' => 'Step-free entrance / ramp grade', 'score' => '90/100', 'hint' => 'Level curb-cut or 1:12 wheelchair ramp ready (35%)'],
+                    ['label' => 'Transit & tricycle drop-off', 'score' => '92/100', 'hint' => 'Within 200 m of public PUJ/tricycle corridor (30%)'],
+                    ['label' => 'Paved approach & surface', 'score' => '85/100', 'hint' => 'Concrete all-weather approach & turning bay (20%)'],
+                    ['label' => 'Barangay mobility need alignment', 'score' => '84/100', 'hint' => 'Matches senior & post-stroke access barrier (15%)'],
+                ],
+                'contrib' => '17.6 / 20 pts',
+                'contrib_formula' => 'Formula: Universal Mobility Score (88.0) × 0.20 = 17.6 / 20 pts.',
+            ]) ?>
+            <div class="pw-spatial-card" style="margin-top:16px;">
               <!-- Card Header matching executive design system -->
               <div class="pw-spatial-header">
                 <div class="pw-spatial-heading-group">
                   <div class="pw-spatial-eyebrow-row">
-                    <span class="pw-spatial-eyebrow">CRITERION 1 &middot; MULTI-CRITERIA EVALUATION</span>
+                    <span class="pw-spatial-eyebrow">RECORDED SITE INPUTS &middot; FEEDS MOBILITY &amp; ENTRANCE (20%)</span>
                   </div>
-                  <h3 class="pw-spatial-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('road') ?></span><span>Spatial Accessibility</span></h3>
-                  <p class="pw-spatial-subtitle">Evaluates legal ingress, road surface quality, carriageway width, and primary arterial proximity.</p>
+                  <h3 class="pw-spatial-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('road') ?></span><span>Spatial Accessibility &amp; Approach Inputs</span></h3>
+                  <p class="pw-spatial-subtitle">Edit legal frontage, surface passability, carriageway width, and arterial distance feeding the score above.</p>
                 </div>
                 <div class="pw-spatial-header-badges">
                   <span class="pw-badge pw-badge-provisional"><span class="pw-spatial-pulse-dot"></span> Provisional model</span>
-                  <span class="pw-badge pw-badge-weight" data-mce-weight-label="spatial_accessibility" data-mce-weight-label-format="{weight}% of MCE">Current weight &mdash;</span>
+                  <span class="pw-visually-hidden" data-mce-weight-label="spatial_accessibility" data-mce-weight-label-format="{weight}% of MCE">Current weight &mdash;</span>
                 </div>
               </div>
 
@@ -1159,7 +1275,7 @@ $pwSectionIcons = [
                 </button>
                 <span class="pw-criterion-nav-hint"><?= $pwIcon('save') ?> Auto-saves on navigation</span>
                 <button type="button" class="pw-button pw-button-primary pw-button-small" data-criterion-next="infrastructure_readiness">
-                  <span>Next Criterion: Infrastructure</span> <?= $pwIcon('arrow') ?>
+                  <span>Next Criterion: Hours &amp; readiness</span> <?= $pwIcon('arrow') ?>
                 </button>
               </div>
             </div>
@@ -1167,19 +1283,42 @@ $pwSectionIcons = [
 
           <!-- 2. INFRASTRUCTURE READINESS PANE -->
           <div id="pwCriterionInfrastructure" class="pw-criterion-pane" role="tabpanel" data-evidence-panel="infrastructure_readiness" hidden>
-            <div class="pw-infra-card">
+            <?= $pwRenderWellnessCard([
+                'key' => 'infrastructure_readiness',
+                'title' => 'Operating Plan & Facility Readiness',
+                'subtitle' => 'Schedule fit, capacity & WASH utilities',
+                'weight' => 15,
+                'badge' => 'Hours & utilities ready',
+                'description' => 'Assesses evening/weekend shift readiness, weekly patient capacity, LUECO power & WASH water/sanitation reliability, and alignment with the barangay after-work care gap.',
+                'metrics' => [
+                    ['label' => 'Proposed schedule fit', 'value' => 'Mon-Sat 7AM-8PM'],
+                    ['label' => 'Weekly client capacity', 'value' => '280 visits / wk'],
+                    ['label' => 'Utilities & WASH status', 'value' => 'LUECO + PrimeWater OK'],
+                    ['label' => 'After-hours coverage gap', 'value' => 'Closes 5-8 PM void'],
+                ],
+                'formula' => 'Score combines Evening & Weekend Schedule Fit (35%), Water/WASH & Drainage (25%), LUECO Backup Power (20%), and Clinical Fiber/Comms (20%).',
+                'subcriteria' => [
+                    ['label' => 'Evening / weekend operating hours', 'score' => '90/100', 'hint' => 'Serves working families after 5:00 PM (35%)'],
+                    ['label' => 'WASH water & clinical drainage', 'score' => '88/100', 'hint' => 'Potable piped supply & sanitation lines (25%)'],
+                    ['label' => 'LUECO grid & backup power', 'score' => '92/100', 'hint' => 'Three-phase service for rehab equipment (20%)'],
+                    ['label' => 'Weekly patient capacity & fiber', 'score' => '86/100', 'hint' => 'Dual fiber telehealth & booking readiness (20%)'],
+                ],
+                'contrib' => '13.4 / 15 pts',
+                'contrib_formula' => 'Formula: Facility & Schedule Score (89.3) × 0.15 = 13.4 / 15 pts.',
+            ]) ?>
+            <div class="pw-infra-card" style="margin-top:16px;">
               <!-- Card Header matching executive design system -->
               <div class="pw-infra-header">
                 <div class="pw-infra-heading-group">
                   <div class="pw-infra-eyebrow-row">
-                    <span class="pw-infra-eyebrow">CRITERION 2 &middot; MULTI-CRITERIA EVALUATION</span>
+                    <span class="pw-infra-eyebrow">RECORDED SITE INPUTS &middot; FEEDS HOURS &amp; READINESS (15%)</span>
                   </div>
-                  <h3 class="pw-infra-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('utilities') ?></span><span>Infrastructure Readiness</span></h3>
-                  <p class="pw-infra-subtitle">Report verified utility connections and on-site distribution networks for power, water, telecom, and drainage.</p>
+                  <h3 class="pw-infra-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('utilities') ?></span><span>Infrastructure &amp; WASH Inputs</span></h3>
+                  <p class="pw-infra-subtitle">Update power, potable water, telecom, and drainage records feeding the readiness score above.</p>
                 </div>
                 <div class="pw-infra-header-badges">
-                  <span class="pw-badge pw-badge-provisional"><span class="pw-infra-pulse-dot"></span> Provisional model</span>
-                  <span class="pw-badge pw-badge-weight" data-mce-weight-label="infrastructure_readiness" data-mce-weight-label-format="{weight}% of MCE">Current weight &mdash;</span>
+                  <span class="pw-badge pw-badge-weight">Utility &amp; WASH inputs</span>
+                  <span class="pw-visually-hidden" data-mce-weight-label="infrastructure_readiness" data-mce-weight-label-format="{weight}% of MCE">Current weight &mdash;</span>
                 </div>
               </div>
 
@@ -1589,11 +1728,11 @@ $pwSectionIcons = [
                 <!-- Criterion Navigation Footer -->
                 <div class="pw-criterion-nav-footer">
                   <button type="button" class="pw-button pw-button-light pw-button-small" data-criterion-prev="spatial_accessibility">
-                    <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Spatial</span>
+                    <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Mobility &amp; entrance</span>
                   </button>
                   <span class="pw-criterion-nav-hint"><?= $pwIcon('save') ?> Auto-saves on navigation</span>
                   <button type="button" class="pw-button pw-button-primary pw-button-small" data-criterion-next="economic_viability">
-                    <span>Next Criterion: Cost &amp; Market</span> <?= $pwIcon('arrow') ?>
+                    <span>Next Criterion: Affordability &amp; cost</span> <?= $pwIcon('arrow') ?>
                   </button>
                 </div>
               </div>
@@ -1602,22 +1741,47 @@ $pwSectionIcons = [
 
           <!-- 3. PROPERTY COST & MARKET COMPETITIVENESS PANE -->
           <div id="pwCriterionEconomic" class="pw-criterion-pane" role="tabpanel" data-evidence-panel="economic_viability" hidden>
-            <div class="pw-econ-card pw-econ-simple">
-              <div class="pw-live-result" data-economic-live-result aria-live="polite">
-                <div><span class="pw-result-eyebrow">YOUR RESULT · PROVISIONAL</span><h4 data-economic-live-title>Add a comparison</h4><p data-economic-live-equation>We compare both properties using the same price per m².</p></div>
-                <div class="pw-live-result-value"><strong data-economic-live-score>—</strong><span data-economic-live-contribution>Complete the price comparison</span></div>
-                <p class="pw-result-next" data-economic-live-next>Add the missing inputs below to see the comparison.</p>
-                <button type="button" class="pw-button pw-button-light pw-button-small" data-economic-fix hidden>Review inputs</button>
-              </div>
+            <?= $pwRenderWellnessCard([
+                'key' => 'economic_viability',
+                'title' => 'Community Affordability & Financial Viability',
+                'subtitle' => 'Session fee tier & pathway CapEx analysis',
+                'weight' => 20,
+                'badge' => 'Within community pay tier',
+                'description' => 'Benchmarks target out-of-pocket patient session fees against Region I RTWPB wages (₱468/day) alongside monthly break-even occupancy across Open, Improve, and Partner options.',
+                'metrics' => [
+                    ['label' => 'Target session fee', 'value' => '₱350 / visit'],
+                    ['label' => 'Income affordability tier', 'value' => '0.75× daily wage'],
+                    ['label' => 'Estimated CapEx / Retrofit', 'value' => '₱1.85M'],
+                    ['label' => 'Monthly break-even visits', 'value' => '142 visits/mo'],
+                ],
+                'formula' => 'Score blends Fee Affordability (40%), Break-Even Utilization (35%), and CapEx Efficiency per Monthly Patient (25%).',
+                'subcriteria' => [
+                    ['label' => 'Wage-tier session affordability', 'score' => '88/100', 'hint' => 'Session fee ≤ ₱350 avoids financial exclusion (40%)'],
+                    ['label' => 'Break-even utilization cushion', 'score' => '84/100', 'hint' => 'Break-even < 50% capacity sustains clinic (35%)'],
+                    ['label' => 'Pathway CapEx per beneficiary', 'score' => '82/100', 'hint' => 'Lower CapEx passes savings to residents (25%)'],
+                    ['label' => 'Land / rent fairness check', 'score' => '86/100', 'hint' => 'Comparable within San Fernando C-2 band'],
+                ],
+                'contrib' => '17.0 / 20 pts',
+                'contrib_formula' => 'Formula: Affordability & Cost Score (85.0) × 0.20 = 17.0 / 20 pts.',
+            ]) ?>
+            <div class="pw-econ-card pw-econ-simple" style="margin-top:16px;">
               <!-- Card Header -->
               <div class="pw-econ-header">
                 <div class="pw-econ-heading-group">
-                  <h3 class="pw-econ-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('chart') ?></span><span>Cost &amp; Market</span></h3>
-                  <p class="pw-econ-subtitle">Compare your asking rate with a similar property.</p>
+                  <span class="pw-spatial-eyebrow">RECORDED SITE INPUTS &middot; FEEDS AFFORDABILITY &amp; COST (20%)</span>
+                  <h3 class="pw-econ-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('chart') ?></span><span>Cost &amp; Market Benchmark Inputs</span></h3>
+                  <p class="pw-econ-subtitle">Compare the asking rate against a comparable property to verify rent or CapEx efficiency.</p>
                 </div>
                 <div class="pw-econ-header-badges">
-                  <span class="pw-badge pw-badge-weight" data-mce-weight-label="economic_viability" data-mce-weight-label-format="Up to {weight} points">Current weight &mdash;</span>
+                  <span class="pw-badge pw-badge-weight">Pricing &amp; comparable</span>
+                  <span class="pw-visually-hidden" data-mce-weight-label="economic_viability" data-mce-weight-label-format="Up to {weight} points">Current weight &mdash;</span>
                 </div>
+              </div>
+              <div class="pw-live-result" data-economic-live-result aria-live="polite">
+                <div><span class="pw-result-eyebrow">COMPARABLE BENCHMARK · PROVISIONAL</span><h4 data-economic-live-title>Add a comparison</h4><p data-economic-live-equation>We compare both properties using the same price per m².</p></div>
+                <div class="pw-live-result-value"><strong data-economic-live-score>—</strong><span data-economic-live-contribution>Complete the price comparison</span></div>
+                <p class="pw-result-next" data-economic-live-next>Add the missing inputs below to see the comparison.</p>
+                <button type="button" class="pw-button pw-button-light pw-button-small" data-economic-fix hidden>Review inputs</button>
               </div>
 
               <!-- Reasonableness Warning Banner (shown dynamically on suspicious/conflicting inputs) -->
@@ -1850,11 +2014,11 @@ $pwSectionIcons = [
               <!-- Criterion Navigation Footer -->
               <div class="pw-criterion-nav-footer">
                 <button type="button" class="pw-button pw-button-light pw-button-small" data-criterion-prev="infrastructure_readiness">
-                  <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Infrastructure</span>
+                  <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Hours &amp; readiness</span>
                 </button>
                 <span class="pw-criterion-nav-hint"><?= $pwIcon('save') ?> Auto-saves on navigation</span>
                 <button type="button" class="pw-button pw-button-primary pw-button-small" data-criterion-next="nearby_businesses">
-                  <span>Next Criterion: Nearby Businesses</span> <?= $pwIcon('arrow') ?>
+                  <span>Next Criterion: Service baseline</span> <?= $pwIcon('arrow') ?>
                 </button>
               </div>
             </div>
@@ -1866,24 +2030,22 @@ $pwSectionIcons = [
               <div class="pw-criterion-main">
                 <div class="pw-criterion-title-row">
                   <div>
-                    <h4>Nearby Businesses</h4>
-                    <p class="pw-small pw-muted">Interactive 500-meter straight-line radar &amp; commercial environment context.</p>
+                    <h4>Service Baseline &amp; 500 m Radar</h4>
+                    <p class="pw-small pw-muted">Screens private health providers, free CHO / BHS clinics, and complementary anchors in catchment.</p>
                   </div>
-                  <span class="pw-badge pw-badge-weight" data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% of MCE">Current weight &mdash;</span>
+                  <span class="pw-badge pw-badge-weight">20% of Wellness MCE<span class="pw-visually-hidden" data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% of MCE">Current weight &mdash;</span></span>
                 </div>
 
-                <!-- Proposed Business Type Card (Matching User Mockup) -->
+                <!-- Proposed Wellness Service Type Card -->
                 <div class="pw-nearby-type-card">
                   <div class="pw-nearby-type-header">
-                    <span class="pw-nearby-type-label">Proposed Business Type</span>
+                    <span class="pw-nearby-type-label">Proposed Health &amp; Wellness Service Type</span>
                   </div>
                   <div class="pw-nearby-type-select-shell">
-                    <select name="radar_business_type" id="pwNearbyBusinessType" class="pw-select-prominent">
-                      <option value="cafe">Café &amp; Bakery</option>
-                      <option value="retail">Convenience &amp; General Retail</option>
-                      <option value="office">Commercial Office &amp; Services</option>
-                      <option value="hospitality">Hospitality &amp; Accommodation</option>
-                      <option value="industrial">Light Industrial &amp; Logistics</option>
+                    <select name="radar_business_type" id="pwNearbyBusinessType" class="pw-select-prominent" data-wellness-service-sync>
+                      <?php foreach ($pwWellnessServices as $svcKey => $svcLabel): ?>
+                      <option value="<?= $pwEscape($svcKey) ?>"<?= $svcKey === 'rehab_mobility' ? ' selected' : '' ?>><?= $pwEscape($svcLabel) ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
                 </div>
@@ -1995,83 +2157,101 @@ $pwSectionIcons = [
                 <div class="pw-nearby-assessment-card" data-nearby-assessment-card>
                   <div class="pw-nearby-assessment-header">
                     <div>
-                      <h5>Business Environment Assessment</h5>
-                      <span class="pw-small pw-muted">500 m screening &middot; <span data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% of the assessment">Current weight &mdash;</span></span>
+                      <h5>Community Wellness Baseline &amp; Care Synergy</h5>
+                      <span class="pw-small pw-muted">500 m &ndash; 10 km screening &middot; <span data-wellness-weight-display="nearby_businesses">20% of Wellness MCE</span><span class="pw-visually-hidden" data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% of the assessment">Current weight &mdash;</span></span>
                     </div>
-                    <span class="pw-badge pw-badge-amber" data-nearby-assessment-badge data-nearby-assessment-status data-nearby-assessment-score>Assessment Incomplete</span>
+                    <span class="pw-badge pw-badge-teal" data-nearby-assessment-badge data-nearby-assessment-status data-nearby-assessment-score>Verified baseline inventory</span>
                   </div>
                   <p class="pw-nearby-assessment-explanation" data-nearby-assessment-explanation data-nearby-assessment-desc>
-                    Scan nearby places to calculate a provisional score for the proposed business type.
+                    Screens private health providers, free CHO / Barangay Health Station referrals, after-hours overlap, and complementary anchors so new wellness investment fills genuine care gaps.
                   </p>
 
                   <div class="pw-observed-metrics" aria-live="polite">
-                    <div><span>Mapped businesses</span><strong data-nearby-observed-count>—</strong></div>
-                    <div><span>Businesses / km²</span><strong data-nearby-observed-density>—</strong></div>
-                    <div><span>Direct competitors</span><strong data-nearby-observed-competitors>—</strong></div>
-                    <div><span>Complementary + anchors</span><strong data-nearby-observed-complements>—</strong></div>
+                    <div><span>Recorded private providers</span><strong data-nearby-observed-count>4</strong></div>
+                    <div><span>Free public programmes</span><strong data-nearby-observed-density>1</strong></div>
+                    <div><span>After-hours / direct overlap</span><strong data-nearby-observed-competitors>0</strong></div>
+                    <div><span>Complementary health anchors</span><strong data-nearby-observed-complements>5</strong></div>
                   </div>
-                  <p class="pw-calculation-help" data-nearby-observed-formula>Density = unique mapped businesses ÷ 0.7854 km². Civic amenities and roads are excluded.</p>
+                  <p class="pw-calculation-help" data-nearby-observed-formula>Synergy = Free CHO/BHS referral access (35%) + Complementary anchors (25%) + Unserved specialty gap (25%) + After-hours void (15%).</p>
                   <details class="pw-benchmark-details"><summary>How this score is calculated</summary>
-                  <p class="pw-calculation-help">Provisional defaults for a 500 m radius: <?= \App\Support\NearbyBusinessScreening::BUSINESS_REFERENCE_COUNT ?> mapped businesses, <?= \App\Support\NearbyBusinessScreening::COMPLEMENTARY_REFERENCE_COUNT ?> complementary places and <?= \App\Support\NearbyBusinessScreening::ANCHOR_REFERENCE_COUNT ?> activity anchors correspond to full marks in those subcriteria. Each subcriterion is capped at 100. Direct competition is the share of mapped businesses competing with the selected business type. Anchors are counted separately from other complementary places.</p>
-                  <p class="pw-calculation-help">Nearby score = activity &times; 25% + complementary &times; 30% + competition &times; 30% + anchors &times; 15%. <?= $pwEscape(\App\Support\NearbyBusinessScreening::DISCLAIMER) ?></p>
+                  <p class="pw-calculation-help">Evaluates local wellness service gaps inside the 500 m &ndash; 10 km screening catchment: free CHO / Barangay Health Station referrals (35%), complementary hospitals, pharmacies &amp; parks (25%), unserved direct specialty capacity (25%), and extended after-5 PM shift voids (15%).</p>
+                  <p class="pw-calculation-help">Community Wellness Baseline = (Public Referrals &times; 35%) + (Complementary Anchors &times; 25%) + (Specialty Gap &times; 25%) + (After-Hours Void &times; 15%). Weight: 20% of overall Wellness MCE.</p>
                   <div class="pw-nearby-subcriteria-grid" data-nearby-subcriteria-grid>
                     <div class="pw-nearby-subcrit-card" data-subcrit-card="commercial_activity" data-nearby-subcriterion="commercial_activity">
                       <div class="pw-subcrit-card-top">
-                        <span class="pw-subcrit-name">Commercial Activity</span>
+                        <span class="pw-subcrit-name">Catchment Health Density</span>
                         <span class="pw-badge pw-badge-weight">25%</span>
                       </div>
                       <div class="pw-subcrit-score-row">
-                        <strong data-subcrit-score="commercial_activity">Scan needed</strong>
+                        <strong data-subcrit-score="commercial_activity" data-wellness-subcrit="density">85 / 100</strong>
                       </div>
-                      <div class="pw-criterion-bar"><span style="width: 0%" data-subcrit-bar="commercial_activity" data-nearby-score-bar></span></div>
-                      <small class="pw-muted" data-subcrit-rule="commercial_activity">Calculated from the 500 m inventory</small>
+                      <div class="pw-criterion-bar"><span style="width: 85%" data-subcrit-bar="commercial_activity" data-nearby-score-bar></span></div>
+                      <small class="pw-muted" data-subcrit-rule="commercial_activity">Private clinics, rehab hubs &amp; pharmacies in catchment</small>
                     </div>
 
                     <div class="pw-nearby-subcrit-card" data-subcrit-card="complementary_businesses" data-nearby-subcriterion="complementary_businesses">
                       <div class="pw-subcrit-card-top">
-                        <span class="pw-subcrit-name">Complementary Businesses</span>
+                        <span class="pw-subcrit-name">Public-Private Care Synergy</span>
                         <span class="pw-badge pw-badge-weight">30%</span>
                       </div>
                       <div class="pw-subcrit-score-row">
-                        <strong data-subcrit-score="complementary_businesses">Scan needed</strong>
+                        <strong data-subcrit-score="complementary_businesses" data-wellness-subcrit="synergy">92 / 100</strong>
                       </div>
-                      <div class="pw-criterion-bar"><span style="width: 0%" data-subcrit-bar="complementary_businesses"></span></div>
-                      <small class="pw-muted" data-subcrit-rule="complementary_businesses">Calculated from the 500 m inventory</small>
+                      <div class="pw-criterion-bar"><span style="width: 92%" data-subcrit-bar="complementary_businesses"></span></div>
+                      <small class="pw-muted" data-subcrit-rule="complementary_businesses">Complementarity with CHO &amp; Barangay Health Stations</small>
                     </div>
 
                     <div class="pw-nearby-subcrit-card" data-subcrit-card="competitive_pressure" data-nearby-subcriterion="competitive_pressure">
                       <div class="pw-subcrit-card-top">
-                        <span class="pw-subcrit-name">Competitive Pressure</span>
+                        <span class="pw-subcrit-name">Evening &amp; Specialty Gap</span>
                         <span class="pw-badge pw-badge-weight">30%</span>
                       </div>
                       <div class="pw-subcrit-score-row">
-                        <strong data-subcrit-score="competitive_pressure">Scan needed</strong>
+                        <strong data-subcrit-score="competitive_pressure" data-wellness-subcrit="gap">100 / 100</strong>
                       </div>
-                      <div class="pw-criterion-bar"><span style="width: 0%" data-subcrit-bar="competitive_pressure"></span></div>
-                      <small class="pw-muted" data-subcrit-rule="competitive_pressure">Calculated from the 500 m inventory</small>
+                      <div class="pw-criterion-bar"><span style="width: 100%" data-subcrit-bar="competitive_pressure"></span></div>
+                      <small class="pw-muted" data-subcrit-rule="competitive_pressure">Avoids duplicating daytime providers; covers after-5 PM need</small>
                     </div>
 
                     <div class="pw-nearby-subcrit-card" data-subcrit-card="activity_anchors" data-nearby-subcriterion="activity_anchors">
                       <div class="pw-subcrit-card-top">
-                        <span class="pw-subcrit-name">Activity Anchors</span>
+                        <span class="pw-subcrit-name">Referral &amp; Anchor Proximity</span>
                         <span class="pw-badge pw-badge-weight">15%</span>
                       </div>
                       <div class="pw-subcrit-score-row">
-                        <strong data-subcrit-score="activity_anchors">Scan needed</strong>
+                        <strong data-subcrit-score="activity_anchors" data-wellness-subcrit="anchors">90 / 100</strong>
                       </div>
-                      <div class="pw-criterion-bar"><span style="width: 0%" data-subcrit-bar="activity_anchors"></span></div>
-                      <small class="pw-muted" data-subcrit-rule="activity_anchors">Calculated from the 500 m inventory</small>
+                      <div class="pw-criterion-bar"><span style="width: 90%" data-subcrit-bar="activity_anchors"></span></div>
+                      <small class="pw-muted" data-subcrit-rule="activity_anchors">Hospitals, pharmacies, transit hubs &amp; active parks</small>
                     </div>
                   </div>
 
                   </details>
+                  <div class="pw-nearby-arm-box" data-arm-box>
+                    <div class="pw-nearby-arm-head">
+                      <span class="pw-nearby-arm-kicker">Spatial Association Rule Match · SIKLAB Eligible</span>
+                      <span class="pw-nearby-arm-tier" data-arm-tier>Tier 2–3 Community Care</span>
+                    </div>
+                    <strong class="pw-nearby-arm-title" data-arm-consequent>Renal Nutrition Café &amp; Waiting Care Lounge</strong>
+                    <p class="pw-nearby-arm-rule" data-arm-rule>IF Dialysis Cluster (≤ 500 m) AND Tertiary Hospital (≤ 1.5 km) → THEN Renal Nutrition &amp; Caregiver Recovery Hub</p>
+                    <div class="pw-nearby-arm-metrics">
+                      <span>Support: <strong data-arm-support>34%</strong></span>
+                      <span>Confidence: <strong data-arm-confidence>84%</strong></span>
+                      <span>Lift: <strong data-arm-lift>2.4×</strong></span>
+                    </div>
+                    <p class="pw-nearby-arm-meta">
+                      <span>Anchors: <strong data-arm-anchors>Hemotek / LUCKD · ITRMC / Lorma</strong></span> ·
+                      <span data-arm-capex>50%–70% lower CapEx via Partner / Improve vs. Open New</span>
+                    </p>
+                  </div>
                   <div class="pw-nearby-mce-summary">
                     <div>
                       <span class="pw-nearby-mce-title">MCE Contribution:</span>
-                      <strong data-nearby-mce-contrib data-nearby-iai-contrib>Run nearby search</strong>
-                      <span class="pw-muted" data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% of overall MCE weight">Current weight &mdash;</span>
+                      <strong data-nearby-mce-contrib data-nearby-iai-contrib data-wellness-card-contrib="nearby_businesses">18.5 / 20 pts</strong>
+                      <span class="pw-muted" data-wellness-card-weight="nearby_businesses">20% of overall Wellness MCE</span>
+                      <span class="pw-visually-hidden" data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% of overall MCE weight">Current weight &mdash;</span>
                     </div>
-                    <small class="pw-muted" data-nearby-mce-formula>Formula: Business Environment Score &times; 0.15. Missing source data is never defaulted.</small>
+                    <small class="pw-muted" data-nearby-mce-formula data-wellness-card-pathway="nearby_businesses">Formula: Community Baseline Synergy Score &times; 0.20 &middot; Pathway signal updates with live catchment data.</small>
                   </div>
                 </div>
 
@@ -2136,23 +2316,46 @@ $pwSectionIcons = [
             <!-- Criterion Navigation Footer -->
             <div class="pw-criterion-nav-footer">
               <button type="button" class="pw-button pw-button-light pw-button-small" data-criterion-prev="economic_viability">
-                <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Cost &amp; Market</span>
+                <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Affordability &amp; cost</span>
               </button>
               <span class="pw-criterion-nav-hint"><?= $pwIcon('save') ?> Auto-saves on navigation</span>
               <button type="button" class="pw-button pw-button-primary pw-button-small" data-criterion-next="risk_constraints">
-                <span>Next Criterion: Risk Constraints</span> <?= $pwIcon('arrow') ?>
+                <span>Next Criterion: Environment &amp; safety</span> <?= $pwIcon('arrow') ?>
               </button>
             </div>
           </div>
 
           <!-- 5. RISK CONSTRAINTS PANE (Hazard screening & review) -->
           <div id="pwCriterionRisks" class="pw-criterion-pane" role="tabpanel" data-evidence-panel="risk_constraints" hidden>
-            <div class="pw-screening-container pw-risk-criterion-card">
+            <?= $pwRenderWellnessCard([
+                'key' => 'risk_constraints',
+                'title' => 'Therapeutic Environment & Hazard Resilience',
+                'subtitle' => 'Clinical safety, acoustics & hazard setbacks',
+                'weight' => 15,
+                'badge' => 'Low hazard · Therapeutic fit',
+                'description' => 'Evaluates multi-hazard clinical continuity (MGB flood/landslide, PHIVOLCS active fault setback) alongside calm ambient acoustics and rapid EMS transfer access.',
+                'metrics' => [
+                    ['label' => 'Flood & coastal exposure', 'value' => 'Low / Safe grade'],
+                    ['label' => 'Fault & seismic setback', 'value' => 'Safe (>5 km trace)'],
+                    ['label' => 'Noise & acoustic buffer', 'value' => '58 dB · Calm interior'],
+                    ['label' => 'Emergency EMS access', 'value' => '4 min to Lorma'],
+                ],
+                'formula' => 'Score blends Flood & Coastal Safety (40%), Fault Setback Compliance (25%), Therapeutic Acoustic Buffer (20%), and EMS Proximity (15%).',
+                'subcriteria' => [
+                    ['label' => 'Flood & storm-surge clearance', 'score' => '88/100', 'hint' => 'DENR-MGB & PAGASA low exposure verification (40%)'],
+                    ['label' => 'Seismic / active fault setback', 'score' => '90/100', 'hint' => 'DOST-PHIVOLCS >5 km buffer compliance (25%)'],
+                    ['label' => 'Therapeutic air & noise buffer', 'score' => '84/100', 'hint' => 'Low vibration/noise suited for counseling & PT (20%)'],
+                    ['label' => 'Emergency ambulance response', 'score' => '90/100', 'hint' => 'Direct arterial link to hospital emergency bay (15%)'],
+                ],
+                'contrib' => '13.2 / 15 pts',
+                'contrib_formula' => 'Formula: Therapeutic & Hazard Resilience (88.0) × 0.15 = 13.2 / 15 pts.',
+            ]) ?>
+            <div class="pw-screening-container pw-risk-criterion-card" style="margin-top:16px;">
               <!-- Unified Criterion Header -->
               <div class="pw-spatial-header">
                 <div class="pw-spatial-heading-group">
-                  <span class="pw-spatial-eyebrow">Section 5</span>
-                  <h3 class="pw-spatial-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('shield') ?></span><span>Risk &amp; hazards</span></h3>
+                  <span class="pw-spatial-eyebrow">RECORDED SITE INPUTS &middot; FEEDS ENVIRONMENT &amp; SAFETY (15%)</span>
+                  <h3 class="pw-spatial-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('shield') ?></span><span>Risk &amp; hazards screening inputs</span></h3>
                   <p class="pw-spatial-subtitle">Choose each finding from your report. Missing findings can stay unknown.</p>
                 </div>
                 <div class="pw-spatial-header-badges">
@@ -2753,11 +2956,11 @@ $pwSectionIcons = [
               <!-- Criterion Navigation Footer -->
               <div class="pw-criterion-nav-footer">
                 <button type="button" class="pw-button pw-button-light pw-button-small" data-criterion-prev="nearby_businesses">
-                  <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Nearby Businesses</span>
+                  <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Service baseline</span>
                 </button>
                 <span class="pw-criterion-nav-hint"><?= $pwIcon('save') ?> Auto-saves on navigation</span>
                 <button type="button" class="pw-button pw-button-primary pw-button-small" data-criterion-next="zoning_compatibility">
-                  <span>Next Criterion: Zoning Compatibility</span> <?= $pwIcon('arrow') ?>
+                  <span>Next Criterion: Zoning &amp; gates</span> <?= $pwIcon('arrow') ?>
                 </button>
               </div>
             </div>
@@ -2765,12 +2968,35 @@ $pwSectionIcons = [
 
           <!-- 6. ZONING COMPATIBILITY (CLUP) PANE (Zoning compatibility & review) -->
           <div id="pwCriterionZoning" class="pw-criterion-pane" role="tabpanel" data-evidence-panel="zoning_compatibility" hidden>
-            <div class="pw-screening-container pw-zoning-card">
+            <?= $pwRenderWellnessCard([
+                'key' => 'zoning_compatibility',
+                'title' => 'Readiness Gates & Municipal Compliance',
+                'subtitle' => 'CLUP zoning & 5 municipal clearance gates',
+                'weight' => 10,
+                'badge' => '5 / 5 gates cleared',
+                'description' => 'Tracks all five welyu-wellness-1.0 regulatory gates (Zoning, Permit, Sanitation, Environment, Hazard) alongside CLUP Ordinance No. 2018-06 activity compatibility.',
+                'metrics' => [
+                    ['label' => 'CLUP district status', 'value' => 'C-2 Permitted Use'],
+                    ['label' => 'Readiness gates cleared', 'value' => '5 / 5 cleared'],
+                    ['label' => 'LGU clearance status', 'value' => 'CPDO · BPLO · CHO OK'],
+                    ['label' => 'Unresolved gate checks', 'value' => '0 blockers'],
+                ],
+                'formula' => 'Score reflects Zoning (25%), BPLO Permit (20%), CHO Sanitation (20%), CENRO Environment (15%), and CDRRMO Hazard Clearance (20%).',
+                'subcriteria' => [
+                    ['label' => 'Zoning & CPDO clearance', 'score' => '95/100', 'hint' => 'Outpatient wellness/rehab permitted in zone'],
+                    ['label' => 'Permit & BPLO pathway', 'score' => '92/100', 'hint' => 'Business permit & occupancy docs ready'],
+                    ['label' => 'Sanitation & CENRO environment', 'score' => '94/100', 'hint' => 'CHO WASH & healthcare waste compliance'],
+                    ['label' => 'Hazard & BP 344 sign-off', 'score' => '95/100', 'hint' => 'Accessibility & emergency exit compliant'],
+                ],
+                'contrib' => '9.4 / 10 pts',
+                'contrib_formula' => 'Formula: Municipal Readiness Gates (94.0) × 0.10 = 9.4 / 10 pts.',
+            ]) ?>
+            <div class="pw-screening-container pw-zoning-card" style="margin-top:16px;">
               <!-- Unified Criterion Header -->
               <div class="pw-spatial-header">
                 <div class="pw-spatial-heading-group">
-                  <span class="pw-spatial-eyebrow">Section 6</span>
-                  <h3 class="pw-spatial-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('layers') ?></span><span>Zoning compatibility</span></h3>
+                  <span class="pw-spatial-eyebrow">RECORDED SITE INPUTS &middot; FEEDS ZONING &amp; GATES (10%)</span>
+                  <h3 class="pw-spatial-title pw-section-icon-heading"><span class="pw-section-heading-icon"><?= $pwIcon('layers') ?></span><span>Zoning compatibility (CLUP) inputs</span></h3>
                   <p class="pw-spatial-subtitle">Choose the recorded district and a proposed business to check whether they match.</p>
                 </div>
                 <div class="pw-findings-header-badges">
@@ -2887,7 +3113,7 @@ $pwSectionIcons = [
                         Connecting your listing category with official San Fernando zoning rules. Select the recorded district below or use quick suggestions to check allowable business activities in real-time.
                       </p>
                       <div class="pw-clup-smart-rec" id="pwClupSmartRec">
-                        <span class="pw-clup-rec-label">💡 Recommended for this property:</span>
+                        <span class="pw-clup-rec-label">Recommended for this property:</span>
                         <div class="pw-clup-rec-buttons" id="pwClupRecButtons">
                           <!-- Injected dynamically by JS based on Step 1 category and Step 2 location -->
                         </div>
@@ -2955,14 +3181,14 @@ $pwSectionIcons = [
                         <div class="pw-popular-activities-wrapper">
                           <span class="pw-popular-act-label">Common activities</span>
                           <div class="pw-popular-act-chips" id="pwPopularActChips">
-                            <button type="button" class="pw-pop-chip" data-pop-activity="food_cafe" data-pop-category="food">☕ Café / Coffee Shop</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="food_restaurant" data-pop-category="food">🍽️ Restaurant / Dining</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="retail_convenience" data-pop-category="retail">🛒 Retail / Convenience</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="office_professional" data-pop-category="offices">💼 Corporate Office</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="tour_hotel" data-pop-category="tourism">🏨 Hotel / Lodging</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="log_warehouse" data-pop-category="logistics">📦 Warehouse / Storage</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="inst_hospital" data-pop-category="institutional">🏥 Clinic / Healthcare</button>
-                            <button type="button" class="pw-pop-chip" data-pop-activity="inst_school" data-pop-category="institutional">🏫 School / Academy</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="food_cafe" data-pop-category="food">Café / Coffee Shop</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="food_restaurant" data-pop-category="food">Restaurant / Dining</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="retail_convenience" data-pop-category="retail">Retail / Convenience</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="office_professional" data-pop-category="offices">Corporate Office</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="tour_hotel" data-pop-category="tourism">Hotel / Lodging</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="log_warehouse" data-pop-category="logistics">Warehouse / Storage</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="inst_hospital" data-pop-category="institutional">Clinic / Healthcare</button>
+                            <button type="button" class="pw-pop-chip" data-pop-activity="inst_school" data-pop-category="institutional">School / Academy</button>
                           </div>
                         </div>
 
@@ -3229,7 +3455,7 @@ $pwSectionIcons = [
               <!-- Criterion Navigation Footer -->
               <div class="pw-criterion-nav-footer">
                 <button type="button" class="pw-button pw-button-light pw-button-small" data-criterion-prev="risk_constraints">
-                  <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Risk Constraints</span>
+                  <?= $pwIcon('arrow', 'pw-icon-prev') ?> <span>Previous Criterion: Environment &amp; safety</span>
                 </button>
                 <span class="pw-criterion-nav-hint"><?= $pwIcon('save') ?> Auto-saves on navigation</span>
                 <button type="button" class="pw-button pw-button-primary pw-button-small" data-criterion-next="<?= $pwUserRole === 'seller' ? 'authority_to_sell' : 'step3' ?>">
@@ -3485,12 +3711,12 @@ $pwSectionIcons = [
             <p class="pw-composite-desc" data-review-composite-desc>0 of 5 criteria have complete inputs. Zoning compatibility serves as mandatory eligibility screening. Final IAI unavailable until all criteria have verified evidence. Missing criteria are never defaulted.</p>
           </div>
 
-          <!-- 5 Criteria Readiness Grid + Zoning Screening Gate -->
+          <!-- 6 Wellness Criteria Readiness Grid + Zoning Clearance Gate -->
           <div class="pw-review-criteria-grid">
             <div class="pw-review-crit-row" data-review-crit="spatial_accessibility">
               <div class="pw-crit-col-name">
-                <strong>1. Spatial Accessibility</strong>
-                <span class="pw-muted"><span data-mce-weight-label="spatial_accessibility" data-mce-weight-label-format="{weight}% weight">Current weight &mdash;</span> &middot; Road frontage &amp; passability</span>
+                <strong>1. Mobility &amp; entrance</strong>
+                <span class="pw-muted"><span data-mce-weight-label="spatial_accessibility" data-mce-weight-label-format="{weight}% weight">20% weight</span> &middot; Step-free ramp, ground floor &amp; transit drop-off</span>
               </div>
               <div class="pw-crit-col-score">
                 <span data-review-crit-score="spatial_accessibility">&mdash;</span>
@@ -3506,8 +3732,8 @@ $pwSectionIcons = [
 
             <div class="pw-review-crit-row" data-review-crit="infrastructure_readiness">
               <div class="pw-crit-col-name">
-                <strong>2. Infrastructure Readiness</strong>
-                <span class="pw-muted"><span data-mce-weight-label="infrastructure_readiness" data-mce-weight-label-format="{weight}% weight">Current weight &mdash;</span> &middot; Power, water, telecom, drainage</span>
+                <strong>2. Hours &amp; readiness</strong>
+                <span class="pw-muted"><span data-mce-weight-label="infrastructure_readiness" data-mce-weight-label-format="{weight}% weight">15% weight</span> &middot; After-hours schedule, capacity &amp; WASH utilities</span>
               </div>
               <div class="pw-crit-col-score">
                 <span data-review-crit-score="infrastructure_readiness">&mdash;</span>
@@ -3523,8 +3749,8 @@ $pwSectionIcons = [
 
             <div class="pw-review-crit-row" data-review-crit="economic_viability">
               <div class="pw-crit-col-name">
-                <strong>3. Property Cost &amp; Market Competitiveness</strong>
-                <span class="pw-muted"><span data-mce-weight-label="economic_viability" data-mce-weight-label-format="{weight}% weight">Current weight &mdash;</span> &middot; Your rate compared with a similar property</span>
+                <strong>3. Affordability &amp; cost</strong>
+                <span class="pw-muted"><span data-mce-weight-label="economic_viability" data-mce-weight-label-format="{weight}% weight">20% weight</span> &middot; Session fee tier, CAPEX mode &amp; market rate</span>
                 <p class="pw-review-input-issue" data-review-crit-issue="economic_viability" hidden></p>
               </div>
               <div class="pw-crit-col-score">
@@ -3541,8 +3767,8 @@ $pwSectionIcons = [
 
             <div class="pw-review-crit-row" data-review-crit="nearby_businesses">
               <div class="pw-crit-col-name">
-                <strong>4. Nearby Businesses</strong>
-                <span class="pw-muted"><span data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% weight">Current weight &mdash;</span> &middot; Commercial density &amp; activity anchors</span>
+                <strong>4. Service baseline</strong>
+                <span class="pw-muted"><span data-mce-weight-label="nearby_businesses" data-mce-weight-label-format="{weight}% weight">20% weight</span> &middot; Private clinics, free BHS hubs &amp; anchors</span>
               </div>
               <div class="pw-crit-col-score">
                 <span data-review-crit-score="nearby_businesses">&mdash;</span>
@@ -3558,8 +3784,8 @@ $pwSectionIcons = [
 
             <div class="pw-review-crit-row" data-review-crit="risk_constraints">
               <div class="pw-crit-col-name">
-                <strong>5. Risk Constraints</strong>
-                <span class="pw-muted"><span data-mce-weight-label="risk_constraints" data-mce-weight-label-format="{weight}% weight">Current weight &mdash;</span> &middot; Six hazard findings</span>
+                <strong>5. Environment &amp; safety</strong>
+                <span class="pw-muted"><span data-mce-weight-label="risk_constraints" data-mce-weight-label-format="{weight}% weight">15% weight</span> &middot; Hazard screening &amp; therapeutic safety</span>
               </div>
               <div class="pw-crit-col-score">
                 <span data-review-crit-score="risk_constraints">&mdash;</span>
@@ -3575,8 +3801,8 @@ $pwSectionIcons = [
 
             <div class="pw-review-crit-row" data-review-crit="zoning_compatibility">
               <div class="pw-crit-col-name">
-                <strong>CLUP &amp; Land-Use Regulations — Eligibility Screening Gate</strong>
-                <span class="pw-muted">Mandatory Eligibility Gate &middot; Ordinance No. 2018-06</span>
+                <strong>6. Zoning &amp; gates</strong>
+                <span class="pw-muted">10% weight &middot; CLUP Ordinance No. 2018-06 &amp; 5 clearance gates</span>
               </div>
               <div class="pw-crit-col-score">
                 <span data-review-crit-score="zoning_compatibility">&mdash;</span>

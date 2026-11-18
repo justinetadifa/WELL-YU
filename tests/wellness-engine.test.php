@@ -85,4 +85,17 @@ $sql=(string)file_get_contents(dirname(__DIR__).'/database/well-yu/01-wellness.s
 $check(count($commands)===11&&$commands[0]==='USE `well_yu_db`','One isolated target plus ten additive statements.');
 foreach(array_slice($commands,1)as$command){$check(str_starts_with($command,'CREATE TABLE IF NOT EXISTS welyu_'),'Migration only creates missing extension tables.');}
 $check(!preg_match('/sfcelerate_bizstart|^(?:INSERT INTO|UPDATE\b|DELETE FROM|DROP\b|TRUNCATE\b|ALTER TABLE|REPLACE INTO)/mi',$sql),'No thesis target or existing-data mutation in migration.');
+
+// SIKLAB 2026 Enhancements Verification (Tasks 1-5)
+require_once dirname(__DIR__) . '/app/Support/PropertyAssessmentService.php';
+$check(array_keys(E::CRITERIA_METADATA) === array_keys(E::CRITERIA), 'All 6 canonical criteria have health-centered sub-indicator metadata.');
+$pilot = E::siklabPilotPresets();
+$check(isset($pilot['pathways']['open'], $pilot['pathways']['improve'], $pilot['pathways']['partner']), 'SIKLAB pilot presets define Open, Improve, and Partner pathways.');
+foreach ($pilot['pathways'] as $modeKey => $pathwayData) {
+    $check(($pathwayData['assessment']['status'] ?? '') === 'reviewed_within_scope' && ($pathwayData['assessment']['iai_score'] ?? 0) > 80.0, "SIKLAB {$modeKey} preset unlocks immediate IAI score.");
+    $check(isset($pathwayData['scenario']['rtwpb_wages']['applied_daily_rate_php'], $pathwayData['scenario']['ordinance_2024_41']['estimated_total_tax_holiday_savings_php'], $pathwayData['scenario']['viability']['estimated_payback_months']), "SIKLAB {$modeKey} scenario includes RTWPB wage, Ordinance 2024-41, and multi-year viability metrics.");
+}
+$suitability = \App\Support\PropertyAssessmentService::wellnessSuitabilityProfile(['id' => 101, 'barangay' => 'Biday', 'category' => 'Commercial']);
+$check(($suitability['siklab_compliant'] ?? false) === true && !empty($suitability['recommended_typologies']) && str_contains($suitability['workspace_url'] ?? '', 'wellness.php?property_id=101&mode=compare'), 'Property Suitability Profile computes SIKLAB typologies and 3-way workspace deep-link.');
+
 echo "Wellness engine, permissions, reproducibility and migration: {$checks} offline checks passed. No database connection or SQL execution.\n";

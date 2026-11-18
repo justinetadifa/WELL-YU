@@ -1,0 +1,31 @@
+/* Keep the investment destination visible without crowding account controls. */
+@layer welyu-theme {
+  @media (min-width: 1280px) {
+    body[data-page] .city-header.city-header-with-investments .city-nav { width: calc(100% - 32px) !important; max-width: 1440px !important; gap: 20px !important; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation { gap: 16px !important; min-width: 0; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation nav { gap: 2px !important; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation nav a { font-size: 12.5px !important; padding: 8px 10px !important; }
+    body[data-page] .city-header.city-header-with-investments .city-account-links { gap: 8px !important; }
+    body[data-page] .city-header.city-header-with-investments .city-account-links > :is(a,button) { padding-inline: 14px !important; }
+  }
+  @media (max-width: 1279px) {
+    body[data-page] .city-header.city-header-with-investments .city-nav { position: relative !important; gap: 12px !important; }
+    body[data-page] .city-header.city-header-with-investments .city-menu-button { display: inline-flex !important; margin-left: auto !important; align-items: center; justify-content: center; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation {
+      position: absolute !important; top: calc(100% + 8px) !important; left: 0 !important; right: 0 !important;
+      display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 12px !important;
+      max-height: var(--city-mobile-menu-max-height, calc(100svh - 160px)) !important;
+      overflow-y: auto !important; overscroll-behavior: contain;
+      padding: 16px !important; border: 1px solid #dfe6da !important; border-radius: 20px !important;
+      background: #fffffff7 !important; box-shadow: 0 20px 50px #1933271a !important;
+      opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; transform: translateY(-6px) !important;
+    }
+    body[data-page] .city-header.city-header-with-investments .city-navigation.is-open { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; transform: none !important; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation.is-open :is(a,button) { visibility: visible !important; opacity: 1 !important; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation nav { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 4px !important; padding: 0 !important; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation nav::before { display: none !important; }
+    body[data-page] .city-header.city-header-with-investments .city-navigation nav a { display: flex !important; justify-content: flex-start !important; min-height: 44px !important; padding: 12px 14px !important; font-size: 14px !important; border-radius: 12px !important; }
+    body[data-page] .city-header.city-header-with-investments .city-account-links { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 8px !important; border-top: 1px solid #e1e7db !important; padding-top: 12px !important; margin: 0 !important; }
+    body[data-page] .city-header.city-header-with-investments .city-account-links > :is(a,button) { display: flex !important; justify-content: center !important; min-height: 44px !important; width: 100% !important; }
+  }
+}

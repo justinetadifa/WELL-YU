@@ -24,12 +24,12 @@ try {
     <div class="city-container home-glance-panel">
       <div class="glance-profile-header">
         <div>
-          <p class="glance-section-label">02 / City overview</p>
-          <h2 id="glanceTitle" class="home-glance-title">San Fernando,<br class="glance-title-break"> at a glance.</h2>
-          <p class="glance-profile-description">The people, businesses and connections that make up the city.</p>
+          <p class="glance-section-label">02 / Care ecosystem</p>
+          <h2 id="glanceTitle" class="home-glance-title">San Fernando health,<br class="glance-title-break"> at a glance.</h2>
+          <p class="glance-profile-description">Hospitals, dialysis centers, barangay health stations, pharmacies and active corridors across 59 barangays.</p>
         </div>
         <div class="glance-profile-meta">
-          <span class="glance-reporting-period">2023&ndash;2024 figures</span>
+          <span class="glance-reporting-period">10-category health baseline</span>
           <a href="#properties" class="glance-property-link">
             <span>Explore properties</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
@@ -41,28 +41,28 @@ try {
         <div class="glance-photo-well">
           <img class="glance-city-photo" src="<?= $e($context['assetBase']) ?>/images/sfcatglance.png<?= sfc_asset_version('images/sfcatglance.png') ?>" width="1920" height="1080" alt="Aerial view across San Fernando City's streets, buildings and surrounding hills." loading="lazy" decoding="async">
           <figcaption class="glance-portrait-caption">
-            <span>LA UNION / PHILIPPINES</span>
-            <h3 id="glancePortraitTitle">One city.<br>Many connections.</h3>
+            <span>SAN FERNANDO CITY / CARE CONTINUUM</span>
+            <h3 id="glancePortraitTitle">From clinical anchors.<br>To healthier barangays.</h3>
           </figcaption>
-          <div class="glance-barangay-badge" aria-label="San Fernando City, 59 barangays">
-            <span>San Fernando City</span><strong>59</strong><span>barangays</span>
+          <div class="glance-barangay-badge" aria-label="San Fernando City, 59 barangay health stations">
+            <span>CHO Care Network</span><strong>59</strong><span>BHS nodes</span>
           </div>
         </div>
         <div class="glance-insight" id="glanceInsight" data-current-key="residents">
           <div class="glance-insight-primary">
-            <p class="glance-insight-category" data-insight-category>People</p>
-            <h3 data-insight-label>Residents</h3>
+            <p class="glance-insight-category" data-insight-category>Community &amp; reach</p>
+            <h3 data-insight-label>Residents Served</h3>
             <p class="glance-insight-value"><strong data-insight-value>128,024</strong><span data-insight-unit></span></p>
           </div>
           <div class="glance-insight-source">
-            <span class="glance-insight-caption">Source / 2023&ndash;2024 figures</span>
-            <p data-insight-source>PSA Census</p>
+            <span class="glance-insight-caption">Source / Health Inventory Baseline</span>
+            <p data-insight-source>PSA Census &middot; 59 Barangays &middot; 10-Min Care Target</p>
             <span class="glance-insight-state" data-insight-state>Selected indicator</span>
           </div>
           <div class="glance-insight-related">
-            <span class="glance-insight-caption">Also in <span data-insight-related-category>People</span></span>
-            <p><span data-insight-related-label>Households</span><strong><span data-insight-related-value>32,202</span><small data-insight-related-unit></small></strong></p>
-            <span class="glance-insight-related-source" data-insight-related-source>PSA Census &middot; 4.0 people per household</span>
+            <span class="glance-insight-caption">Also in <span data-insight-related-category>Community &amp; reach</span></span>
+            <p><span data-insight-related-label>Barangay Health Stations</span><strong><span data-insight-related-value>59</span><small data-insight-related-unit></small></strong></p>
+            <span class="glance-insight-related-source" data-insight-related-source>City Health Office (CHO) &middot; Mon&ndash;Fri 8 AM&ndash;5 PM</span>
           </div>
         </div>
       </figure>
@@ -131,7 +131,7 @@ try {
         <details class="locator-card">
           <summary class="locator-summary">
             <span class="locator-identity">
-              <span class="locator-logo-well"><img class="locator-logo locator-logo--<?= $e($recipient['id']) ?>" src="<?= $e($context['assetBase']) ?>/images/<?= $e($recipient['logo']) ?>" alt="" width="64" height="64" loading="lazy"></span>
+              <span class="locator-logo-well"><img class="locator-logo locator-logo--<?= $e($recipient['id']) ?>" src="<?= $e($context['assetBase']) ?>/images/<?= $e($recipient['logo']) ?>" alt="" width="64" height="64" decoding="async"></span>
               <span class="locator-identity-copy">
                 <span class="locator-name" id="locator-<?= $e($recipient['id']) ?>-name" role="heading" aria-level="3"><?= $e($recipient['name']) ?></span>
                 <span class="locator-category"><?= $e($recipient['sector']) ?></span>
@@ -852,13 +852,14 @@ try {
     </div>
   </section>
 
-  <section class="city-container city-section" id="about">
+  <section class="city-container city-section" id="about" aria-labelledby="welyuAboutTitle">
     <div class="city-about">
       <div class="city-about-intro">
         <div class="city-about-eyebrow">07 / ABOUT wELYU</div>
-        <h2 class="city-about-title">Local insight.<br>Thoughtful decisions.</h2>
-        <p class="city-about-lead">wELYU brings property listings, local context, and recorded assessments together—helping you consider where your next investment could fit in San Fernando City.</p>
-        <p class="city-about-sub">An independent competition prototype, built on the existing LOCUS-SF research foundation.</p>
+        <h2 class="city-about-title" id="welyuAboutTitle">Better places.<br><span>Healthier communities.</span></h2>
+        <p class="city-about-lead">wELYU connects local spaces with health and wellness opportunities in San Fernando, La Union. Explore nearby facilities, discover business ideas, and use local evidence to plan your next move.</p>
+        <p class="city-about-sub"><strong>Wellness, rooted in place.</strong> Bringing people, property, and community needs together.</p>
+        <div class="city-about-actions"><a class="city-button city-button-secondary" href="<?= $e(sfc_path('/wellness-investments.php')) ?>">Explore wellness opportunities <span aria-hidden="true">↗</span></a></div>
       </div>
       <div class="city-about-list" role="region" aria-label="About wELYU details">
         <div class="city-about-item" data-about-item>
@@ -880,6 +881,7 @@ try {
           <div class="city-about-drawer" aria-hidden="true">
             <div class="city-about-drawer-inner">
               <p>Developed by the LOCUS-SF team with guidance from the City Assessor's Office, the City Information and Communications Technology Office (CICTO), and the Local Economic and Business Development Office (LEBDO).</p>
+              <p>wELYU is an independent competition prototype built on the LOCUS-SF research foundation.</p>
             </div>
           </div>
         </div>

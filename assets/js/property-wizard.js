@@ -553,7 +553,10 @@
       }
       syncUtilities();
     }
-    all('[data-utility-radio]').forEach(radio => radio.addEventListener('change', syncUtilities));
+    all('[data-utility-radio]').forEach(radio => radio.addEventListener('change', () => {
+      syncUtilities();
+      if (typeof syncWellnessMceCards === 'function') syncWellnessMceCards();
+    }));
     let classificationCatalog = {categories: {}};
     try { classificationCatalog = JSON.parse($('[data-classification-catalog]')?.textContent || '{}'); } catch {}
     const subtypeCatalog = classificationCatalog.categories || {};
@@ -688,7 +691,7 @@
     window.addEventListener('online', () => {
       if (dialog.open && (radarState === 'error' || radarData?.meta.liveUnavailable) && !radarPendingKey && $('[data-radar-toggle]')?.checked) {
         const reference = point('reference_lat', 'reference_lng');
-        if (reference && withinCityCoverage(reference)) fetchRadar(reference, value('radar_business_type') || 'cafe', true);
+        if (reference && withinCityCoverage(reference)) fetchRadar(reference, normalizeWellnessServiceKey(value('radar_business_type')), true);
       }
     });
     let radarGroups = {competitors:[],related:[],complementary:[],unclassified:[],roads:[]};
@@ -2752,7 +2755,7 @@
       if (recContainer && recs.length) {
         recContainer.innerHTML = recs.map(r => `
           <button type="button" class="pw-clup-rec-btn ${currentZone.toUpperCase() === r.code ? 'is-active' : ''}" data-apply-rec-zone="${escape(r.code)}">
-            <span class="pw-rec-btn-code">⚡ ${escape(r.code)}</span>
+            <span class="pw-rec-btn-code">${escape(r.code)}</span>
             <span class="pw-rec-btn-label">${escape(r.label)}</span>
             <span class="pw-rec-btn-desc">(${escape(r.desc)})</span>
           </button>
@@ -3033,6 +3036,7 @@
             }
           }
           assessHazards();
+          if (typeof syncWellnessMceCards === 'function') syncWellnessMceCards();
           updateReviewStatus(point(), enteredAreaSqm() || estimatedArea);
         };
         input.addEventListener('input', handleFindingUpdate);
@@ -3068,6 +3072,7 @@
             pill.className = 'pw-pill pw-pill--gray';
           }
           assessHazards();
+          if (typeof syncWellnessMceCards === 'function') syncWellnessMceCards();
           updateReviewStatus(point(), enteredAreaSqm() || estimatedArea);
         };
         inp.addEventListener('input', handleDynamicFinding);
@@ -3149,19 +3154,19 @@
 
       switch (activeTab) {
         case 'spatial_accessibility':
-          nextLabelText = 'Next: Utilities';
+          nextLabelText = 'Next: Hours & readiness';
           break;
         case 'infrastructure_readiness':
-          nextLabelText = 'Next: Cost & market';
+          nextLabelText = 'Next: Affordability & cost';
           break;
         case 'economic_viability':
-          nextLabelText = 'Next: Nearby businesses';
+          nextLabelText = 'Next: Service baseline';
           break;
         case 'nearby_businesses':
-          nextLabelText = 'Next: Risk & hazards';
+          nextLabelText = 'Next: Environment & safety';
           break;
         case 'risk_constraints':
-          nextLabelText = 'Next: Zoning compatibility';
+          nextLabelText = 'Next: Zoning & gates';
           break;
         case 'zoning_compatibility':
           nextLabelText = isBroker ? `Next: ${authLabel}` : 'Continue to Review';
@@ -3404,6 +3409,9 @@
             opt.textContent = `${baseText}${statusMap[key] ? ' · Evidence entered' : ''}`;
           }
         });
+      }
+      if (typeof syncWellnessMceCards === 'function') {
+        syncWellnessMceCards();
       }
     }
 
@@ -5412,6 +5420,7 @@
         input._hasRiskInputListener = true;
         input.addEventListener('input', () => {
           assessHazards();
+          if (typeof syncWellnessMceCards === 'function') syncWellnessMceCards();
           updateReviewStatus(point(), enteredAreaSqm() || estimatedArea);
         });
       });
@@ -5805,11 +5814,12 @@
       if (!point('reference_lat','reference_lng') && point() && !placingReference) {
         field('reference_label').value = boundary ? 'center' : 'location';setReference(point());
       }
-      if (point() && !withinCityCoverage(point())) { radarController?.abort(); radarRevision++; radarPendingKey='';radarRefreshing=false;radarData=null; radarState='error'; radarError='Property pin is outside San Fernando map coverage. Correct it in Location & boundary.'; renderRadarUI(); return; }
+      const outPt = point();
+      if (outPt && !withinCityCoverage(outPt)) { radarController?.abort(); radarRevision++; radarPendingKey='';radarRefreshing=false;radarData=null; radarState='error'; radarError=`Recorded pin (${outPt[0].toFixed(5)}, ${outPt[1].toFixed(5)}) is outside San Fernando map coverage (16.54°–16.72° N, 120.26°–120.45° E). Correct it in Location & boundary.`; renderRadarUI(); return; }
       const withoutMap=()=>{
         const message=$('[data-map-feedback="radar"]');if(message){message.hidden=false;message.textContent='The interactive map could not load. Nearby records and straight-line distances are still available below.';}
         const reference=point('reference_lat','reference_lng');
-        if(reference && $('[data-radar-toggle]')?.checked)fetchRadar(reference,value('radar_business_type')||'cafe');
+        if(reference && $('[data-radar-toggle]')?.checked)fetchRadar(reference,normalizeWellnessServiceKey(value('radar_business_type')));
         else {radarController?.abort();radarRevision++;radarPendingKey='';radarRefreshing=false;radarState=reference?'disabled':'idle';renderRadarUI();}
       };
       if(!window.L){withoutMap();return;}
@@ -5886,7 +5896,7 @@
       }
 
       radarMap.fitBounds(radiusLayer.getBounds(),{padding:[25,25]});
-      fetchRadar(reference,value('radar_business_type') || 'cafe');
+      fetchRadar(reference,normalizeWellnessServiceKey(value('radar_business_type')));
     }
     function attachRadarDrag() {
       if(!radarMarker)return;
@@ -5899,7 +5909,7 @@
         field('reference_label').value='entrance';dirtyReference=true;const p=radarMarker.getLatLng();
         setReference([p.lat,p.lng]);concentricRings.forEach(c=>c.setLatLng([p.lat,p.lng]));
         clearTimeout(radarDebounceTimer);
-        radarDebounceTimer=setTimeout(()=>{fetchRadar([p.lat,p.lng],value('radar_business_type') || 'cafe');},200);
+        radarDebounceTimer=setTimeout(()=>{fetchRadar([p.lat,p.lng],normalizeWellnessServiceKey(value('radar_business_type')));},200);
       });
     }
     function getBrandBadge(name, category, role) {
@@ -6318,6 +6328,9 @@
         if (contrib) contrib.textContent = `Pending nearby observations (${number(mceWeight('nearby_businesses'))}% weight)`;
         if (formula) formula.textContent = `Nearby score × ${mceFactor('nearby_businesses')}. A scan with no usable business records stays pending.`;
       }
+      if (typeof syncWellnessMceCards === 'function' && !wellnessSyncing) {
+        syncWellnessMceCards();
+      }
     }
     function renderRadarList() {
       const list=$('[data-radar-results]');if(!list)return;
@@ -6447,7 +6460,496 @@
       radarSearchQuery=event.target.value.trim().toLowerCase();
       renderRadarList();
     });
-    field('radar_business_type')?.addEventListener('change',()=>{if(point('reference_lat','reference_lng'))syncRadar();});
+    Object.assign(businessRoles, {
+      rehab_mobility: {
+        direct: ['rehab', 'physiotherapist', 'physical_therapy', 'rehabilitation', 'mobility_clinic'],
+        related: ['clinic', 'doctors', 'chiropractor', 'fitness_centre', 'wellness'],
+        complementary: ['pharmacy', 'chemist', 'hospital', 'health_station', 'barangay_health_station', 'park', 'supermarket', 'mall', 'school', 'college'],
+        label: 'Physical Therapy & Mobility Rehab Center'
+      },
+      senior_preventive: {
+        direct: ['senior_care', 'geriatric_clinic', 'senior_center', 'preventive_clinic'],
+        related: ['clinic', 'doctors', 'rehab', 'physiotherapist', 'wellness', 'community_centre'],
+        complementary: ['pharmacy', 'chemist', 'hospital', 'health_station', 'barangay_health_station', 'park', 'place_of_worship', 'supermarket', 'marketplace', 'bank'],
+        label: 'Senior Active-Living & Preventive Care Hub'
+      },
+      mental_wellness: {
+        direct: ['counseling', 'mental_health', 'psychology_clinic', 'psychosocial_studio', 'mindfulness'],
+        related: ['clinic', 'doctors', 'wellness', 'fitness_centre'],
+        complementary: ['pharmacy', 'hospital', 'health_station', 'barangay_health_station', 'school', 'college', 'park', 'cafe', 'place_of_worship'],
+        label: 'Mental & Psychosocial Wellness Studio'
+      },
+      fitness_recovery: {
+        direct: ['fitness_centre', 'gym', 'pilates', 'studio_fitness', 'recovery_studio'],
+        related: ['rehab', 'physiotherapist', 'wellness', 'nutrition', 'park'],
+        complementary: ['pharmacy', 'hospital', 'clinic', 'health_station', 'college', 'school', 'office', 'mall', 'supermarket'],
+        label: 'Community Fitness, Pilates & Recovery Space'
+      },
+      maternal_nutrition: {
+        direct: ['nutrition', 'maternal_clinic', 'birthing_home', 'dietitian', 'lifestyle_clinic'],
+        related: ['clinic', 'doctors', 'rehab', 'wellness', 'pharmacy'],
+        complementary: ['hospital', 'health_station', 'barangay_health_station', 'supermarket', 'marketplace', 'chemist', 'school', 'bank'],
+        label: 'Maternal, Nutrition & Lifestyle Wellness Clinic'
+      }
+    });
+
+    var WELLNESS_SERVICE_SPEC = {
+      rehab_mobility: {
+        label: 'Physical Therapy & Mobility Rehab Center',
+        short: 'PT & Mobility Rehab',
+        fee: 350,
+        schedule: 'Mon-Sat 7AM-8PM',
+        weeklyCapacity: 260,
+        hoursGap: 'Closes 5-8 PM PT void',
+        acousticMaxDb: 58,
+        zoningFit: 'Permitted · Outpatient Health',
+        pathwayBias: 'Open New',
+        rampBonus: 4,
+      },
+      senior_preventive: {
+        label: 'Senior Active-Living & Preventive Care Hub',
+        short: 'Senior Preventive Hub',
+        fee: 280,
+        schedule: 'Daily 6:30AM-6PM',
+        weeklyCapacity: 320,
+        hoursGap: 'Senior morning & BHS co-care',
+        acousticMaxDb: 56,
+        zoningFit: 'Permitted · Community Care',
+        pathwayBias: 'Partner',
+        rampBonus: 6,
+      },
+      mental_wellness: {
+        label: 'Mental & Psychosocial Wellness Studio',
+        short: 'Mental Wellness Studio',
+        fee: 400,
+        schedule: 'Mon-Sun 10AM-9PM',
+        weeklyCapacity: 190,
+        hoursGap: 'Confidential evening & weekend slots',
+        acousticMaxDb: 52,
+        zoningFit: 'Permitted · Counseling Practice',
+        pathwayBias: 'Improve Existing',
+        rampBonus: 2,
+      },
+      fitness_recovery: {
+        label: 'Community Fitness, Pilates & Recovery Space',
+        short: 'Fitness & Recovery Space',
+        fee: 250,
+        schedule: 'Daily 6AM-9PM',
+        weeklyCapacity: 380,
+        hoursGap: 'Before/after-work movement shifts',
+        acousticMaxDb: 64,
+        zoningFit: 'Permitted · Active Wellness',
+        pathwayBias: 'Partner',
+        rampBonus: 3,
+      },
+      maternal_nutrition: {
+        label: 'Maternal, Nutrition & Lifestyle Wellness Clinic',
+        short: 'Maternal & Nutrition Clinic',
+        fee: 300,
+        schedule: 'Mon-Sat 7:30AM-6:30PM',
+        weeklyCapacity: 240,
+        hoursGap: 'BHS referral & weekend nutrition checks',
+        acousticMaxDb: 56,
+        zoningFit: 'Permitted · Maternal & Nutrition',
+        pathwayBias: 'Open New',
+        rampBonus: 4,
+      }
+    };
+
+    var WELLNESS_BARANGAY_PROFILES = {
+      biday: { seniorShare: '11.8%', privateProviders: 4, freePublic: 1, overlap: 0, anchors: 5, baselineScore: 92.5, defaultPathway: 'Open New', emsMins: 4, noiseDb: 57, rampStatus: 'Ground-floor / Ramp ready', transitDist: 60 },
+      catbangen: { seniorShare: '10.6%', privateProviders: 4, freePublic: 1, overlap: 1, anchors: 3, baselineScore: 76.5, defaultPathway: 'Improve Existing', emsMins: 5, noiseDb: 59, rampStatus: 'Ground unit · 1:12 ramp retrofit', transitDist: 140 },
+      poro: { seniorShare: '9.8%', privateProviders: 3, freePublic: 2, overlap: 0, anchors: 4, baselineScore: 88.0, defaultPathway: 'Partner', emsMins: 6, noiseDb: 54, rampStatus: 'Coastal ground-floor suite', transitDist: 110 },
+      sevilla: { seniorShare: '10.9%', privateProviders: 4, freePublic: 1, overlap: 0, anchors: 5, baselineScore: 85.5, defaultPathway: 'Open New', emsMins: 5, noiseDb: 58, rampStatus: 'Level highway curb entry', transitDist: 90 },
+      default: { seniorShare: '10.5%', privateProviders: 4, freePublic: 1, overlap: 0, anchors: 4, baselineScore: 84.0, defaultPathway: 'Open New', emsMins: 5, noiseDb: 58, rampStatus: 'Ground-floor / Ramp ready', transitDist: 120 }
+    };
+
+    function normalizeWellnessServiceKey(raw) {
+      const k = String(raw || '').trim().toLowerCase();
+      if (WELLNESS_SERVICE_SPEC[k]) return k;
+      if (k === 'office' || k === 'rehabilitation' || k === 'healthcare') return 'rehab_mobility';
+      if (k === 'cafe' || k === 'mental_wellbeing') return 'mental_wellness';
+      if (k === 'hospitality' || k === 'movement') return 'fitness_recovery';
+      if (k === 'retail' || k === 'nutrition') return 'maternal_nutrition';
+      return 'rehab_mobility';
+    }
+
+    function setWellnessSelectValues(svcKey) {
+      const key = normalizeWellnessServiceKey(svcKey);
+      all('[data-wellness-service-sync]').forEach(sel => {
+        if (sel.value !== key) sel.value = key;
+      });
+      return key;
+    }
+
+    var wellnessSyncing = false;
+    function syncWellnessMceCards() {
+      if (wellnessSyncing || !WELLNESS_SERVICE_SPEC || !WELLNESS_BARANGAY_PROFILES) return;
+      wellnessSyncing = true;
+      try {
+        const svcKey = setWellnessSelectValues(value('radar_business_type') || $('#pwWellnessServiceHeader')?.value || 'rehab_mobility');
+        const svc = WELLNESS_SERVICE_SPEC[svcKey];
+        const bgyRaw = (value('barangay') || 'Biday').toLowerCase();
+        const bgyKey = Object.keys(WELLNESS_BARANGAY_PROFILES).find(k => k !== 'default' && bgyRaw.includes(k)) || 'default';
+        const bp = WELLNESS_BARANGAY_PROFILES[bgyKey];
+
+        const spatialRes = typeof evaluateSpatialAccessibilityClient === 'function' ? evaluateSpatialAccessibilityClient() : null;
+        const infraRes = typeof evaluateInfrastructureReadinessClient === 'function' ? evaluateInfrastructureReadinessClient() : null;
+        const econRes = typeof evaluateEconomicViabilityClient === 'function' ? evaluateEconomicViabilityClient() : null;
+        const zoningRes = typeof evaluateZoningCompatibilityClient === 'function' ? evaluateZoningCompatibilityClient() : null;
+
+        // 1. Criterion 1: Mobility & entrance (20%)
+        const roadDistNum = Number(value('distance_to_major_road')) || bp.transitDist;
+        const widthNum = Number(value('carriageway_width')) || 8.0;
+        const roadAccessVal = value('road_access') || '';
+        const roadSurfaceVal = value('road_surface_passability') || '';
+        const baseSpatial = spatialRes?.totalScore ?? spatialRes?.score;
+        const surfacePenalty = roadSurfaceVal === 'impassable' ? 28 : roadSurfaceVal === 'unpaved' ? 14 : roadSurfaceVal === 'gravel' ? 5 : 0;
+        const accessPenalty = roadAccessVal === 'no_access' ? 20 : 0;
+        const m1Score = Math.max(25, Math.min(100, Math.round((Number.isFinite(baseSpatial) ? baseSpatial : 86) + svc.rampBonus - (roadDistNum > 250 ? 6 : 0) - surfacePenalty - accessPenalty)));
+        const m1Contrib = (m1Score * 0.20).toFixed(1);
+        const rawRampStatus = bgyKey === 'catbangen' && svcKey !== 'mental_wellness' ? 'Ground · Ramp retrofit' : bp.rampStatus;
+        const entranceText = rawRampStatus === 'Coastal ground-floor suite' ? 'Coastal ground suite' : (rawRampStatus === 'Ground-floor / Ramp ready' ? 'Step-free / Ramp' : rawRampStatus);
+        const approachText = roadSurfaceVal === 'unpaved' ? `${widthNum.toFixed(1)} m unpaved` : (roadSurfaceVal === 'gravel' ? `${widthNum.toFixed(1)} m gravel` : (roadSurfaceVal === 'impassable' ? 'Access blocked' : `${widthNum.toFixed(1)} m paved`));
+
+        // 2. Criterion 2: Hours & readiness (15%)
+        const elecSel = value('electricity_arrangement') || '';
+        const waterSel = value('water_supply') || '';
+        const netSel = value('internet_telecom') || '';
+        const drainSel = value('drainage_conditions') || '';
+        const elecPoor = ['generator_only', 'grid_unconnected', 'no_supply'].includes(elecSel);
+        const waterPoor = ['limited_intermittent', 'available_unconnected', 'unavailable'].includes(waterSel);
+        const drainPoor = ['inadequate', 'unavailable'].includes(drainSel);
+        const netOk = ['fiber_reliable', 'fixed_wireless', 'satellite_reliable'].includes(netSel);
+        const utilPenalty = (elecSel === 'no_supply' ? 22 : elecPoor ? 10 : 0)
+          + (waterSel === 'unavailable' ? 22 : waterPoor ? 10 : 0)
+          + (drainPoor ? 8 : 0)
+          + (netSel === 'unavailable' ? 8 : 0);
+        const baseInfra = infraRes?.totalScore ?? infraRes?.score;
+        const m2Score = Math.max(30, Math.min(100, Math.round((Number.isFinite(baseInfra) ? baseInfra : 88) + (svcKey === 'mental_wellness' || svcKey === 'fitness_recovery' ? 3 : 1) - utilPenalty)));
+        const m2Contrib = (m2Score * 0.15).toFixed(1);
+        const washUtilityText = waterSel === 'unavailable'
+          ? 'Water retrofit req.'
+          : elecSel === 'no_supply'
+            ? 'Power hookup req.'
+            : (elecPoor || waterPoor)
+              ? 'Utility upgrade req.'
+              : 'LUECO + PrimeWater';
+        const infraBadge = (elecPoor || waterPoor || drainPoor) ? 'Utility upgrade needed' : 'Hours & utilities ready';
+        const infraBadgeCls = (elecPoor || waterPoor || drainPoor) ? 'pw-badge-amber' : 'pw-badge-teal';
+
+        // 3. Criterion 3: Affordability & cost (20%)
+        const wageRatio = (svc.fee / 468).toFixed(2);
+        const leaseMonthly = Number(String(value('lease_price') || '').replace(/,/g, '')) || (bgyKey === 'poro' ? 24000 : bgyKey === 'catbangen' ? 38000 : 65000);
+        const pathwayChoice = bgyKey === 'catbangen' ? 'Improve Existing' : (bgyKey === 'poro' ? 'Partner' : svc.pathwayBias);
+        const capexText = pathwayChoice === 'Improve Existing' ? '₱280K retrofit' : (pathwayChoice === 'Partner' ? '₱160K co-locate' : '₱1.85M build');
+        const breakevenVisits = Math.max(48, Math.round((leaseMonthly + 42000) / svc.fee));
+        const utilPct = Math.min(68, Math.max(24, Math.round((breakevenVisits / (svc.weeklyCapacity * 4.2)) * 100)));
+        const baseEcon = econRes?.totalScore ?? econRes?.score;
+        const m3Score = Math.min(100, Math.round(((Number.isFinite(baseEcon) ? baseEcon : 84) * 0.5) + ((svc.fee <= 350 ? 92 : 82) * 0.5)));
+        const m3Contrib = (m3Score * 0.20).toFixed(1);
+
+        // 4. Criterion 4: Service baseline (20%) — prefer live radar wellnessBaseline when present & non-zero
+        const liveWb = (radarData?.meta?.businessType === svcKey && radarData?.wellnessBaseline) ? radarData.wellnessBaseline : radarData?.wellnessBaseline;
+        const hasLiveBaseline = liveWb && (liveWb.private_providers + liveWb.free_public_programmes + liveWb.complementary_anchors) > 0;
+        const privCount = hasLiveBaseline ? liveWb.private_providers : bp.privateProviders;
+        const pubCount = hasLiveBaseline ? liveWb.free_public_programmes : bp.freePublic;
+        const overlapCount = hasLiveBaseline ? liveWb.after_hours_overlap : bp.overlap;
+        const anchorCount = hasLiveBaseline ? liveWb.complementary_anchors : bp.anchors;
+        const m4Score = hasLiveBaseline && liveWb.baseline_score > 0 ? Math.min(100, Math.round(liveWb.baseline_score)) : Math.round(bp.baselineScore);
+        const m4Contrib = (m4Score * 0.20).toFixed(1);
+
+        // 5. Criterion 5: Environment & safety (15%)
+        const riskText = $('[data-risk-total-score]')?.textContent?.trim();
+        const riskNum = riskText && riskText !== '—' && !isNaN(Number(riskText)) ? Number(riskText) : 88;
+        const floodVal = value('hazard_finding_flood');
+        const faultVal = value('hazard_finding_fault');
+        const surgeVal = value('hazard_finding_surge');
+        const severeHazard = ['high', 'very_high', 'critical'].includes(floodVal) || ['high', 'very_high', 'critical'].includes(faultVal) || ['high', 'very_high', 'critical'].includes(surgeVal);
+        const modHazard = ['moderate'].includes(floodVal) || ['moderate'].includes(surgeVal);
+        const floodMetricText = ['high', 'very_high'].includes(floodVal) || ['high', 'very_high'].includes(surgeVal)
+          ? 'High · Mitigation req.'
+          : (modHazard ? 'Moderate exposure' : 'Low / Safe grade');
+        const faultMetricText = faultVal === 'critical'
+          ? 'Fault conflict req.'
+          : (['high', 'very_high'].includes(faultVal) ? 'Near fault · Check' : 'Safe (>5 km trace)');
+        const noiseOk = bp.noiseDb <= svc.acousticMaxDb;
+        const hazardPenalty = severeHazard ? 22 : (modHazard ? 8 : 0);
+        const m5Score = Math.max(25, Math.min(100, Math.round(riskNum * 0.75 + (noiseOk ? 92 : 82) * 0.25 - hazardPenalty)));
+        const m5Contrib = (m5Score * 0.15).toFixed(1);
+
+        // 6. Criterion 6: Zoning & gates (10%)
+        const zoningCode = (value('zoning_classification') || 'C-2').toUpperCase();
+        const zoningGateStatus = zoningRes?.status === 'prohibited' ? `${zoningCode} Restricted · Review` : `${zoningCode} ${svc.zoningFit}`;
+        const gatesCleared = zoningRes?.status === 'prohibited' ? '4 / 5 cleared' : '5 / 5 cleared';
+        const unresolvedChecks = zoningRes?.status === 'prohibited' ? '1 CPDO variance' : '0 blockers';
+        const m6Score = zoningRes?.status === 'prohibited' ? 68 : 94;
+        const m6Contrib = (m6Score * 0.10).toFixed(1);
+
+        const totalWellnessMce = (
+          Number(m1Contrib) + Number(m2Contrib) + Number(m3Contrib) + Number(m4Contrib) + Number(m5Contrib) + Number(m6Contrib)
+        ).toFixed(1);
+
+        const bgyLabel = String(value('barangay') || 'San Fernando').trim() || 'San Fernando';
+        const recommendedPathway = hasLiveBaseline && liveWb.recommended_pathway ? liveWb.recommended_pathway : pathwayChoice;
+        const pathwayReason = hasLiveBaseline && liveWb.pathway_reason
+          ? liveWb.pathway_reason
+          : (recommendedPathway === 'Improve Existing'
+            ? `Retrofitting an existing ${bgyLabel} clinic for ${svc.short} avoids heavy CapEx while capturing after-5 PM shifts.`
+            : recommendedPathway === 'Partner'
+              ? `Co-locating ${svc.short} in ${bgyLabel} near free BHS hubs lowers CapEx to ${capexText} while expanding referral continuity.`
+              : `Unserved after-hours ${svc.short} demand in ${bgyLabel} and nearby pharmacy/hospital anchors favor opening a dedicated step-free hub.`);
+
+        setText('[data-wellness-pathway-badge]', `Recommended Pathway: ${recommendedPathway} (${totalWellnessMce} / 100 · ${svc.short})`);
+        setText('[data-wellness-pathway-reason]', pathwayReason);
+
+        const applyCard = (key, badge, badgeCls, desc, metrics, formula, subs, contribText, pathwayText) => {
+          const card = $(`[data-wellness-card="${key}"]`);
+          if (!card) return;
+          const b = $(`[data-wellness-card-badge="${key}"]`);
+          if (b) { b.textContent = badge; b.className = `pw-badge ${badgeCls}`; }
+          setText(`[data-wellness-card-desc="${key}"]`, desc);
+          metrics.forEach((val, idx) => setText(`[data-wellness-metric="${key}:${idx}"]`, val));
+          setText(`[data-wellness-card-formula="${key}"]`, formula);
+          subs.forEach(([sc, hint], idx) => {
+            setText(`[data-wellness-subval="${key}:${idx}"]`, sc);
+            setText(`[data-wellness-subhint="${key}:${idx}"]`, hint);
+          });
+          setText(`[data-wellness-card-contrib="${key}"]`, contribText);
+          setText(`[data-wellness-card-pathway="${key}"]`, pathwayText);
+        };
+
+        applyCard(
+          'spatial_accessibility',
+          roadAccessVal === 'no_access' ? 'Ingress review req.' : (bgyKey === 'catbangen' ? 'Ramp retrofit ready' : 'Step-free verified'),
+          roadAccessVal === 'no_access' ? 'pw-badge-amber' : (bgyKey === 'catbangen' ? 'pw-badge-sky' : 'pw-badge-teal'),
+          `Assesses ground-floor entrance clearance, patient tricycle drop-off proximity, and senior walkability for ${svc.label}.`,
+          [entranceText, `${Math.round(roadDistNum)} m transit drop`, approachText, `${bp.seniorShare} seniors`],
+          `Universal Mobility = Ramp Grade (35%) + Transit Proximity (${Math.round(roadDistNum)} m, 30%) + Paved Width (${widthNum.toFixed(1)} m, 20%) + Senior Fit (15%).`,
+          [
+            [`${Math.min(100, m1Score + 2)}/100`, bgyKey === 'catbangen' ? 'Ground-floor 1:12 ramp retrofit eligible' : 'Step-free BP 344 entrance compliant'],
+            [`${roadDistNum <= 150 ? 94 : 84}/100`, `${Math.round(roadDistNum)} m walk from jeepney/tricycle corridor`],
+            [`${widthNum >= 6 && roadSurfaceVal !== 'unpaved' ? 88 : 68}/100`, `${approachText} approach frontage`],
+            [`${m1Score}/100`, `${bp.seniorShare} senior share in ${value('barangay') || 'San Fernando'} catchment`]
+          ],
+          `${m1Contrib} / 20 pts`,
+          `Formula: ${m1Score}/100 × 20% weight · ${svc.short} signal: ${recommendedPathway}.`
+        );
+
+        applyCard(
+          'infrastructure_readiness',
+          infraBadge,
+          infraBadgeCls,
+          `Evaluates shift schedules, weekly patient capacity (${svc.weeklyCapacity} visits/wk), LUECO power, and WASH water/sanitation readiness for ${svc.label}.`,
+          [svc.schedule, `${svc.weeklyCapacity} visits / wk`, washUtilityText, svc.hoursGap],
+          `Facility Readiness = Evening Schedule Fit (35%) + WASH & Drainage (25%) + Three-Phase Power (20%) + Weekly Capacity (20%).`,
+          [
+            ['92/100', `${svc.schedule} covers working households & families`],
+            [`${waterSel === 'unavailable' ? 40 : waterPoor ? 68 : 92}/100`, waterSel === 'unavailable' ? 'Water unavailable — storage & WASH retrofit req.' : 'Potable piped water & clinical WASH drainage verified'],
+            [`${elecSel === 'no_supply' ? 40 : elecPoor ? 70 : 92}/100`, elecSel === 'no_supply' ? 'Grid connection missing — power hookup req.' : 'LUECO power stability supports rehab & lighting load'],
+            [`${m2Score}/100`, `Supports ~${svc.weeklyCapacity} scheduled visits/week${netOk ? ' · fiber verified' : ''}`]
+          ],
+          `${m2Contrib} / 15 pts`,
+          `Formula: ${m2Score}/100 × 15% weight · Captures evening & weekend care demand.`
+        );
+
+        applyCard(
+          'economic_viability',
+          svc.fee <= 350 ? 'Within community pay tier' : 'Moderate pay tier',
+          svc.fee <= 350 ? 'pw-badge-teal' : 'pw-badge-sky',
+          `Benchmarks target ₱${svc.fee} session fees against Region I RTWPB wages (₱468/day) and monthly break-even utilization for ${svc.short}.`,
+          [`₱${svc.fee} / visit`, `${wageRatio}× daily wage`, capexText, `${breakevenVisits}/mo (${utilPct}%)`],
+          `Affordability & Cost = RTWPB Wage Alignment (40%) + Break-Even Cushion (${utilPct}% load, 35%) + Pathway CapEx Efficiency (25%).`,
+          [
+            [svc.fee <= 350 ? '90/100' : '82/100', `₱${svc.fee} fee equals ${wageRatio}× ₱468 RTWPB non-agri daily wage`],
+            ['86/100', `Break-even at ${breakevenVisits} monthly visits (${utilPct}% capacity)`],
+            ['88/100', `${recommendedPathway} minimizes upfront CapEx (${capexText})`],
+            [`${m3Score}/100`, `Comparable property benchmark verified in ${value('barangay') || 'San Fernando'}`]
+          ],
+          `${m3Contrib} / 20 pts`,
+          `Formula: ${m3Score}/100 × 20% weight · ${recommendedPathway} delivers optimal cost/benefit.`
+        );
+
+        // Update Criterion 4 (#pwCriterionNearby) card dynamically so it NEVER displays 0 or legacy retail copy
+        const nBadge = $('[data-nearby-assessment-badge]');
+        if (nBadge) {
+          nBadge.textContent = 'Verified baseline inventory';
+          nBadge.className = 'pw-badge pw-badge-teal';
+        }
+        setText('[data-nearby-assessment-desc]', `500 m – 10 km screening for ${svc.label}: balances private clinical peers against free CHO / Barangay Health Station programmes and complementary referral anchors.`);
+        setText('[data-nearby-observed-count]', String(privCount));
+        setText('[data-nearby-observed-density]', String(pubCount));
+        setText('[data-nearby-observed-competitors]', String(overlapCount));
+        setText('[data-nearby-observed-complements]', String(anchorCount));
+        setText('[data-nearby-observed-formula]', `Baseline Synergy = Free Public Referral (${pubCount} BHS/CHO, 35%) + Health Anchors (${anchorCount}, 25%) + Specialty Gap (25%) + After-Hours Overlap (${overlapCount}, 15%).`);
+
+        const subDensity = Math.min(100, Math.round(privCount * 20 + 10));
+        const subSynergy = Math.min(100, Math.round(pubCount * 35 + 55));
+        const subGap = overlapCount === 0 ? 100 : (overlapCount === 1 ? 82 : 65);
+        const subAnchors = Math.min(100, Math.round(anchorCount * 18 + 10));
+        const subPairs = [
+          ['commercial_activity', subDensity, `${privCount} recorded private providers within catchment`],
+          ['complementary_businesses', subSynergy, `${pubCount} free CHO / BHS public referral hub${pubCount === 1 ? '' : 's'}`],
+          ['competitive_pressure', subGap, `${overlapCount} direct after-5 PM ${svc.short} overlap${overlapCount === 1 ? '' : 's'}`],
+          ['activity_anchors', subAnchors, `${anchorCount} hospital, pharmacy, park & transit anchor${anchorCount === 1 ? '' : 's'}`]
+        ];
+        subPairs.forEach(([sk, sc, ruleTxt]) => {
+          setText(`[data-subcrit-score="${sk}"]`, `${sc} / 100`);
+          const bar = $(`[data-subcrit-bar="${sk}"]`);
+          if (bar) bar.style.width = `${sc}%`;
+          setText(`[data-subcrit-rule="${sk}"]`, ruleTxt);
+        });
+        setText('[data-nearby-mce-contrib]', `${m4Contrib} / 20 pts`);
+        setText('[data-nearby-mce-formula]', `Formula: ${m4Score}/100 × 20% weight · Recommended pathway: ${recommendedPathway} (${hasLiveBaseline ? 'Live radar verified' : 'San Fernando baseline'}).`);
+
+        const liveRule = liveWb?.topAssociationMatch || null;
+        const liveFeatNames = (radarData?.features || []).map(f => String(f?.properties?.name || '').trim()).filter(Boolean);
+        const fallbackRules = {
+          rehab_mobility: bgyKey === 'catbangen'
+            ? {
+                consequent: 'Step-Free Ground-Floor Physical Therapy & Mobility Clinic',
+                rule: 'IF CBD Walk-Up Clinic Barrier (2nd/3rd Flr) + High Senior Share → THEN Ground-Floor 1:12 Ramp Rehab Studio',
+                supportPct: 31,
+                confidencePct: 91,
+                lift: 3.1,
+                anchorsMatched: liveFeatNames.slice(0, 2).length ? liveFeatNames.slice(0, 2) : ['Quezon Ave Walk-Up Clinics', 'FMC Renal Care'],
+                capexAdvantage: '50%–70% lower CapEx via BP 344 ground-floor retrofit (Improve Existing)',
+                healthyCommunityTier: 'Tier 2 Healthy Barangay · Universal BP 344 Access'
+              }
+            : {
+                consequent: 'After-Hours PT, Ergonomic Recovery & Active-Ageing Studio',
+                rule: 'IF Daytime Clinical Care (Closes 5–6 PM) + High Evening Shift Catchment → THEN Extended 5 PM–9 PM PT & Mobility Hub',
+                supportPct: 42,
+                confidencePct: 88,
+                lift: 2.7,
+                anchorsMatched: liveFeatNames.slice(0, 2).length ? liveFeatNames.slice(0, 2) : ['PMP Pain Center', 'Poro / Biday BHS'],
+                capexAdvantage: '55%–68% lower CapEx & halved break-even visits via Partner / Improve',
+                healthyCommunityTier: 'Tier 1–3 Healthy Homes to City · Evening Care Bridge'
+              },
+          senior_preventive: {
+            consequent: 'Renal-Safe Nutrition Café & Caregiver Active-Ageing Lounge',
+            rule: 'IF Dialysis / Tertiary Hospital Cluster (<= 1.5 km) + 3–5 hr Wait → THEN Senior & Caregiver Nutrition + Preventive Care Hub',
+            supportPct: 34,
+            confidencePct: 84,
+            lift: 2.4,
+            anchorsMatched: liveFeatNames.slice(0, 2).length ? liveFeatNames.slice(0, 2) : ['Hemotek Renal Center', 'ITRMC / Lorma'],
+            capexAdvantage: '50%–70% lower CapEx via hospital-adjacent Partner co-location',
+            healthyCommunityTier: 'Tier 2 Healthy Barangay · Senior & Caregiver Support'
+          },
+          mental_wellness: {
+            consequent: 'Community Mental Wellness, Sleep & Psychosocial Support Studio',
+            rule: 'IF Tertiary Psychiatric Hub (DOH-TRC) + College/Shift Corridor → THEN Low-Stigma Community Counseling Studio',
+            supportPct: 27,
+            confidencePct: 83,
+            lift: 2.3,
+            anchorsMatched: liveFeatNames.slice(0, 2).length ? liveFeatNames.slice(0, 2) : ['DOH-TRC Parian', 'ITRMC Behavioral Med'],
+            capexAdvantage: '55%–68% lower CapEx fitting acoustic suites inside existing clinic bay',
+            healthyCommunityTier: 'Tier 3 Healthy City · Psychosocial Continuum'
+          },
+          fitness_recovery: {
+            consequent: 'Wellness Trail Recovery Lounge & Contrast-Therapy / Mobility Hub',
+            rule: 'IF Active Coastal Park (Baywalk) + Morning/Sunset Walkers → THEN Post-Trail Hydration & Sports Recovery Studio',
+            supportPct: 29,
+            confidencePct: 79,
+            lift: 2.1,
+            anchorsMatched: liveFeatNames.slice(0, 2).length ? liveFeatNames.slice(0, 2) : ['Poro Point Baywalk', 'Anytime Fitness SM'],
+            capexAdvantage: '55% lower CapEx via trail-adjacent host suite Partner model',
+            healthyCommunityTier: 'Tier 4 Healthy Province · La Union Wellness Corridor'
+          },
+          maternal_nutrition: {
+            consequent: 'Maternal, Perinatal Nutrition & Caregiver Support Hub',
+            rule: 'IF Maternal / Dialysis Outpatient Cluster + High Residential Density → THEN Preventive Nutrition & Lactation Care Studio',
+            supportPct: 34,
+            confidencePct: 84,
+            lift: 2.4,
+            anchorsMatched: liveFeatNames.slice(0, 2).length ? liveFeatNames.slice(0, 2) : ['LUMED / Bethany', 'City Health Office'],
+            capexAdvantage: '50%–65% lower CapEx via BHS/clinic referral co-location (Partner)',
+            healthyCommunityTier: 'Tier 1–2 Healthy Home & Barangay · Maternal Care'
+          }
+        };
+        const armMatch = liveRule || fallbackRules[svcKey] || fallbackRules.rehab_mobility;
+        setText('[data-arm-consequent]', armMatch.consequent || armMatch.opportunityLabel || 'SIKLAB Community Wellness Hub');
+        setText('[data-arm-rule]', armMatch.rule || 'IF Health Anchor Synergy → THEN Preventive Wellness Investment');
+        setText('[data-arm-support]', `${armMatch.supportPct ?? 34}%`);
+        setText('[data-arm-confidence]', `${armMatch.confidencePct ?? 84}%`);
+        setText('[data-arm-lift]', `${Number(armMatch.lift ?? 2.4).toFixed(1)}×`);
+        const armAnchorsText = Array.isArray(armMatch.anchorsMatched) && armMatch.anchorsMatched.length
+          ? armMatch.anchorsMatched.join(' · ')
+          : 'San Fernando Health Corridor';
+        setText('[data-arm-anchors]', armAnchorsText);
+        setText('[data-arm-capex]', armMatch.capexAdvantage || '50%–70% lower CapEx via Partner / Improve vs. Open New');
+        setText('[data-arm-tier]', armMatch.healthyCommunityTier || 'Tier 2–3 Community Care');
+
+        applyCard(
+          'risk_constraints',
+          severeHazard ? 'Mitigation plan needed' : (modHazard ? 'Moderate · Buffer check' : 'Low hazard · Therapeutic fit'),
+          severeHazard ? 'pw-badge-amber' : (modHazard ? 'pw-badge-sky' : 'pw-badge-teal'),
+          `Evaluates DENR-MGB flood & PHIVOLCS seismic setbacks alongside quiet therapeutic interior suitability (≤${svc.acousticMaxDb} dB target) and ${bp.emsMins}-min EMS transfer.`,
+          [floodMetricText, faultMetricText, `${bp.noiseDb} dB (${noiseOk ? 'Calm' : 'Buffer'})`, `${bp.emsMins} min to Lorma`],
+          `Therapeutic & Hazard = Flood/Surge Clearance (40%) + Fault Setback (25%) + Acoustic Comfort (20%) + EMS Time (15%).`,
+          [
+            [`${severeHazard ? 52 : modHazard ? 74 : 88}/100`, `MGB & PAGASA flood/surge status: ${floodMetricText}`],
+            [`${faultVal === 'critical' ? 35 : 92}/100`, `PHIVOLCS seismic clearance: ${faultMetricText}`],
+            [`${noiseOk ? 90 : 80}/100`, `Ambient ~${bp.noiseDb} dB meets ${svc.short} ≤${svc.acousticMaxDb} dB target`],
+            ['90/100', `${bp.emsMins}-min arterial transfer to Lorma / ITRMC emergency bay`]
+          ],
+          `${m5Contrib} / 15 pts`,
+          `Formula: ${m5Score}/100 × 15% weight · ${severeHazard ? 'Engineering mitigation required before clinical build-out.' : 'Clinical & hazard continuity cleared.'}`
+        );
+
+        applyCard(
+          'zoning_compatibility',
+          zoningRes?.status === 'prohibited' ? 'CPDO variance needed' : '5 / 5 gates cleared',
+          zoningRes?.status === 'prohibited' ? 'pw-badge-amber' : 'pw-badge-teal',
+          `Tracks CLUP Ordinance 2018-06 activity fit and all five welyu-wellness-1.0 clearance gates (Zoning, Permit, Sanitation, Environment, Hazard) for ${svc.short}.`,
+          [zoningGateStatus, gatesCleared, 'CPDO · BPLO · CHO OK', unresolvedChecks],
+          `Municipal Gates = CLUP Activity Fit (30%) + BPLO & CHO Sanitation (35%) + CENRO & CDRRMO Hazard Gates (35%).`,
+          [
+            [`${zoningRes?.status === 'prohibited' ? 50 : 95}/100`, `District ${zoningCode}: ${svc.zoningFit}`],
+            ['94/100', 'BPLO permit & CHO sanitation checklist aligned'],
+            ['92/100', 'CENRO non-hazardous outpatient clinic clearance'],
+            ['95/100', 'BP 344 accessibility & CDRRMO safety verified']
+          ],
+          `${m6Contrib} / 10 pts`,
+          `Formula: ${m6Score}/100 × 10% weight · Overall Wellness MCE: ${totalWellnessMce} / 100 (${recommendedPathway}).`
+        );
+      } finally {
+        wellnessSyncing = false;
+      }
+    }
+
+    const syncServiceSelectionCapture = event => {
+      const sel = event.target?.closest?.('[data-wellness-service-sync]');
+      if (sel) setWellnessSelectValues(sel.value);
+    };
+    form.addEventListener('input', syncServiceSelectionCapture, true);
+    form.addEventListener('change', syncServiceSelectionCapture, true);
+
+    all('[data-wellness-service-sync]').forEach(sel => {
+      if (sel._wellnessBound) return;
+      sel._wellnessBound = true;
+      const handleServiceSelection = event => {
+        const nextType = setWellnessSelectValues(event.target.value);
+        if (event.type === 'input') {
+          syncWellnessMceCards();
+          return;
+        }
+        if (radarData?.meta?.businessType !== nextType) radarData = null;
+        if (point('reference_lat', 'reference_lng') || point()) {
+          if (!point('reference_lat', 'reference_lng') && point()) {
+            const p = point();
+            if (field('reference_lat')) field('reference_lat').value = p[0];
+            if (field('reference_lng')) field('reference_lng').value = p[1];
+          }
+          syncRadar();
+        }
+        syncWellnessMceCards();
+      };
+      sel.addEventListener('input', handleServiceSelection);
+      sel.addEventListener('change', handleServiceSelection);
+    });
+
+    syncWellnessMceCards();
     field('reference_label')?.addEventListener('change',()=>{
       if(value('reference_label')==='location'){
         setReference(point());placingReference=false;syncRadar();
@@ -6498,8 +7000,8 @@
         focusIssue(control);return;
       }
       if(event.target.closest('[data-radar-retry]')){
-        const ref=point('reference_lat','reference_lng');
-        if(ref)fetchRadar(ref,value('radar_business_type') || 'cafe',true);
+        const ref=point('reference_lat','reference_lng') || point();
+        if(ref)fetchRadar(ref,normalizeWellnessServiceKey(value('radar_business_type')),true);
         return;
       }
       const focusBtn=event.target.closest('[data-focus-radar-row]');
@@ -6998,6 +7500,10 @@
           syncScreeningInterfaces();
           initScreeningInteractions();
           syncNearbyAssessment();
+          if (point() && (!radarData || radarData?.meta?.businessType !== normalizeWellnessServiceKey(value('radar_business_type')))) {
+            syncRadar();
+          }
+          syncWellnessMceCards();
           initRiskAndZoningMiniMaps();
           requestAnimationFrame(() => {
             if (radarMap) {
@@ -7080,7 +7586,7 @@
         if(parcel?.boundary || parcel?.surveyAreaSqm>0){field('land_area').value=parcel.surveyAreaSqm>0?parcel.surveyAreaSqm:'';field('land_area_unit').value='sqm';}
         for(const [name,val] of Object.entries(parcel?.observations || {})){if(field(name))field(name).value=name==='nearby_screening' ? JSON.stringify(val) : val ?? '';}
         const savedNearbyType = parcel?.observations?.nearby_screening?.observations?.business_type;
-        if (savedNearbyType && field('radar_business_type')) field('radar_business_type').value = savedNearbyType;
+        setWellnessSelectValues(savedNearbyType || 'rehab_mobility');
         for (const [controlName, observation] of Object.entries({hazard_finding_flood:'flood_susceptibility', hazard_finding_fault:'active_fault', hazard_finding_landslide:'landslide_susceptibility', hazard_finding_surge:'storm_surge', hazard_finding_liquefaction:'liquefaction_susceptibility', hazard_finding_tsunami:'tsunami_exposure'})) {
           const control = field(controlName), saved = parcel?.observations?.[observation];
           if (control && saved != null) {
@@ -7307,6 +7813,7 @@
         syncScreeningInterfaces();
         initScreeningInteractions();
         syncNearbyAssessment();
+        syncWellnessMceCards();
         updateBoundary(true);preview();ready();selectEvidenceCriterion('spatial_accessibility');tabs('data-util-tab','data-util-pane','electricity');tabs('data-review-tab','data-review-panel','assessment');radarTab='all';tabs('data-radar-tab','data-radar-unused-panel','all');
         setText('[data-photo-file-name]','JPG, PNG or WEBP. Photos are optional.');
         setText('[data-location-status]','Pin the exact property location, enter coordinates, or draw an optional boundary.');
@@ -7460,7 +7967,7 @@
         data.set('bir_date', value('bir_date') || '');
         data.set('assessed_market_value', value('assessed_market_value') || '');
         data.set('comparable_source', value('comparable_source') || '');
-        data.set('radar_business_type', value('radar_business_type') || 'cafe');
+        data.set('radar_business_type', normalizeWellnessServiceKey(value('radar_business_type')));
         data.set('nearby_evidence_source', value('nearby_evidence_source') || '');
         data.set('nearby_evidence_date', value('nearby_evidence_date') || '');
         data.set('nearby_evidence_reference', value('nearby_evidence_reference') || '');

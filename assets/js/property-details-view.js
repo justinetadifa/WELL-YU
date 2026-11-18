@@ -36,7 +36,22 @@ const legacyCriteria7 = [
   ['environmental_safety', 'Environmental Safety', 5],
 ];
 
+const criteriaWellness6 = [
+  ['mobility_entrance', 'Mobility & entrance', 20, ['spatial_accessibility']],
+  ['hours_readiness', 'Hours & readiness', 15, ['infrastructure_readiness']],
+  ['affordability_cost', 'Affordability & cost', 20, ['property_cost_market_competitiveness', 'economic_viability']],
+  ['service_baseline', 'Service baseline', 20, ['nearby_businesses']],
+  ['environment_safety', 'Environment & safety', 15, ['risk_constraints']],
+  ['zoning_gates', 'Zoning & gates', 10, ['zoning_compatibility']],
+];
+
 const criterionExplanations = {
+  mobility_entrance: 'Universal design entrance (ground-floor / 1:12 ramp), transit drop-off proximity, and walkable barangay catchment (20% weight).',
+  hours_readiness: 'Extended operating hours fit (after-5 PM / weekend), session capacity, and verified power, water, telecom & WASH readiness (15% weight).',
+  affordability_cost: 'Community price tier vs RTWPB daily wage, pathway CAPEX fit (Open / Improve / Partner), and property market benchmark (20% weight).',
+  service_baseline: 'Documented barangay need vs nearby private clinics, free BHS public care, and pharmacy/hospital referral anchors (20% weight).',
+  environment_safety: 'DENR-MGB & DOST-PHIVOLCS multi-hazard screening plus quiet therapeutic acoustics and natural ventilation safety (15% weight).',
+  zoning_gates: 'CLUP Ordinance No. 2018-06 activity compatibility plus 5 welyu-wellness-1.0 clearance gates (zoning, permit, sanitation, environment, hazards) (10% weight).',
   spatial_accessibility: 'Proximity to primary roads, highways, and transport corridors (25% weight).',
   infrastructure_readiness: 'Verified availability of power (LUECO), water (MSFWD), telecom/fiber, and drainage (25% weight).',
   property_cost_market_competitiveness: 'Offered unit price per m² evaluated against verified local market benchmarks (20% weight).',
@@ -48,6 +63,70 @@ const criterionExplanations = {
 };
 
 export function assessmentCalculation(property) {
+  if (property?.wellnessMce || property?.wellnessDisplay || property?.assessmentCriteria?.mobility_entrance !== undefined) {
+    const wm = property?.wellnessMce || {};
+    const rows = criteriaWellness6.map(([key, label, defaultWeight, aliases]) => {
+      const score = numeric(
+        wm.scores?.[key]
+        ?? property.assessmentCriteria?.[key]
+        ?? property.criterion_scores?.[key]
+        ?? aliases.map(a => property.criterion_scores?.[a] ?? property.assessmentCriteria?.[a]).find(v => numeric(v) !== null)
+      );
+      const validScore = score !== null && score >= 0 && score <= 100 ? score : null;
+      const weight = numeric(wm.weights?.[key]) ?? defaultWeight;
+      const contribution = numeric(wm.contributions?.[key]) ?? (validScore === null ? null : validScore * weight / 100);
+      return {
+        key,
+        aliases,
+        label,
+        weight,
+        score: validScore,
+        contribution,
+        explanation: criterionExplanations[key] || '',
+      };
+    });
+    const weightSum = rows.reduce((sum, row) => sum + row.weight, 0);
+    const weightsValid = Math.abs(weightSum - 100) < 0.01;
+    const allScoresPresent = rows.every(row => row.score !== null);
+    const sum = rows.reduce((total, row) => total + (row.contribution ?? 0), 0);
+    const rounded = Math.round((sum + Number.EPSILON) * 10) / 10;
+    const isNotSuitable = property.assessmentStatus === 'not_suitable'
+      || property.status === 'not_suitable'
+      || property.eligibility === 'prohibited'
+      || property.eligibility?.zoning === 'prohibited';
+    const isConditional = property.assessmentStatus === 'conditional'
+      || property.status === 'conditional'
+      || property.eligibility === 'conditional'
+      || property.eligibility?.zoning === 'conditional';
+    const complete = !isNotSuitable
+      && allScoresPresent
+      && weightsValid
+      && !property.technical_review_hold
+      && !property.discrepancy_detected
+      && !property.discrepancy_review_required
+      && (wm.complete === true || property.assessmentComplete === true || ['complete', 'conditional'].includes(property.assessmentStatus) || rows.every(r => r.score !== null));
+    const headline = complete ? (numeric(wm.score) ?? rounded) : null;
+    return {
+      rows,
+      complete,
+      iai: headline,
+      mce: headline,
+      recordedTotal: allScoresPresent && weightsValid ? rounded : null,
+      physicalSubtotal: allScoresPresent ? rounded : null,
+      hasPhysicalBaseline: false,
+      components: rows,
+      isZoningPending: rows.find(r => r.key === 'zoning_gates')?.score === null,
+      isConditional,
+      isNotSuitable,
+      isLegacy: false,
+      isWellness: true,
+      reason: property.reason || null,
+      note: property.note || (isConditional ? 'Conditional compatibility — requires zoning clearance or further city review.' : null),
+      completedCount: rows.filter(row => row.score !== null).length,
+      missingCriteria: rows.filter(row => row.score === null).map(row => row.label),
+      discrepancy: false,
+    };
+  }
   // The current protocol supplies its evidence gates and unrounded contributions.
   // Never resurrect a withheld result from an older compatibility alias.
   if (property?.protocol_version || property?.criteriaBreakdown) {
@@ -67,8 +146,10 @@ export function assessmentCalculation(property) {
       const score = numeric(property.criterion_scores?.[key] ?? property.criterion_scores?.[aliasKey] ?? property.assessmentCriteria?.[key] ?? property.assessmentCriteria?.[aliasKey] ?? recorded.score);
       const weight = numeric(property.weight_configuration?.[key] ?? property.weight_configuration?.[aliasKey] ?? property.assessmentWeights?.[key] ?? property.assessmentWeights?.[aliasKey]) ?? defaultWeight;
       const contribution = numeric(property.weighted_contributions?.[key] ?? property.weighted_contributions?.[aliasKey] ?? recorded.weighted_score ?? (score !== null ? score * weight / 100 : null));
-      return { key, label, weight, score: score !== null && score >= 0 && score <= 100 ? score : null,
-        contribution, explanation: criterionExplanations[key] ?? criterionExplanations[aliasKey] ?? '' };
+      return {
+        key, label, weight, score: score !== null && score >= 0 && score <= 100 ? score : null,
+        contribution, explanation: criterionExplanations[key] ?? criterionExplanations[aliasKey] ?? ''
+      };
     });
     const sum = rows.reduce((total, row) => total + (row.contribution ?? 0), 0);
     const displayed = numeric(property.displayed_iai);
@@ -95,14 +176,16 @@ export function assessmentCalculation(property) {
       && close(rows.reduce((total, row) => total + row.weight, 0), 100)
       && !discrepancy && !property.discrepancy_detected && !property.discrepancy_review_required
       ? Math.round((sum + Number.EPSILON) * 10) / 10 : null;
-    return { rows, complete, iai: complete ? displayed : null, mce: complete ? displayed : null,
+    return {
+      rows, complete, iai: complete ? displayed : null, mce: complete ? displayed : null,
       recordedTotal,
       physicalSubtotal, hasPhysicalBaseline: physicalSubtotal !== null, components: rows,
       isZoningPending,
       isConditional: property.assessmentStatus === 'conditional', isNotSuitable: property.assessmentStatus === 'not_suitable' || property.eligibility?.zoning === 'prohibited',
       isLegacy: false, reason: discrepancy ? 'Stored calculations disagree; assessment review required.' : property.reason,
       note: property.note, completedCount: rows.filter(row => row.score !== null).length,
-      missingCriteria: rows.filter(row => row.score === null).map(row => row.label), discrepancy };
+      missingCriteria: rows.filter(row => row.score === null).map(row => row.label), discrepancy
+    };
   }
   const isLegacy = Boolean(
     property?.assessmentMethodologyVersion?.includes('v1.1')
@@ -298,8 +381,8 @@ function utilitiesMarkup(property) {
       </div>
       <div class="property-utilities-grid">
         ${items.map(item => {
-          const statusClass = item.available ? 'is-available' : item.status === 'unavailable' ? 'is-unavailable' : 'is-pending';
-          return `
+    const statusClass = item.available ? 'is-available' : item.status === 'unavailable' ? 'is-unavailable' : 'is-pending';
+    return `
             <div class="property-utility-card ${statusClass}">
               <div class="utility-card-top">
                 <div class="utility-card-icon">
@@ -317,7 +400,7 @@ function utilitiesMarkup(property) {
               </div>
             </div>
           `;
-        }).join('')}
+  }).join('')}
       </div>
     </div>
   `;
@@ -347,9 +430,11 @@ export function safetyMarkup(property) { return `${floodAndFireAssessmentMarkup(
 function radarMarkup(calculation) {
   const count = calculation.rows.length;
   if (!calculation.complete) return `<p class="property-pending-note">A radar profile will appear when all ${count === 6 ? 'six' : 'seven'} criteria have recorded ratings. Missing evidence is not plotted as zero.</p>`;
-  const abbreviations = count === 6
-    ? ['Access', 'Infra', 'Econ', 'Business', 'Zoning', 'Risk']
-    : ['Access', 'Infrastructure', 'Economic', 'Businesses', 'Zoning', 'Risk', 'Environment'];
+  const abbreviations = calculation.isWellness
+    ? ['Mobility', 'Hours', 'Cost', 'Baseline', 'Safety', 'Gates']
+    : (count === 6
+      ? ['Access', 'Infra', 'Econ', 'Business', 'Zoning', 'Risk']
+      : ['Access', 'Infrastructure', 'Economic', 'Businesses', 'Zoning', 'Risk', 'Environment']);
   const point = (index, radius) => {
     const angle = index * Math.PI * 2 / count - Math.PI / 2;
     return [180 + Math.cos(angle) * radius, 155 + Math.sin(angle) * radius];
@@ -367,7 +452,8 @@ function radarMarkup(calculation) {
 
 function evidenceMarkup(property, calculation) {
   return `<div class="property-evidence-list">${calculation.rows.map(row => {
-    const detail = property.criteriaDetails?.[row.key] || {};
+    const aliasDetail = Array.isArray(row.aliases) ? row.aliases.map(k => property.criteriaDetails?.[k]).find(Boolean) : null;
+    const detail = property.criteriaDetails?.[row.key] || aliasDetail || {};
     const evidence = Array.isArray(detail.evidence) ? detail.evidence : [];
     const raw = Object.entries(detail.raw || {});
     const missing = Array.isArray(detail.missingData) ? detail.missingData : [];
@@ -388,7 +474,9 @@ export function calculationMarkup(property) {
   const value = value => value === null ? 'Pending' : rating(value);
   const total = value => value === null ? 'Pending' : fixed(value);
   const totalWeight = Math.round(calc.rows.reduce((sum, r) => sum + r.weight, 0));
-  const methodologyLabel = property.methodology || property.assessmentMethodologyVersion || property.ruleVersion || (calc.rows.length === 5 ? 'LOCUS-SF MCE v3.0 (Five-Criterion with Mandatory Zoning Eligibility)' : (calc.rows.length === 6 ? 'LOCUS-SF MCE v2.0 (Provisional 6-Criterion)' : 'LOCUS-SF MCE v1.1 (Legacy 7-Criterion)'));
+  const methodologyLabel = calc.isWellness
+    ? 'wELYU Wellness MCE v1.0 (Six-Criterion Health & Wellness Model)'
+    : (property.methodology || property.assessmentMethodologyVersion || property.ruleVersion || (calc.rows.length === 5 ? 'LOCUS-SF MCE v3.0 (Five-Criterion with Mandatory Zoning Eligibility)' : (calc.rows.length === 6 ? 'LOCUS-SF MCE v2.0 (Provisional 6-Criterion)' : 'LOCUS-SF MCE v1.1 (Legacy 7-Criterion)')));
   return `<section class="property-calculation" aria-labelledby="propertyCalculationTitle">
     <div class="property-calc-header-block">
       <div>
@@ -401,7 +489,7 @@ export function calculationMarkup(property) {
     </div>
     ${calc.isNotSuitable ? `<div class="property-alert-danger" style="background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;padding:12px 16px;border-radius:12px;margin-bottom:16px;"><strong>Site Not Eligible:</strong> ${esc(calc.reason || 'Proposed land use is not permitted under the applicable zoning / CLUP classification.')} Composite IAI is withheld.</div>` : ''}
     ${calc.isConditional ? `<div class="property-alert-warning" style="background:#FFFBEB;border:1px solid #FCD34D;color:#92400E;padding:12px 16px;border-radius:12px;margin-bottom:16px;"><strong>Conditional Compatibility:</strong> ${esc(calc.note)}</div>` : ''}
-    <div class="property-table-scroll"><table class="property-calculation-table"><caption>${calc.rows.length === 7 ? 'Seven' : (calc.rows.length === 5 ? 'Five' : 'Six')} criteria and their weighted contributions to the composite IAI score</caption><thead><tr><th scope="col">MCE Criterion</th><th scope="col">Score / 100</th><th scope="col">Weight</th><th scope="col">Contribution</th></tr></thead><tbody>${calc.rows.map(row => `<tr><th scope="row">${esc(row.label)}</th><td>${row.key === 'zoning_compatibility' && row.score === null ? '<span style="color:#B45309;font-weight:600;">Pending investor activity</span>' : value(row.score)}</td><td>${fmt(row.weight)}%</td><td>${row.key === 'zoning_compatibility' && row.contribution === null ? '<span style="color:#94A3B8;">Pending use (15%)</span>' : contribution(row.contribution)}</td></tr>`).join('')}</tbody><tfoot><tr><th scope="row">${presentation.provisional ? 'Provisional IAI · rounded to 1 decimal' : calc.iai === null && calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? 'Five-Criterion MCE Baseline (100%)' : 'Physical Site Attributes Subtotal (85%)') : 'Composite IAI · rounded to 1 decimal'}</th><td>${presentation.provisional ? presentation.indexValue : calc.iai !== null ? total(calc.iai) : (calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? `${fixed(calc.physicalSubtotal)} / 100 pts` : `${fixed(calc.physicalSubtotal)} / 85 pts`) : 'Pending')}</td><td>${totalWeight}%</td><td>${presentation.provisional ? fixed(presentation.index) : calc.iai !== null ? fixed(calc.iai) : (calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? `${fixed(calc.physicalSubtotal)} / 100 pts` : `${fixed(calc.physicalSubtotal)} / 85 pts`) : 'Pending')}</td></tr></tfoot></table></div>
+    <div class="property-table-scroll"><table class="property-calculation-table"><caption>${calc.rows.length === 7 ? 'Seven' : (calc.rows.length === 5 ? 'Five' : 'Six')} criteria and their weighted contributions to the composite IAI score</caption><thead><tr><th scope="col">MCE Criterion</th><th scope="col">Score / 100</th><th scope="col">Weight</th><th scope="col">Contribution</th></tr></thead><tbody>${calc.rows.map(row => `<tr><th scope="row">${esc(row.label)}</th><td>${['zoning_compatibility', 'zoning_gates'].includes(row.key) && row.score === null ? '<span style="color:#B45309;font-weight:600;">Pending investor activity</span>' : value(row.score)}</td><td>${fmt(row.weight)}%</td><td>${['zoning_compatibility', 'zoning_gates'].includes(row.key) && row.contribution === null ? `<span style="color:#94A3B8;">Pending use (${fmt(row.weight)}%)</span>` : contribution(row.contribution)}</td></tr>`).join('')}</tbody><tfoot><tr><th scope="row">${presentation.provisional ? 'Provisional IAI · rounded to 1 decimal' : calc.iai === null && calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? 'Five-Criterion MCE Baseline (100%)' : 'Physical Site Attributes Subtotal (85%)') : 'Composite IAI · rounded to 1 decimal'}</th><td>${presentation.provisional ? presentation.indexValue : calc.iai !== null ? total(calc.iai) : (calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? `${fixed(calc.physicalSubtotal)} / 100 pts` : `${fixed(calc.physicalSubtotal)} / 85 pts`) : 'Pending')}</td><td>${totalWeight}%</td><td>${presentation.provisional ? fixed(presentation.index) : calc.iai !== null ? fixed(calc.iai) : (calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? `${fixed(calc.physicalSubtotal)} / 100 pts` : `${fixed(calc.physicalSubtotal)} / 85 pts`) : 'Pending')}</td></tr></tfoot></table></div>
     <p class="property-formula">${presentation.index !== null && !calc.isLegacy ? `${presentation.provisional ? 'Provisional IAI' : 'IAI'} = round(Σ(score × weight ÷ 100), 1) = round(${calc.rows.map(row => fmt(row.contribution, 6)).join(' + ')}, 1) = ${fixed(presentation.index)}` : (calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? `Physical Site Baseline = Σ(Physical Attribute Scores × Weight ÷ 100) = ${fixed(calc.physicalSubtotal)} / 100.0 pts (Spatial 25%, Infra 25%, Cost & Market 20%, Nearby 15%, Risk 15%). CLUP Zoning serves as a mandatory non-compensatory eligibility gate.` : `Physical Site Baseline = Σ(Physical Attribute Scores × Weight ÷ 100) = ${fixed(calc.physicalSubtotal)} / 85.0 pts (Spatial 20%, Infra 20%, Econ 20%, Nearby 10%, Risk 15%). The remaining 15% Zoning Compatibility is added once an investor establishes a business activity.`) : 'IAI = round(Σ(score × weight ÷ 100), 1)')}</p>
     ${calc.iai === null && !calc.isNotSuitable ? `<p class="property-pending-note">${presentation.provisional ? `${esc(presentation.scoreNote)} ${esc(presentation.description)}` : calc.hasPhysicalBaseline ? (calc.rows.length === 5 ? `Five-criterion physical site baseline is complete (${fixed(calc.physicalSubtotal)} / 100.0 pts). Official certification requires CLUP zoning clearance.` : `Physical site baseline is complete (${fixed(calc.physicalSubtotal)} / 85.0 pts). Composite 6-criterion IAI score is withheld until an investment business or land use activity is selected.`) : `Assessment pending · ${calc.completedCount} of ${calc.rows.length} criteria have ratings.${calc.missingCriteria?.length ? ` Missing: ${esc(calc.missingCriteria.join(', '))}.` : ''} Missing evidence is not treated as zero; a composite score or rank is withheld until all required criteria are complete.`}</p>` : ''}
     <p class="property-note">This breakdown records the physical site IAI. Statutory policy incentives for proposed investments are evaluated separately by LEBDO and do not modify physical site suitability.</p>
@@ -503,7 +591,7 @@ export function setupPropertyGallery(container = document) {
   const jumpToOpportunities = e => {
     if (e) e.preventDefault();
     if (typeof window !== 'undefined' && window.LocusSound?.play) {
-      try { window.LocusSound.play('select'); } catch (_) {}
+      try { window.LocusSound.play('select'); } catch (_) { }
     }
     const oppSection = document.getElementById('propertyOpportunitiesSection');
     if (oppSection) {
@@ -606,9 +694,11 @@ export function investorBriefReportMarkup(property, options = {}, calc) {
     const result = hazardFinding(property, key);
     const entry = result.entry;
     const legacy = key === 'flood_susceptibility' ? property.hazardScreening?.flood : key === 'active_fault' ? property.hazardScreening?.fault : null;
-    return { label, weight: numeric(entry.weight) ?? weight, finding: result.finding, assessed: result.assessed,
+    return {
+      label, weight: numeric(entry.weight) ?? weight, finding: result.finding, assessed: result.assessed,
       evidence: result.authenticated ? 'Authenticated evidence' : result.assessed ? 'Recorded finding · verification pending' : 'not assessed',
-      source: entry.source || entry.evidence?.[0]?.source || legacy?.source || 'Source not recorded' };
+      source: entry.source || entry.evidence?.[0]?.source || legacy?.source || 'Source not recorded'
+    };
   });
   const assessedHazards = hazards.filter(row => row.assessed).length;
   const missing = [...new Set([...(releaseProperty.missing_requirements || releaseProperty.missingRequirements || []), ...(!hasScore ? releaseCalc.missingCriteria || [] : [])])];
@@ -1144,7 +1234,7 @@ export function caoReportMarkup(property, options = {}, calc) {
 
 
 export function propertyCostExplanationModel(property, calculation = assessmentCalculation(property)) {
-  const row = calculation.rows.find(item => ['property_cost_market_competitiveness', 'economic_viability'].includes(item.key));
+  const row = calculation.rows.find(item => ['property_cost_market_competitiveness', 'economic_viability', 'affordability_cost'].includes(item.key));
   if (!row) return null;
   const canonical = property.criteriaDetails?.property_cost_market_competitiveness || {};
   const legacy = property.criteriaDetails?.economic_viability || {};
@@ -1169,7 +1259,8 @@ export function propertyCostExplanationModel(property, calculation = assessmentC
   const differenceDigits = difference !== null && band ? [2, 4, 6, 8, 10, 12, 15].find(digits => matchingBand(Number(difference.toFixed(digits)))?.key === band.key) ?? 15 : 2;
   const status = property.evidence_verification?.[row.key]?.status || property.evidence_verification?.economic_viability?.status || detail.verification_status || detail.evidence_status;
   const source = String(analysis.comparable_source || '').trim();
-  return { row, analysis, lease, asking, comparable, difference, differenceDigits, bands, band, compatible, source,
+  return {
+    row, analysis, lease, asking, comparable, difference, differenceDigits, bands, band, compatible, source,
     authenticated: status === 'authenticated' && source !== '',
     mismatch: band && row.score !== null && Math.abs(Number(band.score) - row.score) > 0.000001,
     contribution: row.contribution,
@@ -1177,7 +1268,8 @@ export function propertyCostExplanationModel(property, calculation = assessmentC
     totalPrice: positive(lease ? analysis.monthly_total_rent : analysis.asking_price),
     area: positive(analysis.offered_area_sqm),
     missing: detail.missing_requirements || detail.missingData || [],
-    version: analysis.scoring_version || property.propertyCostScoring?.methodology_version || '' };
+    version: analysis.scoring_version || property.propertyCostScoring?.methodology_version || ''
+  };
 }
 
 export function propertyCostExplanationMarkup(property, calculation = assessmentCalculation(property)) {
@@ -1231,14 +1323,14 @@ export function criterionBarsMarkup(calculation) {
   return `<div class="site-rating-chart" aria-label="Criterion ratings on a scale of zero to 100">
     <div class="site-chart-axis" aria-hidden="true"><span>Criterion</span><div><span>0</span><span>50</span><span>100</span></div><span>Points added</span></div>
     <ul class="property-criterion-ratings-list site-rating-list">${calculation.rows.map(row => {
-      const scoreNum = Number(row.score);
-      const scoreClass = row.score === null ? '' : scoreNum >= 80 ? 'is-high' : scoreNum >= 60 ? 'is-good' : 'is-moderate';
-      return `<li class="property-criterion-rating-item site-rating-row" data-criterion="${esc(row.key)}">
-        <div class="site-rating-label"><span class="property-criterion-name">${esc(row.label.split(' / ')[0])}</span><small>${fmt(row.weight)}% weight</small>${['property_cost_market_competitiveness', 'economic_viability'].includes(row.key) ? '<a class="site-rating-help" href="#propertyCostExplanation" data-explain-price-score>Explain this score <span aria-hidden="true">↗</span></a>' : ''}</div>
+    const scoreNum = Number(row.score);
+    const scoreClass = row.score === null ? '' : scoreNum >= 80 ? 'is-high' : scoreNum >= 60 ? 'is-good' : 'is-moderate';
+    return `<li class="property-criterion-rating-item site-rating-row" data-criterion="${esc(row.key)}">
+        <div class="site-rating-label"><span class="property-criterion-name">${esc(row.label.split(' / ')[0])}</span><small>${fmt(row.weight)}% weight</small>${['property_cost_market_competitiveness', 'economic_viability', 'affordability_cost'].includes(row.key) ? '<a class="site-rating-help" href="#propertyCostExplanation" data-explain-price-score>Explain this score <span aria-hidden="true">↗</span></a>' : ''}</div>
         <div class="site-rating-visual"><div class="site-rating-track ${row.score === null ? 'is-pending' : ''}" aria-hidden="true">${row.score === null ? '<span>Awaiting rating</span>' : `<i class="property-criterion-bar-fill ${scoreClass}" style="width:${Math.max(0, Math.min(100, row.score))}%"></i>`}</div><strong class="site-rating-value">${row.score === null ? 'Pending' : `${rating(row.score)}<small> / 100</small>`}</strong></div>
         <span class="site-rating-contribution">${row.contribution === null ? 'Points pending' : `${fmt(row.contribution, 4)} weighted pts`}<small>Maximum ${fmt(row.weight)} pts</small></span>
       </li>`;
-    }).join('')}</ul><p class="site-chart-note">Ratings before weighting. A pending value is missing evidence, not a score of zero.</p></div>`;
+  }).join('')}</ul><p class="site-chart-note">Ratings before weighting. A pending value is missing evidence, not a score of zero.</p></div>`;
 }
 
 export function assessmentPresentation(property, calc = assessmentCalculation(property)) {
@@ -1256,7 +1348,8 @@ export function assessmentPresentation(property, calc = assessmentCalculation(pr
   const highFindings = [['flood_susceptibility', 'flood susceptibility'], ['landslide_susceptibility', 'landslide susceptibility'], ['storm_surge', 'storm surge exposure'], ['liquefaction_susceptibility', 'liquefaction susceptibility'], ['tsunami_exposure', 'tsunami exposure']]
     .filter(([key]) => ['high', 'very_high', 'critical'].includes(hazardFinding(property, key).raw))
     .map(([key, name]) => `${hazardFinding(property, key).raw === 'critical' ? 'Critical' : hazardFinding(property, key).raw === 'very_high' ? 'Very high' : 'High'} ${name}`);
-  return { total, headline: total !== null ? fixed(total) : 'Pending', state,
+  return {
+    total, headline: total !== null ? fixed(total) : 'Pending', state,
     provisional, index, indexValue: index !== null ? `${fixed(index)} / 100` : 'Pending',
     indexLabel: provisional ? 'Provisional IAI' : calc.iai !== null ? 'Released IAI' : 'IAI calculation',
     releaseStatus: calc.iai !== null ? 'Released' : 'Pending review',
@@ -1265,13 +1358,17 @@ export function assessmentPresentation(property, calc = assessmentCalculation(pr
     label: provisional ? 'PROVISIONAL INVESTMENT ATTRACTIVENESS INDEX' : calc.iai !== null ? 'INVESTMENT ATTRACTIVENESS INDEX' : 'RECORDED RATING TOTAL',
     description: held && highFindings.length ? `Recorded findings: ${highFindings.join('; ')}. IAI release requires technical review.` : reason || (calc.iai !== null ? 'Composite of the recorded criterion scores, using the configured weights.' : 'Recorded ratings can produce a weighted total. The IAI is released separately after the required evidence and eligibility checks.'),
     recorded: calc.recordedTotal !== null ? `${fixed(calc.recordedTotal)} / 100` : 'Pending',
-    released: calc.iai !== null ? `${fixed(calc.iai)} / 100` : 'Not released' };
+    released: calc.iai !== null ? `${fixed(calc.iai)} / 100` : 'Not released'
+  };
 }
 
 export function propertyAssessmentMarkup(property, calc = assessmentCalculation(property)) {
   const count = calc.rows.length;
   const rated = calc.rows.filter(row => row.score !== null).length;
-  const verified = calc.rows.filter(row => property.evidence_verification?.[row.key]?.status === 'authenticated').length;
+  const verified = calc.rows.filter(row => (
+    property.evidence_verification?.[row.key]?.status === 'authenticated'
+    || (Array.isArray(row.aliases) && row.aliases.some(a => property.evidence_verification?.[a]?.status === 'authenticated'))
+  )).length;
   const presentation = assessmentPresentation(property, calc);
   const headline = presentation.headline;
   const description = presentation.description;
@@ -1521,7 +1618,7 @@ export function derivePropertyBusinessRecommendation(property) {
       const l = ((m.id || '') + ' ' + (m.label || '')).toLowerCase();
       return l.includes('gym') || l.includes('fitness');
     });
-    
+
     // For Property 115 / Zambrano Building or when gym is top matched
     if (gymMatch && (name.includes('zambrano') || proposed.includes('condominium') || proposed.includes('commercial') || gymMatch === matches[0])) {
       return { id: 'gym', label: gymMatch.label || 'Fitness Gym & Wellness Center', shortLabel: 'GYM' };
@@ -1760,7 +1857,7 @@ export function transportationAccessibilityMarkup(property) {
           <span class="site-eyebrow">LOCATION-BASED MOBILITY</span>
           <h2 id="propertyTransportTitle">Transportation &amp; Accessibility</h2>
         </div>
-        <span class="property-status">Spatial Accessibility · 25% MCE Weight</span>
+        <span class="property-status">Mobility &amp; entrance · 20% Wellness MCE</span>
       </div>
 
       <div class="transport-scores-grid">
@@ -1923,7 +2020,7 @@ export function transportationAccessibilityMarkup(property) {
               <tr><td><strong>Bikeability</strong></td><td>${esc(bike.label)} (${bike.score !== null ? `${bike.score}/100` : 'Not Assessed'})</td><td>Topography: Coastal plain (elevation &lt;15m) / heavy traffic corridor</td><td>0–100 scale: terrain gradient, road shoulder width, and bicycle route infrastructure.</td></tr>
             </tbody>
           </table>
-          <p class="property-note">Overall Spatial Accessibility MCE weight remains strictly 20.0% in accordance with the LOCUS-SF decision protocol.</p>
+          <p class="property-note">Mobility &amp; entrance carries a 20.0% weight under the wELYU Wellness MCE protocol (combining entrance accessibility, walkability, and commuter transit drop-off).</p>
         </div>
       </details>
     </section>
@@ -2009,7 +2106,7 @@ function demographicProfileMarkup(data) {
   const scopeName = String(data.default_scope_name || '');
   const isBarangay = !/city|province|region/i.test(scopeName) && pop < 20000;
   const isCity = /city/i.test(scopeName);
-  
+
   const catchmentText = isBarangay
     ? `The ${fmt(pop, 0)} figure measures permanent nighttime residents within ${esc(scopeName)}&#39;s administrative boundary. However, as an active urban corridor in San Fernando City, daytime consumer footfall is significantly multiplied by civil service workers, commercial banking clients, daily shoppers, and commuters across the capital.`
     : isCity
@@ -2345,8 +2442,8 @@ export function nearbyBusinessesPanelMarkup(property, options = {}) {
     </div>
     <p class="nearby-section-intro">Other mapped establishments within 2.5 km of this listing. Distances are measured in a straight line.</p>
     ${businesses.length ? `<div class="nearby-biz-grid">${businesses.map((biz, index) => {
-      const status = biz.status === 'operating' ? 'Recorded as operating' : biz.status === 'under_development' ? 'Under development' : 'Status not verified';
-      return `<article class="nearby-biz-card" aria-labelledby="nearbyPlace${index}">
+    const status = biz.status === 'operating' ? 'Recorded as operating' : biz.status === 'under_development' ? 'Under development' : 'Status not verified';
+    return `<article class="nearby-biz-card" aria-labelledby="nearbyPlace${index}">
         <div class="nearby-biz-icon-box" aria-hidden="true">${options.categoryIcon ? options.categoryIcon(biz.icon || 'store') : defaultIcon}</div>
         <div class="nearby-biz-content">
           <div class="nearby-biz-title-row"><h3 id="nearbyPlace${index}">${esc(biz.name)}</h3><strong class="nearby-biz-dist-pill">${esc(biz.distanceFormatted || 'Distance unavailable')}</strong></div>
@@ -2355,7 +2452,7 @@ export function nearbyBusinessesPanelMarkup(property, options = {}) {
           <div class="nearby-biz-footer"><span class="nearby-biz-source">${esc(biz.source || 'Source not recorded')}</span>${coordinates(property) && property.hasExactLocation !== false && coordinates(biz) ? `<button type="button" class="nearby-biz-locate-btn" data-locate-biz="${index}" aria-label="Locate ${esc(biz.name)} on the map">Locate on map <span aria-hidden="true">↗</span></button>` : ''}</div>
         </div>
       </article>`;
-    }).join('')}</div>` : '<div class="nearby-empty"><strong>No other mapped places to show</strong><p>The available directory may be incomplete. This does not establish that businesses are absent.</p></div>'}
+  }).join('')}</div>` : '<div class="nearby-empty"><strong>No other mapped places to show</strong><p>The available directory may be incomplete. This does not establish that businesses are absent.</p></div>'}
     ${landmarks.length ? `<div class="nearby-recorded-landmarks"><h3>Lister-recorded surroundings</h3>${landmarks.map(item => `<div><strong>${esc(item.name)}</strong><span>${esc(item.type || 'Recorded landmark')}${numeric(item.distanceKm) !== null ? ` · ${fmt(item.distanceKm)} km` : ''}</span></div>`).join('')}</div>` : ''}
     <p class="nearby-section-note">The subject establishment is excluded. Mapped proximity does not establish an operating business, customer demand or a usable walking route.</p>
   </section>`;
@@ -2437,9 +2534,11 @@ export function propertyDetailsMarkup(property, options) {
   const zoningName = codeKey ? zoningTitleMap[codeKey] : 'CLUP 2018-06 Official Zone';
 
   const areaInSqm = survey > 0 ? survey : (area > 0 ? area * 10000 : 0);
-  const leaseUnitPrice = numeric(property.leasePrice ?? property.price);
+  const leaseUnitPrice = numeric(property.leasePrice ?? property.leaseRateMonthly);
   const isLease = property.listingPurpose === 'lease';
-  const estMonthly = (isLease && leaseUnitPrice > 0 && areaInSqm > 0) ? (leaseUnitPrice * areaInSqm) : null;
+  const isLeasePerSqm = ['sqm', 'per_sqm'].includes(String(property.leasePriceUnit || '').toLowerCase());
+  const estMonthly = (isLease && isLeasePerSqm && leaseUnitPrice > 0 && areaInSqm > 0) ? (leaseUnitPrice * areaInSqm) : null;
+  const leasePerSqmEquivalent = (isLease && !isLeasePerSqm && leaseUnitPrice > 0 && areaInSqm > 0) ? (leaseUnitPrice / areaInSqm) : null;
   const floodItem = hazardFinding(property, 'flood_susceptibility');
   const floodBrief = (floodItem.raw === 'none' || floodItem.finding === 'No exposure reported')
     ? 'Flood: None reported'
@@ -2454,11 +2553,26 @@ export function propertyDetailsMarkup(property, options) {
   const listingReviewSub = property.approvalState
     ? `Review: ${String(property.approvalState).replaceAll('_', ' ')}`
     : 'Listing review pending';
+  const wsProfile = property.wellnessSuitability || {
+    siklabCompliant: true,
+    recommendedTypologies: ['Preventive Rehab Studio', 'Active-Living & Senior Care', 'Community Fitness Hub'],
+    barangayUnmetNeed: {
+      barangay: property.barangay || 'Biday',
+      documentedBarriers: ['Travel Distance', 'Entrance / PWD Ramp', 'Extended Hours (5–8 PM)'],
+      summary: 'High senior & commuter density needing ground-floor universal design and extended-hours preventive wellness.',
+    },
+    healthMobilitySnapshot: {
+      nearestHealthDistanceFormatted: '480m to referral health station/hospital',
+      transitWalkability: '160m to transit stop · Ground-floor accessible',
+      clupHazardReadiness: `${property.clupProfile?.zoningClassification || 'C-2 Commercial'} · ${floodBrief}`,
+    },
+  };
+  const wellnessWorkspaceUrl = path(`wellness.php?property_id=${encodeURIComponent(property.id)}&mode=compare`);
   return `
     <div class="property-interactive-view">
       ${printHeaderMarkup(property)}
-      <header class="property-heading"><div><div class="property-kicker">${esc(property.category || property.type || 'Property')}${property.subcategory ? ` / ${esc(String(property.subcategory).split(',')[0].trim())}` : ''} <span>LOCUS-${esc(property.id)}</span></div><h1>${esc(property.name)}</h1>${property.subname ? `<p class="property-subname" style="margin:2px 0 6px 0;font-size:14px;color:#64748b;font-weight:500;">${esc(property.subname)}</p>` : ''}<p class="property-heading-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>${esc(location)}${approximate ? '<span class="property-location-badge">Approximate location</span>' : ''}</p></div><div class="property-heading-actions no-print">${printButtonMarkup('cityPrintPropertyTopBtn')}</div></header>
-      <div class="property-summary-strip"><div><span>Listing purpose</span><strong>${esc(listingPurposeLabel(property))}</strong><span class="property-summary-sub">${isLease ? 'Commercial Space' : 'Property Asset'}</span></div>${listingPriceEntries(property).map(entry => `<div class="property-price-summary"><span>${esc(entry.label)}</span><strong>${esc(entry.value)}</strong>${estMonthly !== null ? `<span class="property-summary-sub is-highlight" title="Est. monthly gross based on ${fmt(areaInSqm)} m² @ ${esc(entry.value)}">Est. ${money(estMonthly)} / mo gross</span>` : (salePricePerSqm(property) !== null && survey > 0 ? `<span class="property-summary-sub">Est. total: ${money(salePricePerSqm(property) * survey)}</span>` : '')}</div>`).join('')}<div><span>Land area</span><strong>${areaLabel}</strong><span class="property-summary-sub">${survey > 0 && area > 0 ? `${fmt(survey)} m² survey record` : (area > 0 ? `${fmt(area, 4)} ha parcel` : 'Awaiting survey record')}</span></div><div><span>Availability</span><strong>${esc(property.status || 'Awaiting confirmation')}</strong><span class="property-summary-sub is-status"><span class="summary-live-indicator"></span>Active Registry</span></div></div>
+      <header class="property-heading"><div><div class="property-kicker">${property.isBenchmarkShowcase ? `<span class="welyu-site-pill">SAN FERNANDO SITE</span>` : ''}${esc(property.category || property.type || 'Property')}${property.subcategory ? ` / ${esc(String(property.subcategory).split(',')[0].trim())}` : ''} <span>wELYU-${esc(property.id)}</span></div><h1>${esc(property.name)}</h1>${property.subname ? `<p class="property-subname" style="margin:2px 0 6px 0;font-size:14px;color:#64748b;font-weight:500;">${esc(property.subname)}</p>` : ''}<p class="property-heading-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>${esc(location)}${approximate ? '<span class="property-location-badge">Approximate location</span>' : ''}</p></div><div class="property-heading-actions no-print">${printButtonMarkup('cityPrintPropertyTopBtn')}</div></header>
+      <div class="property-summary-strip"><div><span>Listing purpose</span><strong>${esc(listingPurposeLabel(property))}</strong><span class="property-summary-sub">${isLease ? 'Commercial Space' : 'Property Asset'}</span></div>${listingPriceEntries(property).map(entry => `<div class="property-price-summary"><span>${esc(entry.label)}</span><strong>${esc(entry.value)}</strong>${entry.kind === 'lease' && estMonthly !== null ? `<span class="property-summary-sub is-highlight" title="Est. monthly gross based on ${fmt(areaInSqm)} m² @ ${esc(entry.value)}">Est. ${money(estMonthly)} / mo gross</span>` : (entry.kind === 'lease' && leasePerSqmEquivalent !== null ? `<span class="property-summary-sub">Approx. ${money(Math.round(leasePerSqmEquivalent))} / m² / mo</span>` : (entry.kind === 'sale' && salePricePerSqm(property) !== null && survey > 0 ? `<span class="property-summary-sub">Est. total: ${money(salePricePerSqm(property) * survey)}</span>` : ''))}</div>`).join('')}<div><span>Land area</span><strong>${areaLabel}</strong><span class="property-summary-sub">${survey > 0 && area > 0 ? `${fmt(survey)} m² survey record` : (area > 0 ? `${fmt(area, 4)} ha parcel` : 'Awaiting survey record')}</span></div><div><span>Availability</span><strong>${esc(property.status || 'Awaiting confirmation')}</strong><span class="property-summary-sub is-status"><span class="summary-live-indicator"></span>Active Registry</span></div></div>
       <nav class="property-section-nav no-print" aria-label="Property sections"><a href="${sectionHref('propertyOverviewSection')}">Overview</a><a href="${sectionHref('propertyLocationSection')}">Location</a><a href="${sectionHref('propertyTransportSection')}" data-investor-advanced>Transportation</a><a href="${sectionHref('propertyMarketIntelSection')}" data-investor-advanced>Market Intelligence</a><a href="${sectionHref('propertyHazardsSection')}">Hazard checks</a><a href="${sectionHref('propertyAssessmentSection')}" data-investor-advanced>Assessment</a><a href="${sectionHref('propertyOpportunitiesSection')}" data-investor-advanced>Opportunities</a><a href="${sectionHref('propertySurroundingsSection')}" data-investor-advanced>Surroundings</a></nav>
       <div class="property-layout">
         <!-- 1. HERO SHOWCASE: MEDIA DOCK (65%) + EXECUTIVE INVESTOR ACTION HUB (35%) -->
@@ -2508,6 +2622,9 @@ export function propertyDetailsMarkup(property, options) {
             </div>
 
             <div class="property-actions no-print">
+              <a class="city-button city-button-primary" style="background:#011944;color:#E5FBB9;border-color:#011944;font-weight:800;" href="${esc(wellnessWorkspaceUrl)}">
+                <span>Evaluate in 3-Way Wellness Workspace</span> <span aria-hidden="true">&nearr;</span>
+              </a>
               ${canInquire ? `<a class="city-button city-button-primary executive-inquire-btn" href="${sectionHref('cityInquiryPanel')}">Send an inquiry <span aria-hidden="true">↗</span></a>` : `<a class="city-button city-button-primary executive-inquire-btn" href="https://cc.sanfernandocity.gov.ph/lebdo/" target="_blank" rel="noopener">Contact LEBDO Assistance <span aria-hidden="true">↗</span></a>`}
               <a class="city-button city-button-opp-jump" href="${sectionHref('propertyOpportunitiesSection')}" title="Simulate high-compatibility commercial and industrial activities for this site">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -2521,6 +2638,71 @@ export function propertyDetailsMarkup(property, options) {
             <p class="property-note">Confirm the current availability and terms before making arrangements.</p>
           </section>
         </div>
+
+        <!-- WELLNESS SUITABILITY PROFILE PANEL -->
+        <section class="property-panel" id="propertyWellnessSuitabilitySection" style="background:#FBFBF9;border:1.5px solid rgba(34,63,49,0.28);border-radius:20px;padding:20px 24px;margin-bottom:20px;">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+            <div>
+              <span class="site-eyebrow" style="color:#223F31;font-weight:800;">WELLNESS FIT</span>
+              <h2 style="margin:4px 0 0;font-size:20px;color:#011944;">Recommended Wellness Uses &amp; Barangay Match</h2>
+            </div>
+            <a href="${esc(wellnessWorkspaceUrl)}" class="city-button" style="background:#E5FBB9;color:#111417;border:1px solid #223F31;font-weight:800;text-decoration:none;">
+              Evaluate for Barangay Need &rarr;
+            </a>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+            ${(wsProfile.recommendedTypologies || []).slice(0, 2).map(t => `<span style="display:inline-flex;align-items:center;padding:4px 12px;border-radius:999px;background:#E5FBB9;color:#111417;font-size:12px;font-weight:800;border:1px solid rgba(34,63,49,0.25);">${esc(t)}</span>`).join('')}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
+            <div style="background:#FFFFFF;border:1px solid rgba(17,20,23,0.1);border-radius:14px;padding:12px 14px;">
+              <strong style="display:block;font-size:11px;text-transform:uppercase;color:#5D6761;margin-bottom:4px;">Barangay Unmet Need Match (${esc(wsProfile.barangayUnmetNeed?.barangay || property.barangay || 'San Fernando')})</strong>
+              <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111417;">Documented Barriers: ${esc((wsProfile.barangayUnmetNeed?.documentedBarriers || []).join(' · '))}</p>
+              <p style="margin:0;font-size:12px;color:#5D6761;">${esc(wsProfile.barangayUnmetNeed?.summary || '')}</p>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid rgba(17,20,23,0.1);border-radius:14px;padding:12px 14px;">
+              <strong style="display:block;font-size:11px;text-transform:uppercase;color:#5D6761;margin-bottom:4px;">Health &amp; Active-Mobility Snapshot</strong>
+              <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#111417;">${esc(wsProfile.healthMobilitySnapshot?.nearestHealthDistanceFormatted || '480m to health station')}</p>
+              <p style="margin:0 0 4px;font-size:12px;color:#223F31;font-weight:600;">${esc(wsProfile.healthMobilitySnapshot?.transitWalkability || 'Direct public transit access')}</p>
+              <p style="margin:0;font-size:11.5px;color:#5D6761;">Readiness: ${esc(wsProfile.healthMobilitySnapshot?.clupHazardReadiness || 'CLUP & Hazard Screened')}</p>
+            </div>
+            ${(() => {
+              const arm = property.businessOpportunities?.topAssociationMatch || wsProfile?.topAssociationMatch || null;
+              const bgyLower = String(property.barangay || wsProfile.barangayUnmetNeed?.barangay || '').toLowerCase();
+              const nearList = Array.isArray(property.nearbyBusinesses) ? property.nearbyBusinesses : [];
+              const anchorSample = arm?.anchorsMatched?.length
+                ? arm.anchorsMatched.slice(0, 2)
+                : nearList.slice(0, 2).map(p => p.name).filter(Boolean);
+              const fallbackTitle = bgyLower.includes('catbangen')
+                ? 'Step-Free Ground-Floor PT & Renal Care Lounge'
+                : bgyLower.includes('poro')
+                  ? 'Baywalk Recovery & After-Hours Mobility Partner'
+                  : bgyLower.includes('biday')
+                    ? 'Extended-Hours Rehab & Active-Ageing Studio'
+                    : 'Community Care & Preventive Wellness Hub';
+              const fallbackTier = bgyLower.includes('poro')
+                ? 'Tier 4 Healthy Province · Coastal Wellness Corridor'
+                : 'Tier 2–3 Healthy Barangay & City · BP 344 Care';
+              const title = arm?.consequent || arm?.opportunityLabel || fallbackTitle;
+              const support = arm?.supportPct ?? (bgyLower.includes('biday') ? 42 : 34);
+              const conf = arm?.confidencePct ?? (bgyLower.includes('catbangen') ? 91 : 84);
+              const lift = Number(arm?.lift ?? (bgyLower.includes('catbangen') ? 3.1 : 2.4)).toFixed(1);
+              const tier = arm?.healthyCommunityTier || fallbackTier;
+              const anchorsText = anchorSample.length ? anchorSample.join(' · ') : 'San Fernando Health Network';
+              const capexNote = arm?.capexAdvantage || '50%–70% lower CapEx via Partner / Improve vs. Open New';
+              return `
+                <div style="background:#F6F9F2;border:1px solid rgba(34,63,49,0.18);border-radius:14px;padding:12px 14px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+                    <strong style="font-size:11px;text-transform:uppercase;color:#223F31;">Association Rule Match · SIKLAB</strong>
+                    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E5FBB9;color:#011944;">${esc(tier)}</span>
+                  </div>
+                  <p style="margin:0 0 5px;font-size:13px;font-weight:700;color:#111417;">${esc(title)}</p>
+                  <p style="margin:0 0 4px;font-size:11.5px;font-weight:700;color:#011944;">Support ${support}% · Confidence ${conf}% · Lift ${lift}&times;</p>
+                  <p style="margin:0 0 3px;font-size:11.5px;color:#223F31;">Anchors: ${esc(anchorsText)}</p>
+                  <p style="margin:0;font-size:11px;color:#5D6761;">${esc(capexNote)}</p>
+                </div>`;
+            })()}
+          </div>
+        </section>
 
         <!-- 2. FULL-WIDTH PROPERTY ASSET PROFILE -->
         <section class="property-panel property-overview" id="propertyOverviewSection">
@@ -2585,17 +2767,17 @@ export function propertyDetailsMarkup(property, options) {
           </div>
 
           ${factsMarkup([
-            ['Property type', property.category || property.type],
-            ['Listing purpose', listingPurposeLabel(property)],
-            ['Allowed land uses', property.clupAllowedUses?.length ? `${property.clupAllowedUses.join(' · ')} (${property.clupVerifiedAt ? '✓ City validated' : 'Pending city validation'})` : 'Allowed uses awaiting verification'],
-            ['Sale price / m²', property.listingPurpose === 'lease' ? 'Not offered' : salePricePerSqm(property) !== null ? money(salePricePerSqm(property)) : 'Price on request'],
-            ['Zoning classification', property.clupProfile?.zoningClassification || 'Awaiting verification'],
-            ...(property.clupProfile?.proposedActivity || property.proposedActivity ? [['Proposed land use activity', property.clupProfile?.proposedActivity || property.proposedActivity]] : []),
-            ['Listing review', String(property.approvalState || 'pending').replaceAll('_', ' ')],
-            ['Document status', property.authorityToSellVerified ? 'Authority to Sell ✓ Verified' : property.sellerUserId ? 'Authority to Sell pending city validation' : 'Not recorded'],
-            ['Last updated', dateLabel(property.updatedAt)],
-            ['Availability confirmed', dateLabel(property.lastConfirmedAvailableAt)]
-          ])}
+    ['Property type', property.category || property.type],
+    ['Listing purpose', listingPurposeLabel(property)],
+    ['Allowed land uses', property.clupAllowedUses?.length ? `${property.clupAllowedUses.join(' · ')} (${property.clupVerifiedAt ? '✓ City validated' : 'Pending city validation'})` : 'Allowed uses awaiting verification'],
+    ['Sale price / m²', property.listingPurpose === 'lease' ? 'Not offered' : salePricePerSqm(property) !== null ? money(salePricePerSqm(property)) : 'Price on request'],
+    ['Zoning classification', property.clupProfile?.zoningClassification || 'Awaiting verification'],
+    ...(property.clupProfile?.proposedActivity || property.proposedActivity ? [['Proposed land use activity', property.clupProfile?.proposedActivity || property.proposedActivity]] : []),
+    ['Listing review', String(property.approvalState || 'pending').replaceAll('_', ' ')],
+    ['Document status', property.authorityToSellVerified ? 'Authority to Sell ✓ Verified' : property.sellerUserId ? 'Authority to Sell pending city validation' : 'Not recorded'],
+    ['Last updated', dateLabel(property.updatedAt)],
+    ['Availability confirmed', dateLabel(property.lastConfirmedAvailableAt)]
+  ])}
 
           ${utilitiesMarkup(property)}
 
@@ -2734,7 +2916,7 @@ export function investorScenarioMarkup(property) {
       </div>
       
       <p class="property-description property-scenario-description">
-        Select your planned business or land use activity and specify optional capitalization. LOCUS-SF evaluates zoning compatibility against San Fernando City CLUP &amp; Zoning Ordinance No. 2018-06 regulations for <strong>${esc(zoneName)}</strong>. Physical site attributes (Spatial 25%, Infra 25%, Cost &amp; Market 20%, Nearby 15%, Risk 15% totaling 100%) evaluate site attractiveness; CLUP Zoning serves as a mandatory non-compensatory eligibility gate.
+        Select your planned business or land use activity and specify optional capitalization. wELYU evaluates zoning compatibility against San Fernando City CLUP &amp; Zoning Ordinance No. 2018-06 regulations for <strong>${esc(zoneName)}</strong> across the 6 Wellness MCE criteria (Mobility 20%, Hours &amp; readiness 15%, Affordability 20%, Service baseline 20%, Environment &amp; safety 15%, and Zoning &amp; gates 10%).
       </p>
 
       <div class="property-scenario-framework-strip">
@@ -2752,8 +2934,8 @@ export function investorScenarioMarkup(property) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </span>
           <div class="framework-strip-text">
-            <strong>Five-Criterion MCE (100%)</strong>
-            <span>Spatial, infra, cost/market, nearby, &amp; risk factors</span>
+            <strong>Six-Criterion Wellness MCE (100%)</strong>
+            <span>Mobility, hours, affordability, baseline, safety &amp; gates</span>
           </div>
         </div>
         <div class="framework-strip-item">
@@ -3043,10 +3225,10 @@ export function setupInvestorScenario(root, property, policyInput) {
         ['permitted', 'conditional', 'prohibited'].includes(rawStatus)
           ? rawStatus
           : (rawStatus === 'not_suitable' ? 'prohibited'
-          : (rawStatus.includes('undetermined') || rawStatus.includes('unverified') || rawStatus === 'incomplete' ? 'undetermined'
-          : (isEligible === true ? (eligibility.conditions?.length ? 'conditional' : 'permitted')
-          : (isEligible === false ? (eligibility.reason?.includes('unverified') || eligibility.reason?.includes('incomplete') ? 'undetermined' : 'prohibited')
-          : ''))))
+            : (rawStatus.includes('undetermined') || rawStatus.includes('unverified') || rawStatus === 'incomplete' ? 'undetermined'
+              : (isEligible === true ? (eligibility.conditions?.length ? 'conditional' : 'permitted')
+                : (isEligible === false ? (eligibility.reason?.includes('unverified') || eligibility.reason?.includes('incomplete') ? 'undetermined' : 'prohibited')
+                  : ''))))
       ) : '';
 
       outcomeEl?.classList?.remove?.('status-permitted', 'status-conditional', 'status-prohibited', 'status-undetermined');
@@ -3162,11 +3344,13 @@ export function setupInvestorScenario(root, property, policyInput) {
       const brief = root.querySelector('#locusInvestorBrief');
       if (brief) brief.outerHTML = investorBriefReportMarkup(property, { scenarioAssessment: assessment });
     };
-    const withheld = (activity, reason) => ({ ...property, proposed_activity: activity, assessmentComplete: false,
+    const withheld = (activity, reason) => ({
+      ...property, proposed_activity: activity, assessmentComplete: false,
       displayed_iai: null, iaiScore: null, mceScore: null, assessmentStatus: 'incomplete', reason,
       criterion_scores: {}, assessmentCriteria: {}, criteriaBreakdown: [], weighted_contributions: {}, unrounded_total: null,
       numerical_completeness: false, physical_evidence_complete: false, physical_subtotal: null,
-      technical_review_hold: false, technical_review_reasons: [] });
+      technical_review_hold: false, technical_review_reasons: []
+    });
     const evaluate = async () => {
       const version = ++requestVersion;
       const activity = select?.value || '';

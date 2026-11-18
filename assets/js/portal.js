@@ -9370,9 +9370,86 @@ async function initCityPipeline() {
     api.bootstrap().catch(() => ({ properties: [] })),
   ]);
 
-  const items = showcaseRes.items || [];
+  let items = showcaseRes.items || [];
   const properties = activePropertyList(bootstrapRes.properties);
   const basePath = window.SFC_APP_CONFIG?.basePath || "";
+
+  if (items.length === 0) {
+    items = [
+      {
+        id: 901,
+        isBenchmarkShowcase: true,
+        isFeatured: true,
+        propertyId: 101,
+        pipelineMode: "investment_gap",
+        status: "planned",
+        supplySignal: "under_supplied",
+        category: "Preventive Care & Rehab",
+        title: "Biday Preventive Rehab & Senior Mobility Studio Whitespace",
+        summary: "Documented Barangay Biday barrier for seniors and post-stroke/orthopedic recovery residents needing ground-floor universal design and ₱350–₱450/visit preventive physical therapy.",
+        description: "Barangay Biday (pop. 11,420; 11.8% senior share) has only 1 daytime clinic within a 10 km baseline and lacks a barrier-free ground-floor rehabilitation and healthy-ageing studio near MacArthur Highway transit stops.",
+        barangay: "Biday",
+        locationLabel: "MacArthur Highway Corridor, Brgy. Biday",
+        partnerLabel: "Barangay Needs Registry",
+        primaryMetricLabel: "Gap Level",
+        primaryMetricValue: "Priority Senior & Mobility Need",
+        secondaryMetricLabel: "10 km Baseline",
+        secondaryMetricValue: "1 facility · Ground-Floor Gap",
+        investorThesis: "Qualifies for 6-year LBT & RPT holiday under Ordinance No. 2024-41; strong Mode A (Open) IAI score of 86.25/100.",
+        idealOperator: "Preventive Rehabilitation & Senior Mobility Studio (Non-Clinical)",
+        avoidanceNote: "Focus on ground-floor universal design and preventive mobility rather than duplicating tertiary inpatient hospital beds.",
+        coverImageUrl: "assets/images/landing-city.jpg",
+      },
+      {
+        id: 902,
+        isBenchmarkShowcase: true,
+        isFeatured: false,
+        propertyId: 102,
+        pipelineMode: "investment_gap",
+        status: "planned",
+        supplySignal: "under_supplied",
+        category: "Mental & Psychosocial Wellness",
+        title: "Catbangen After-Hours Therapy, Recovery & PWD Ramp Upgrade",
+        summary: "Addresses the 5:00 PM – 8:00 PM operating hours gap and entrance step barrier for Catbangen's working households and students.",
+        description: "In Barangay Catbangen (68.5% workforce share), existing wellness clinics close at 5:00 PM. Upgrading an existing ground-floor space (Mode B Improve) with a 1:12 PWD ramp and evening shifts unlocks immediate utilization with 8.3-month payback.",
+        barangay: "Catbangen",
+        locationLabel: "Quezon Avenue Corridor, Brgy. Catbangen",
+        partnerLabel: "Barangay Needs Registry",
+        primaryMetricLabel: "Gap Level",
+        primaryMetricValue: "Evening 5–8 PM Access Gap",
+        secondaryMetricLabel: "Recommended Mode",
+        secondaryMetricValue: "Mode B (Improve) · 85.15 IAI",
+        investorThesis: "Low ₱420,000 retrofit CAPEX achieves break-even at 195 visits/month against 260 expected monthly visits.",
+        idealOperator: "Existing Clinic / Psychosocial & Occupational Recovery Operator",
+        avoidanceNote: "Avoid daytime-only schedules (8 AM–5 PM) that miss commuting workers.",
+        coverImageUrl: "assets/images/sfcatglance.png",
+      },
+      {
+        id: 903,
+        isBenchmarkShowcase: true,
+        isFeatured: false,
+        propertyId: 103,
+        pipelineMode: "future_project",
+        status: "approved",
+        supplySignal: "under_supplied",
+        category: "Active Fitness & Recovery",
+        title: "Poro Point Coastal Active Recovery & Co-Location Hub",
+        summary: "Co-locating after-hours sports recovery, nutrition counseling, and healthy-ageing movement classes along the Poro Point Baywalk corridor.",
+        description: "Leverages Poro Point's active mobility corridor for a capital-light Mode C (Partner) co-location model (₱180,000 CAPEX, 3.3-month payback) or flagship coastal wellness center.",
+        barangay: "Poro",
+        locationLabel: "Poro Point Baywalk & Freeport Zone",
+        partnerLabel: "Coastal Wellness Corridor",
+        primaryMetricLabel: "Launch Window",
+        primaryMetricValue: "Q3 2026 Pilot Ready",
+        secondaryMetricLabel: "Development Stage",
+        secondaryMetricValue: "Mode C Partner · 84.30 IAI",
+        investorThesis: "Highest capital efficiency (₱750 CAPEX per monthly beneficiary) via shared-facility revenue split.",
+        idealOperator: "Active Recovery, Sports Rehab & Community Nutrition Partner",
+        avoidanceNote: "Focused on active recovery, nutrition coaching & preventive community movement.",
+        coverImageUrl: "assets/images/locusherosec.png",
+      },
+    ];
+  }
 
   let activeLens = "all";
   let activeSector = "all";
@@ -9490,6 +9567,7 @@ async function initCityPipeline() {
           <div class="pipe-spotlight-media-wrap">
             <img class="pipe-spotlight-img" src="${escapeHtml(spotlightItem.coverImageUrl || 'assets/images/Property6.png')}" alt="${escapeHtml(spotlightItem.title)}">
             <div class="pipe-spotlight-badges">
+              ${spotlightItem.isBenchmarkShowcase ? `<span class="pipe-badge" style="background:#E5FBB9;color:#111417;font-weight:800;border:1px solid #223F31;">VERIFIED OPPORTUNITY</span>` : ""}
               <span class="pipe-badge is-featured">${icon("spark")}Featured Signal</span>
               <span class="pipe-badge is-category">${escapeHtml(spotlightItem.category || "Strategic")}</span>
             </div>
@@ -9547,12 +9625,15 @@ async function initCityPipeline() {
             ` : ""}
 
             <div class="pipe-spotlight-actions">
+              <a href="${basePath}/wellness.php?property_id=${encodeURIComponent(spotlightItem.propertyId || 101)}&mode=compare" class="btn-pipe-primary" style="background:#011944;color:#E5FBB9;">
+                Evaluate in 3-Way Wellness Workspace ↗
+              </a>
               ${isSpotlightGap ? `
-                <a href="${basePath}/property-ranking.php" class="btn-pipe-primary">
+                <a href="${basePath}/property-ranking.php" class="btn-pipe-secondary">
                   Find Matching Sites ↗
                 </a>
               ` : `
-                <a href="${basePath}/property-explorer.php" class="btn-pipe-primary">
+                <a href="${basePath}/property-explorer.php" class="btn-pipe-secondary">
                   Explore Corridor in Map ↗
                 </a>
               `}
@@ -9677,6 +9758,7 @@ async function initCityPipeline() {
         <div class="pipe-card-top">
           <div class="pipe-card-tags">
             <div class="pipe-tag-group">
+              ${item.isBenchmarkShowcase ? `<span class="pipe-tag" style="background:#E5FBB9;color:#111417;font-weight:800;border:1px solid rgba(34,63,49,0.35);">VERIFIED OPPORTUNITY</span>` : ""}
               <span class="pipe-tag is-sector">${escapeHtml(item.category || "General")}</span>
               ${isGap ? `
                 <span class="pipe-tag ${supplyClass}">${escapeHtml(supplySignalLabel)}</span>
@@ -9721,15 +9803,9 @@ async function initCityPipeline() {
           <button type="button" class="btn-card-secondary" data-inspect-signal="${item.id}">
             Inspect Brief
           </button>
-          ${isGap ? `
-            <a href="${basePath}/property-ranking.php" class="btn-card-primary is-amber">
-              Find Sites ↗
-            </a>
-          ` : `
-            <a href="${basePath}/property-explorer.php" class="btn-card-primary is-blue">
-              Explore ↗
-            </a>
-          `}
+          <a href="${basePath}/wellness.php?property_id=${encodeURIComponent(item.propertyId || 101)}&mode=compare" class="btn-card-primary is-blue">
+            3-Way Workspace ↗
+          </a>
         </div>
       </article>
     `;

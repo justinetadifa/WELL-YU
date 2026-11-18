@@ -172,6 +172,30 @@ function sfc_render_account_page(array $context, string $role, string $mode, str
           <p class="account-eyebrow"><?= $role === 'admin' ? 'CITY WORKSPACE' : ($signup ? 'GET STARTED' : 'YOUR wELYU ACCOUNT') ?></p>
           <h1 id="accountTitle" class="account-title" data-welcome-heading><?= $role === 'admin' ? 'City staff access' : ($signup ? ($role === 'seller' ? 'Broker registration' : 'Create your account') : $loginWelcomeText) ?></h1>
           <p class="account-intro"><?= match (true) { $role === 'admin' => 'CICTO · City Assessor · LEBDO', $role === 'seller' && $signup => 'Submit your PRC credentials for review by authorized CAO or LEBDO personnel.', $role === 'seller' => 'Sign in to your listings and verification status.', $signup => 'A few details to make your next move.', default => 'Sign in to explore your next opportunity.' } ?></p>
+          <div class="welyu-login-instant-demo" data-login-instant-demo>
+            <div class="welyu-login-instant-header">
+              <span class="welyu-login-instant-kicker">Workspace access</span>
+              <span class="welyu-login-instant-sub">Switch directly into a pre-verified local session:</span>
+            </div>
+            <div class="welyu-login-instant-grid">
+              <a href="<?= sfc_account_escape(sfc_path('/api/demo-switch.php?role=investor')) ?>" class="welyu-login-instant-btn <?= $role === 'investor' ? 'is-recommended' : '' ?>" data-login-demo-role="investor">
+                <strong>Investor</strong>
+                <small>Juan Dela Cruz · Saved &amp; Proposals</small>
+              </a>
+              <a href="<?= sfc_account_escape(sfc_path('/api/demo-switch.php?role=broker')) ?>" class="welyu-login-instant-btn <?= $role === 'seller' ? 'is-recommended' : '' ?>" data-login-demo-role="broker">
+                <strong>PRC Broker</strong>
+                <small>Maria Santos, REB #0028491</small>
+              </a>
+              <a href="<?= sfc_account_escape(sfc_path('/api/demo-switch.php?role=admin')) ?>" class="welyu-login-instant-btn <?= $role === 'admin' ? 'is-recommended' : '' ?>" data-login-demo-role="admin">
+                <strong>Admin / LEBDO</strong>
+                <small>Justine Tadifa · All-Access Reviewer</small>
+              </a>
+              <a href="<?= sfc_account_escape(sfc_path('/api/demo-switch.php?role=guest')) ?>" class="welyu-login-instant-btn" data-login-demo-role="guest">
+                <strong>Guest</strong>
+                <small>Public Showcase &amp; Atlas View</small>
+              </a>
+            </div>
+          </div>
           <?php if (($_GET['reason'] ?? '') === 'timeout'): ?><p class="account-message" role="status">Your session expired. Sign in again.</p><?php endif; ?>
           <?php if ($error !== ''): ?><p class="account-message is-error" role="alert"><?= sfc_account_escape($error) ?></p><?php endif; ?>
           <p class="account-validation-summary account-sr-only" data-validation-summary role="alert"><?= $fieldErrors !== [] ? 'Please check the highlighted fields.' : '' ?></p>

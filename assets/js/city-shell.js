@@ -7,7 +7,7 @@
 
   const shell = header.querySelector('.city-nav');
   const darkHeroes = [...document.querySelectorAll('.city-hero, .admin-hero-card')];
-  const mobile = window.matchMedia('(max-width: 850px)');
+  const mobile = window.matchMedia('(max-width: 1279px)');
   let menuOpen = false;
   let pageScroll = null;
   const syncMenuHeight = () => {

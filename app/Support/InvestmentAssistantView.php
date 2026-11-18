@@ -8,10 +8,10 @@ function sfc_render_investment_assistant(array $context): void
     ?>
 <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/investment-assistant.css<?= sfc_asset_version('css/investment-assistant.css') ?>">
 <section class="investment-assistant" id="investmentAssistant" aria-labelledby="investmentAssistantTitle" data-investment-assistant>
-  <div class="ia-shell ia-workbench" id="iaWorkbench" aria-busy="true">
-    <section class="ia-conversation" aria-labelledby="investmentAssistantTitle">
+  <div class="ia-shell ia-workbench is-assistant-collapsed" id="iaWorkbench" aria-busy="true">
+    <section class="ia-conversation" id="iaConversationDrawer" aria-labelledby="investmentAssistantTitle">
       <header class="ia-intro">
-        <div class="ia-brand-line"><span class="ia-chat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11.5a8 8 0 0 1-8 8c-1.2 0-2.3-.2-3.3-.7L4 20l1.2-4.7A8 8 0 1 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg></span><h1 id="investmentAssistantTitle">Property Assistant</h1><button type="button" class="ia-text-button" id="iaReset" disabled>New conversation</button></div>
+        <div class="ia-brand-line"><span class="ia-chat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11.5a8 8 0 0 1-8 8c-1.2 0-2.3-.2-3.3-.7L4 20l1.2-4.7A8 8 0 1 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg></span><h1 id="investmentAssistantTitle">Property Assistant</h1><button type="button" class="ia-text-button" id="iaReset" disabled>New conversation</button><button type="button" class="ia-text-button" id="iaCloseAssistant" aria-label="Collapse assistant sidebar">Hide</button></div>
         <h2 id="iaConversationTitle">Find a place for <br>your next idea.</h2>
         <p class="ia-description">Explore published properties through guided search.</p>
       </header>
@@ -36,8 +36,7 @@ function sfc_render_investment_assistant(array $context): void
       </div>
     </section>
     <section class="ia-results" id="iaResults" aria-labelledby="iaResultsTitle">
-      <div class="ia-breadcrumb" aria-label="Current view">Assistant <span aria-hidden="true">›</span> Properties</div>
-      <div class="ia-results-head"><div><div class="ia-results-title-row"><h2 id="iaResultsTitle">Properties to explore</h2><span class="ia-result-count" id="iaResultCount" aria-live="polite">Loading…</span></div><p>Published properties in San Fernando, La Union</p></div><div class="ia-view-switch" role="group" aria-label="Property result view"><button type="button" id="iaListView" aria-pressed="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5h10M7 10h10M7 15h10M3 5h.01M3 10h.01M3 15h.01"/></svg>List</button><button type="button" id="iaMapView" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2 4 5-2 6 2 5-2v14l-5 2-6-2-5 2V4Zm5-2v14M13 4v14"/></svg>Map</button></div></div>
+      <div class="ia-results-head"><div><div class="ia-results-title-row"><h2 id="iaResultsTitle">Properties to explore</h2><span class="ia-result-count" id="iaResultCount" aria-live="polite">Loading…</span></div><p>Published properties in San Fernando, La Union</p></div><div class="ia-view-switch" role="group" aria-label="Property result view"><button type="button" id="iaToggleAssistant" aria-expanded="false" aria-controls="iaConversationDrawer">Assistant</button><button type="button" id="iaListView" aria-pressed="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5h10M7 10h10M7 15h10M3 5h.01M3 10h.01M3 15h.01"/></svg>List</button><button type="button" id="iaMapView" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2 4 5-2 6 2 5-2v14l-5 2-6-2-5 2V4Zm5-2v14M13 4v14"/></svg>Map</button></div></div>
       <div class="ia-search-tools">
         <div class="ia-tools-heading">
           <div class="ia-tools-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14M7 3v4M13 8v4M8 13v4"/></svg><span>Refine your search</span></div>

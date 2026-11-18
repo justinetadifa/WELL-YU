@@ -21,6 +21,20 @@
     body[data-page="city-investor"] .investment-assistant .ia-workbench {
       grid-template-columns: minmax(300px, 31.5%) minmax(0, 1fr) !important;
     }
+    body[data-page="city-investor"] .investment-assistant .ia-workbench.is-assistant-collapsed {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    body[data-page="city-investor"] .investment-assistant .ia-workbench.is-assistant-collapsed .ia-conversation {
+      display: none !important;
+    }
+    body[data-page="city-investor"] .investment-assistant .ia-workbench.is-assistant-collapsed .ia-results {
+      border-radius: 20px !important;
+    }
+    @media (min-width: 960px) {
+      body[data-page="city-investor"] .investment-assistant .ia-workbench.is-assistant-collapsed .ia-result-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+    }
     body[data-page="city-investor"] .investment-assistant .ia-conversation {
       padding: 28px 24px 22px !important;
       background: #efeee8 !important;

@@ -15,8 +15,11 @@ function sfc_web_context(): array
     $appName = (string) ($config['app']['name'] ?? 'wELYU');
     $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
     $basePath = rtrim(str_replace('\\', '/', dirname($scriptName)), '/.');
-    if (preg_match('#/(admin-dashboard|seller-dashboard|investor-dashboard|admin-login|seller-login|investor-login|property-explorer|property-ranking|voting-dashboard|property-details|compare-decision|admin-properties|admin-showcase|offer-board|city-pipeline|simulator|reports|logout)\.php$#', $scriptName, $matches) === 1) {
+    if (preg_match('#/(admin-dashboard|seller-dashboard|investor-dashboard|admin-login|seller-login|investor-login|property-explorer|property-ranking|voting-dashboard|property-details|compare-decision|admin-properties|admin-showcase|offer-board|city-pipeline|simulator|reports|logout|wellness|wellness-investments)\.php$#', $scriptName, $matches) === 1) {
         $basePath = substr($scriptName, 0, -strlen($matches[0]));
+    }
+    if (str_ends_with($basePath, '/api')) {
+        $basePath = substr($basePath, 0, -4);
     }
     $basePath = $basePath === '' ? '' : $basePath;
     $assetBase = ($basePath === '' ? '' : $basePath) . '/assets';

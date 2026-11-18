@@ -32,9 +32,20 @@ final class NearbyBusinesses
         'pharmacy' => ['name' => 'Pharmacy & Medicine', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
         'chemist' => ['name' => 'Pharmacy & Health', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
         'dentist' => ['name' => 'Dental Care', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'dental' => ['name' => 'Dental & Specialty Clinic', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
         'doctors' => ['name' => 'Medical Clinic', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
         'clinic' => ['name' => 'Medical Clinic', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
         'hospital' => ['name' => 'Hospital & Healthcare', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'dialysis' => ['name' => 'Dialysis & Renal Center', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'rehab' => ['name' => 'Physical Therapy & Rehab', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'physiotherapist' => ['name' => 'Physical Therapy & Rehab', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'mental_health' => ['name' => 'Mental & Psychosocial Care', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'health_station' => ['name' => 'Public Health Station (BHS / CHO)', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'barangay_health_station' => ['name' => 'Barangay Health Station (BHS)', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
+        'emergency' => ['name' => 'DRRMO & Emergency EMS', 'group' => 'civic', 'color' => 'rose', 'icon' => 'shield'],
+        'fitness_centre' => ['name' => 'Fitness & Movement Studio', 'group' => 'wellness', 'color' => 'emerald', 'icon' => 'sparkles'],
+        'gym' => ['name' => 'Gym & Fitness Center', 'group' => 'wellness', 'color' => 'emerald', 'icon' => 'sparkles'],
+        'park' => ['name' => 'Wellness Park & Active Space', 'group' => 'wellness', 'color' => 'emerald', 'icon' => 'sparkles'],
         'optician' => ['name' => 'Optical Clinic', 'group' => 'healthcare', 'color' => 'emerald', 'icon' => 'cross'],
         'supermarket' => ['name' => 'Supermarket & Grocery', 'group' => 'retail', 'color' => 'purple', 'icon' => 'shopping-bag'],
         'convenience' => ['name' => 'Convenience Retail', 'group' => 'retail', 'color' => 'purple', 'icon' => 'shopping-bag'],
@@ -100,54 +111,67 @@ final class NearbyBusinesses
         $directory = [];
         $dataDir = $dataDirectory ?? dirname(__DIR__, 2) . '/data';
 
-        // 1. Primary: Load verified 2026 San Fernando City Commercial & Civic Directory
-        $commercialDirFile = $dataDir . '/commercial-directory.json';
-        if (is_file($commercialDirFile)) {
+        // 1. Primary: Load 10-category San Fernando City Healthcare & Wellness Inventory + Commercial Directory
+        foreach ([
+            $dataDir . '/san-fernando-health-inventory.json' => 'San Fernando Health & Wellness Inventory',
+            $dataDir . '/commercial-directory.json' => 'Local Commercial Directory',
+        ] as $commercialDirFile => $defaultSource) {
+            if (!is_file($commercialDirFile)) {
+                continue;
+            }
             $raw = @file_get_contents($commercialDirFile);
-            if ($raw !== false) {
-                $dirData = json_decode($raw, true);
-                if (is_array($dirData) && isset($dirData['features']) && is_array($dirData['features'])) {
-                    foreach ($dirData['features'] as $feature) {
-                        $props = $feature['properties'] ?? [];
-                        $name = trim((string) ($props['name'] ?? ''));
-                        $coords = $feature['geometry']['coordinates'] ?? null;
-                        if ($name === '' || !self::validCoordinates($feature) || self::isClosed($props)) {
-                            continue;
-                        }
-                        $lng = (float) $coords[0];
-                        $lat = (float) $coords[1];
-                        if (!is_finite($lat) || !is_finite($lng) || abs($lat) > 90 || abs($lng) > 180) {
-                            continue;
-                        }
-                        $rawCat = strtolower(trim((string) ($props['categoryKey'] ?? $props['category'] ?? $props['businessType'] ?? 'commercial')));
-                        $meta = self::CATEGORY_MAP[$rawCat] ?? [
-                            'name' => ucwords(str_replace('_', ' ', $rawCat ?: 'Commercial Establishment')),
-                            'group' => 'commercial',
-                            'color' => 'slate',
-                            'icon' => 'store',
-                        ];
-                        $key = strtolower($name) . '|' . round($lat, 4) . '|' . round($lng, 4);
-                        $directory[$key] = [
-                            'id' => $props['id'] ?? $feature['id'] ?? ('biz-' . md5($key)),
-                            'name' => $name,
-                            'category' => $meta['name'],
-                            'categoryKey' => $rawCat,
-                            'categoryGroup' => $meta['group'],
-                            'categoryColor' => $meta['color'],
-                            'icon' => $meta['icon'],
-                            'lat' => $lat,
-                            'lng' => $lng,
-                            'status' => self::status($props),
-                            'barangay' => $props['barangay'] ?? null,
-                            'address' => $props['address'] ?? null,
-                            'note' => $props['note'] ?? null,
-                            'source' => $props['source'] ?? 'Local Commercial Directory',
-                            'footprint' => $props['footprint'] ?? (($feature['geometry']['type'] ?? '') === 'Polygon' ? $feature['geometry'] : null),
-                            'bplo_no' => $props['bplo_no'] ?? null,
-                            'osm_id' => $props['osm_id'] ?? null,
-                        ];
-                    }
+            if ($raw === false) {
+                continue;
+            }
+            $dirData = json_decode($raw, true);
+            if (!is_array($dirData) || !isset($dirData['features']) || !is_array($dirData['features'])) {
+                continue;
+            }
+            foreach ($dirData['features'] as $feature) {
+                $props = $feature['properties'] ?? [];
+                $name = trim((string) ($props['name'] ?? ''));
+                $coords = $feature['geometry']['coordinates'] ?? null;
+                if ($name === '' || !self::validCoordinates($feature) || self::isClosed($props)) {
+                    continue;
                 }
+                $lng = (float) $coords[0];
+                $lat = (float) $coords[1];
+                if (!is_finite($lat) || !is_finite($lng) || abs($lat) > 90 || abs($lng) > 180) {
+                    continue;
+                }
+                $rawCat = strtolower(trim((string) ($props['categoryKey'] ?? $props['category'] ?? $props['businessType'] ?? 'commercial')));
+                $meta = self::CATEGORY_MAP[$rawCat] ?? [
+                    'name' => ucwords(str_replace('_', ' ', $rawCat ?: 'Commercial Establishment')),
+                    'group' => 'commercial',
+                    'color' => 'slate',
+                    'icon' => 'store',
+                ];
+                $key = strtolower($name) . '|' . round($lat, 4) . '|' . round($lng, 4);
+                $directory[$key] = [
+                    'id' => $props['id'] ?? $feature['id'] ?? ('biz-' . md5($key)),
+                    'name' => $name,
+                    'category' => $meta['name'],
+                    'categoryKey' => $rawCat,
+                    'categoryGroup' => $meta['group'],
+                    'categoryColor' => $meta['color'],
+                    'icon' => $meta['icon'],
+                    'inventoryCategory' => $props['inventoryCategory'] ?? null,
+                    'careSector' => $props['careSector'] ?? null,
+                    'operatingHours' => $props['operatingHours'] ?? null,
+                    'afterHours' => $props['afterHours'] ?? null,
+                    'accessBarrier' => $props['accessBarrier'] ?? null,
+                    'isAnchor' => $props['isAnchor'] ?? null,
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'status' => self::status($props),
+                    'barangay' => $props['barangay'] ?? null,
+                    'address' => $props['address'] ?? null,
+                    'note' => $props['note'] ?? null,
+                    'source' => $props['source'] ?? $defaultSource,
+                    'footprint' => $props['footprint'] ?? (($feature['geometry']['type'] ?? '') === 'Polygon' ? $feature['geometry'] : null),
+                    'bplo_no' => $props['bplo_no'] ?? null,
+                    'osm_id' => $props['osm_id'] ?? null,
+                ];
             }
         }
 
@@ -501,6 +525,13 @@ final class NearbyBusinesses
 
         if (in_array($proposedActivity, ['', 'general', 'commercial', 'land', 'unspecified'], true)) {
             return ['classification' => 'nearby_place', 'classificationLabel' => 'Nearby place', 'isAnchor' => false];
+        }
+
+        if (SurroundingsRadar::isWellnessServiceType($proposedActivity)) {
+            return SurroundingsRadar::classifyWellnessEstablishment(
+                array_merge($properties, ['businessType' => $categoryKey]),
+                $proposedActivity
+            );
         }
 
         $classified = SurroundingsRadar::classifyEstablishment(

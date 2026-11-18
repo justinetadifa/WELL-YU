@@ -1,171 +1,1405 @@
-/* wELYU connected wellness workspace. Server calculations and permissions are authoritative. */
-(() => {
-  'use strict';
-  const root=document.getElementById('wellnessWorkspace');if(!root)return;
-  const cfg=window.SFC_APP_CONFIG||{},base=(cfg.apiBase||'api')+'/wellness.php';
-  const view=document.getElementById('wellnessView'),notice=document.getElementById('wellnessNotice'),tabs=document.getElementById('wellnessTabs');
-  const state={meta:null,tab:['directory','needs','plan','compare','follow'].includes(location.hash.slice(1))?location.hash.slice(1):'directory',proposal:null,importPreview:null,map:null};
-  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-  const label=value=>String(value||'').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());
-  const money=value=>value===null||value===undefined?'Not recorded':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP',maximumFractionDigits:2}).format(value);
-  const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila'}).format(new Date());
-  const saveDisabled=()=>!state.meta?.signed_in||!state.meta?.workspace?.ready?' disabled':'';
-  function message(text,error=false){notice.textContent=text;notice.classList.toggle('is-error',error);}
-  async function api(action,data=null,query={}){
-    const url=new URL(base,location.href);url.searchParams.set('action',action);Object.entries(query).forEach(([k,v])=>url.searchParams.set(k,v));
-    const options={credentials:'same-origin',headers:{Accept:'application/json'}};
-    if(data!==null){options.method='POST';options.headers['X-CSRF-Token']=cfg.csrfToken||'';if(data instanceof FormData)options.body=data;else{options.headers['Content-Type']='application/json';options.body=JSON.stringify(data);}}
-    const response=await fetch(url,options);let result;try{result=await response.json();}catch{throw new Error('The server returned an unreadable response. Try again.');}
-    if(!response.ok||result.error)throw new Error(result.error||'The request could not finish.');return result;
+const cfg = window.SFC_APP_CONFIG || {};
+const base = `${cfg.basePath || ''}/api/wellness.php`;
+const tabs = document.getElementById('wellnessTabs');
+const view = document.getElementById('wellnessView');
+const notice = document.getElementById('wellnessNotice');
+const root = document.getElementById('wellnessWorkspace');
+
+const LABELS = {
+  open: 'Option A · Open New',
+  improve: 'Option B · Improve Existing',
+  partner: 'Option C · Partner & Co-Locate',
+  rehabilitation: 'Preventive Rehab',
+  preventive_care: 'Preventive Care',
+  mental_wellbeing: 'Mental Wellness',
+  senior_living: 'Healthy Ageing',
+  movement: 'Active Fitness & Recovery',
+  nutrition: 'Nutrition',
+  access_affordability: 'Affordability & Access',
+  health_access: 'Health Facility Proximity',
+  active_mobility: 'Active Mobility & PWD Access',
+  operating_readiness: 'Operating Readiness',
+  cost_feasibility: 'Cost Feasibility',
+  market_context: 'Unmet Need & Market Fit',
+  zoning: 'Zoning',
+  permit: 'Permit',
+  sanitation: 'Sanitation',
+  environment: 'Environment',
+  hazards: 'Hazards',
+  physical_access: 'Stepped / Barrier Entrance',
+  hours: 'Daytime-Only Hours (Closes 5 PM)',
+  affordability: 'High Out-of-Pocket Fee',
+  capacity: 'Overcrowded Capacity',
+  travel: 'Long Transit Distance',
+  none: 'All 5 Reviewed',
+  reviewed: 'Verified',
+  reported: 'Reported',
+  documented: 'Documented',
+  unknown: 'Unverified',
+  restricted: 'Restricted',
+  public: 'Public',
+  private: 'Private',
+  ngo: 'Community / NGO',
+  non_agri: 'RTWPB Non-Agri (₱468/day)',
+  micro_agri: 'RTWPB Micro/Agri (₱435/day)',
+  provisional: 'Provisional',
+  validated: 'Validated',
+  confirmed_inquiry: 'Confirmed Inquiry',
+  site_visit: 'Site Visit',
+  decision: 'Decision Recorded',
+  implemented: 'Implemented',
+  observed_follow_up: 'Observed Outcome',
+  correction_report: 'Correction Report',
+  correction_response: 'Correction Response',
+};
+
+const TAB_ALIASES = {
+  needs: 'needs',
+  directory: 'needs',
+  compare: 'compare',
+  assumptions: 'assumptions',
+  assessment: 'assumptions',
+  plan: 'assumptions',
+  follow: 'follow',
+  implementation: 'follow',
+  review: 'review',
+  settings: 'settings',
+};
+
+const DEFAULT_WEIGHTS = {
+  access_affordability: 22,
+  health_access: 16,
+  active_mobility: 18,
+  operating_readiness: 16,
+  cost_feasibility: 14,
+  market_context: 14,
+};
+
+const state = {
+  tab: initialTab(),
+  needSubView: initialSubView(),
+  selectedNeedKey: 'biday',
+  activeMode: 'open',
+  activeBarangay: 'Biday',
+  meta: null,
+  proposal: 0,
+  scenarios: [],
+  importPreview: null,
+  importHash: null,
+  map: null,
+  ringGroup: null,
+  markerGroup: null,
+  linkedProperty: null,
+  mapLayers: {
+    private: true,
+    public: true,
+    barriers: true,
+    rings: true,
+  },
+  sensitivity: {
+    priceDeltaPct: 0,
+    fixedCostDeltaPct: 0,
+    weeklyHours: 72,
+    wageTier: 'non_agri',
+    simulateGateHold: 'none',
+    weights: { ...DEFAULT_WEIGHTS },
+  },
+  verificationChecks: {
+    bp344_ramp: { title: 'Confirm ground-floor BP 344 ramp slope (1:12 grade)', office: 'City Engineering & PDAO', status: 'pending', impact: 'Directly affects Active Mobility & PWD clearance.' },
+    evening_roster: { title: 'Confirm evening practitioner shift roster (5:00 PM–8:00 PM)', office: 'Operator & LEBDO', status: 'pending', impact: 'Closes evening hours barrier under RTWPB Wage Order RB1-23.' },
+    cho_sanitation: { title: 'Verify PrimeWater mainline & ADA restroom ventilation', office: 'City Health Office (Sanitation)', status: 'verified', impact: 'Satisfies Sanitation clearance gate prior to BPLO permit.' },
+    ord_tax_relief: { title: 'Pre-screen Ordinance No. 2024-41 priority wellness eligibility', office: 'LEBDO / City Assessor', status: 'verified', impact: 'Unlocks 4–6 year Local Business Tax & RPT relief.' },
+    hazard_access: { title: 'Verify all-weather road access & flood clearance (CDRRMO)', office: 'CDRRMO / CPDO', status: 'pending', impact: 'Required before final Hazards gate sign-off.' },
+  },
+};
+
+function initialTab() {
+  const hash = location.hash.replace('#', '').toLowerCase();
+  return TAB_ALIASES[hash] || 'needs';
+}
+
+function initialSubView() {
+  return location.hash.replace('#', '').toLowerCase() === 'directory' ? 'services' : 'barriers';
+}
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function label(key) {
+  return LABELS[key] || String(key || '').replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+}
+
+function money(value) {
+  if (value === null || value === undefined || value === '' || Number.isNaN(Number(value))) return '—';
+  return '₱' + Number(value).toLocaleString('en-PH', { maximumFractionDigits: 0 });
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function message(text, error = false) {
+  if (!notice) return;
+  notice.textContent = text;
+  notice.classList.toggle('is-error', Boolean(error));
+}
+
+function empty(text) {
+  return `<div class="wy-empty">${esc(text)}</div>`;
+}
+
+function saveDisabled() {
+  return state.meta?.signed_in && state.meta?.workspace?.ready ? '' : ' disabled';
+}
+
+async function api(action, data = null, query = {}) {
+  const params = new URLSearchParams({ action, ...query });
+  const options = { method: data ? 'POST' : 'GET', credentials: 'same-origin', headers: { Accept: 'application/json' } };
+  if (data instanceof FormData) {
+    if (cfg.csrfToken) data.append('_csrf', cfg.csrfToken);
+    if (cfg.csrfToken) options.headers['X-CSRF-Token'] = cfg.csrfToken;
+    options.body = data;
+  } else if (data) {
+    options.headers['Content-Type'] = 'application/json';
+    if (cfg.csrfToken) options.headers['X-CSRF-Token'] = cfg.csrfToken;
+    options.body = JSON.stringify({ ...data, csrf_token: cfg.csrfToken || '' });
   }
-  const opts=(values,empty='Choose…')=>`<option value="">${esc(empty)}</option>`+values.map(v=>`<option value="${esc(typeof v==='object'?v.id:v)}">${esc(typeof v==='object'?v.title||v.name:label(v))}</option>`).join('');
-  function field(name,title,type='text',extra='',required=false){return `<label class="wy-field"><span>${esc(title)}</span><input name="${esc(name)}" type="${type}" ${required?'required':''} ${extra}></label>`;}
-  function select(name,title,values,required=false,empty='Choose…'){return `<label class="wy-field"><span>${esc(title)}</span><select name="${name}" ${required?'required':''}>${opts(values,empty)}</select></label>`;}
-  const area=(name,title,required=false,placeholder='')=>`<label class="wy-field wy-full"><span>${esc(title)}</span><textarea name="${name}" ${required?'required':''} placeholder="${esc(placeholder)}"></textarea></label>`;
-  const evidence=(prefix='')=>field(prefix+'source','Source / supporting record','text','maxlength="600"',true)+field(prefix+'observed_on','Collected / observed on','date',`max="${today()}" value="${today()}"`,true)+field(prefix+'url','Source URL (optional)','url');
-  const badges=row=>`<span class="wy-label">${esc(label(row.review_status))}</span>${row.outdated?'<span class="wy-label is-warning">Verification due / date unknown</span>':''}`;
-  const empty=text=>`<div class="wy-empty">${esc(text)}</div>`;
-  const sourceText=record=>{const e=record.payload?.evidence||{};return `<p class="wy-muted">Source: ${esc(e.source||'Not recorded')} · ${esc(e.observed_on||'Date unknown')}</p>`;};
-  const privateRecords=()=>['services','needs','proposals'].flatMap((key,i)=>(state.meta[key]||[]).filter(row=>state.meta.reviewer||row.owner_user_id===cfg.user?.id).map(row=>({...row,kind:['service','need','proposal'][i]})));
-  function recordOptions(){return opts(privateRecords().map(row=>({id:`${row.kind}:${row.id}`,title:`${label(row.kind)} · ${row.title}`})));}
-  async function load(){
-    state.meta=await api('bootstrap');
-    const m=state.meta;
-    message(!m.workspace.ready?'The wellness workspace is being prepared. You can explore an assessment or simulation; saving will be available after setup.':(!m.signed_in?'Explore the recorded directory and needs. Sign in to contribute, save an assessment or export a private brief.':'Your workspace is ready. New submissions require review; assessment snapshots keep their original inputs.'));
-    const links=[['directory','Service directory'],['needs','Community needs'],['plan','Plan & assess'],['compare','Compare & brief'],['follow','Follow-up']];if(m.reviewer)links.push(['review','Review desk'],['settings','Scoring & imports']);
-    tabs.innerHTML=links.map(([key,text])=>`<button type="button" data-tab="${key}" aria-current="${state.tab===key?'page':'false'}">${text}</button>`).join('');
+  const response = await fetch(`${base}?${params.toString()}`, options);
+  const raw = await response.text();
+  let json = {};
+  try { json = raw ? JSON.parse(raw) : {}; } catch { throw new Error('Unexpected server response.'); }
+  if (!response.ok) throw new Error(json.error || `Request failed (${response.status}).`);
+  return json;
+}
+
+function opts(values, placeholder = 'Select…') {
+  return `<option value="">${esc(placeholder)}</option>` + (values || []).map(item =>
+    typeof item === 'object'
+      ? `<option value="${esc(item.id)}">${esc(item.title || item.name || item.label)}</option>`
+      : `<option value="${esc(item)}">${esc(label(item))}</option>`
+  ).join('');
+}
+
+function field(name, title, type = 'text', extra = '', required = false) {
+  return `<label class="wy-field"><span>${esc(title)}</span><input name="${esc(name)}" type="${type}" ${required ? 'required' : ''} ${extra}></label>`;
+}
+
+function select(name, title, values, required = false, placeholder = 'Choose…') {
+  return `<label class="wy-field"><span>${esc(title)}</span><select name="${esc(name)}" ${required ? 'required' : ''}>${opts(values, placeholder)}</select></label>`;
+}
+
+function area(name, title, required = false, val = '') {
+  return `<label class="wy-field" style="grid-column:1/-1;"><span>${esc(title)}</span><textarea name="${esc(name)}" rows="3" ${required ? 'required' : ''}>${esc(val)}</textarea></label>`;
+}
+
+function evidence(prefix = '') {
+  return field(prefix + 'source', 'Evidence source reference', 'text', '', true)
+    + field(prefix + 'observed_on', 'Observed date', 'date', `max="${today()}" value="${today()}"`, true)
+    + field(prefix + 'url', 'Reference URL (optional)', 'url');
+}
+
+function privateRecords() {
+  const m = state.meta || {};
+  return [
+    ...(m.needs || []).map(row => ({ ...row, kind: 'need' })),
+    ...(m.services || []).map(row => ({ ...row, kind: 'service' })),
+    ...(m.proposals || []).map(row => ({ ...row, kind: 'proposal' })),
+  ];
+}
+
+function recordOptions() {
+  return opts(privateRecords().map(row => ({ id: `${row.kind}:${row.id}`, title: `${label(row.kind)} · ${row.title}` })), 'Choose a record…');
+}
+
+function needCatalog() {
+  const pilot = state.meta?.siklab_pilot || {};
+  const catalog = { ...(pilot.need_scenarios || {}) };
+  const basePathways = pilot.pathways || {};
+
+  // Fallback synthesis if backend need_scenarios is empty
+  if (!Object.keys(catalog).length && basePathways.open) {
+    catalog.biday = {
+      key: 'biday',
+      barangay: 'Biday',
+      label: 'Brgy. Biday — Evening Physical Rehab & Senior Mobility Access',
+      category: 'rehabilitation',
+      typology_badge: 'Preventive Rehab & Senior Mobility',
+      lat: 16.6312,
+      lng: 120.3238,
+      barriers: ['physical_access', 'hours', 'affordability'],
+      intended_users: 'Seniors (60+) and post-injury commuters in Brgy. Biday',
+      baseline_summary: 'Current supply: 1 daytime clinic, closes 5:00 PM; stepped entry and 4.2 km downtown commute.',
+      source: 'CHO / OSCA / PDAO Barangay Needs Registry',
+      observed_on: '2026-04-10',
+      pathways: basePathways,
+    };
+  }
+
+  // Merge user-submitted needs (deduplicated against seeded baseline barangays if custom title added)
+  (state.meta?.needs || []).forEach(row => {
+    const brgy = row.barangay || 'Biday';
+    const baseKey = String(brgy).toLowerCase();
+    if (!catalog[baseKey] && !row.title?.includes('Preventive Rehab')) {
+      const template = catalog.biday || Object.values(catalog)[0];
+      if (!template) return;
+      catalog[`need_${row.id}`] = {
+        key: `need_${row.id}`,
+        id: row.id,
+        owner_user_id: row.owner_user_id,
+        revision: row.revision,
+        review_status: row.review_status,
+        barangay: brgy,
+        label: `Brgy. ${brgy} — ${row.title}`,
+        category: row.payload?.category || 'preventive_care',
+        typology_badge: label(row.payload?.category || 'preventive_care'),
+        lat: row.lat || template.lat,
+        lng: row.lng || template.lng,
+        barriers: row.payload?.barriers || ['hours', 'affordability'],
+        intended_users: row.payload?.intended_users || 'Local residents',
+        baseline_summary: row.payload?.notes || `Submitted barrier in Brgy. ${brgy}.`,
+        source: row.payload?.evidence?.source || 'Community need submission',
+        observed_on: row.payload?.evidence?.observed_on || today(),
+        pathways: template.pathways,
+      };
+    }
+  });
+
+  return catalog;
+}
+
+function activeNeed() {
+  const cat = needCatalog();
+  return cat[state.selectedNeedKey] || cat.biday || Object.values(cat)[0] || null;
+}
+
+function computePathwayMetrics(pathway, sens) {
+  const criteria = pathway?.evidence?.criteria || {};
+  const weights = sens.weights || DEFAULT_WEIGHTS;
+  let wSum = 0;
+  let weightedScore = 0;
+
+  const criterionRows = Object.entries(state.meta?.criteria || {}).map(([key, title]) => {
+    const rawObs = criteria[key] || {};
+    const rawVal = Number(rawObs.value ?? 85);
+    const w = Number(weights[key] ?? DEFAULT_WEIGHTS[key] ?? 16);
+    wSum += w;
+    return { key, title, rawVal, weight: w, source: rawObs.source || 'Benchmark registry', observed_on: rawObs.observed_on || '2026-04-10', method: rawObs.method || 'Standard normalization' };
+  });
+
+  criterionRows.forEach(r => {
+    const normalizedW = wSum > 0 ? (r.weight / wSum) * 100 : r.weight;
+    r.contribution = (r.rawVal * normalizedW) / 100;
+    weightedScore += r.contribution;
+  });
+
+  const mceRounded = Math.round(weightedScore * 100) / 100;
+  const gateHold = sens.simulateGateHold && sens.simulateGateHold !== 'none';
+  const iaiScore = gateHold ? null : mceRounded;
+
+  const baseInp = pathway.scenario_input || {};
+  const priceMult = 1 + (Number(sens.priceDeltaPct || 0) / 100);
+  const hoursRatio = Number(sens.weeklyHours || baseInp.weekly_hours || 72) / Number(baseInp.weekly_hours || 72);
+
+  const pricePhp = Math.round(Number(baseInp.price_per_visit_php || 300) * priceMult * 100) / 100;
+  const varPhp = Number(baseInp.variable_cost_php || 75);
+  const dailyRate = sens.wageTier === 'micro_agri' ? 435.0 : 468.0;
+  const staffCount = Number(baseInp.staff_count || 3);
+  const staffMonthly = Math.round(dailyRate * staffCount * 26 * 100) / 100;
+  const baseStaffMonthly = (baseInp.wage_tier === 'micro_agri' ? 435.0 : 468.0) * staffCount * 26;
+  const fixedPhp = Math.max(12000, Math.round((Number(baseInp.fixed_monthly_cost_php || 45000) - baseStaffMonthly + staffMonthly) * 100) / 100);
+  const startupPhp = Number(baseInp.startup_cost_php || 420000);
+  const customers = Math.max(50, Math.round(Number(baseInp.expected_monthly_customers || 500) * Math.min(1.35, Math.max(0.65, hoursRatio))));
+
+  const marginCents = Math.round(pricePhp * 100) - Math.round(varPhp * 100);
+  const fixedCents = Math.round(fixedPhp * 100);
+  const breakEven = marginCents > 0 ? Math.floor((fixedCents + marginCents - 1) / marginCents) : null;
+  const netPhp = marginCents > 0 ? Math.round(((pricePhp - varPhp) * customers - fixedPhp) * 100) / 100 : -fixedPhp;
+  const paybackMonths = netPhp > 0 ? Math.round((startupPhp / netPhp) * 10) / 10 : null;
+  const capexPerBeneficiary = customers > 0 ? Math.round((startupPhp / customers) * 100) / 100 : null;
+
+  const holidayYears = Number(baseInp.tax_holiday_years || (startupPhp >= 1500000 ? 5 : 4));
+  const annualGross = pricePhp * customers * 12;
+  const annualTaxRelief = Math.round((annualGross * 0.015 + startupPhp * 0.01) * 100) / 100;
+  const totalTaxSavings = Math.round(annualTaxRelief * holidayYears * 100) / 100;
+
+  return {
+    mode: pathway.mode,
+    badge: pathway.badge || label(pathway.mode),
+    title: pathway.title,
+    subtitle: pathway.subtitle || '',
+    additional_access: pathway.additional_access_summary || `${customers} visits/mo · ${Math.round(Number(sens.weeklyHours || baseInp.weekly_hours || 72))} hrs/wk`,
+    mce_score: mceRounded,
+    iai_score: iaiScore,
+    gate_hold: gateHold ? sens.simulateGateHold : null,
+    criterionRows,
+    readiness: pathway.evidence?.readiness || {},
+    price_per_visit_php: pricePhp,
+    variable_cost_php: varPhp,
+    fixed_monthly_cost_php: fixedPhp,
+    startup_capex_php: startupPhp,
+    expected_monthly_customers: customers,
+    break_even_visits_per_month: breakEven,
+    monthly_noi_php: netPhp,
+    estimated_payback_months: paybackMonths,
+    capital_cost_per_monthly_beneficiary_php: capexPerBeneficiary,
+    staff_count: staffCount,
+    daily_wage_php: dailyRate,
+    monthly_staff_cost_php: staffMonthly,
+    tax_holiday_years: holidayYears,
+    annual_tax_relief_php: annualTaxRelief,
+    total_tax_holiday_savings_php: totalTaxSavings,
+  };
+}
+
+function buildModalForms() {
+  const m = state.meta;
+  const needMount = document.getElementById('wyNeedModalFormMount');
+  const serviceMount = document.getElementById('wyServiceModalFormMount');
+  if (needMount && !needMount.hasChildNodes()) {
+    needMount.innerHTML = `<form data-form="need" id="needForm"><input name="id" type="hidden"><input name="revision" type="hidden"><div class="wy-form-grid">${field('title', 'Requested service or barrier title', 'text', 'maxlength="190"', true)}${select('category', 'Wellness sector', m.categories, true)}${field('intended_users', 'Affected resident group', 'text', 'maxlength="600"', true)}${select('barangay', 'Barangay', m.barangays, true)}${field('lat', 'Latitude (optional)', 'number', 'step="any"')}${field('lng', 'Longitude (optional)', 'number', 'step="any"')}${evidence()}${area('notes', 'Observed barrier & supporting notes', true)}</div><p class="wy-muted" style="margin:6px 0 4px;"><strong>Specific barriers reported</strong></p><div style="display:flex;flex-wrap:wrap;gap:12px;">${m.barriers.map(k => `<label class="wy-check"><input name="barrier_${k}" type="checkbox">${esc(label(k))}</label>`).join('')}</div><div class="wy-actions" style="margin-top:14px;"><button type="submit" class="wy-primary"${saveDisabled()}>Submit Barrier Report</button><button type="button" data-close-modal="wyNeedModal">Cancel</button></div></form>`;
+  }
+  if (serviceMount && !serviceMount.hasChildNodes()) {
+    serviceMount.innerHTML = `<form data-form="service" id="serviceForm"><input name="id" type="hidden"><input name="revision" type="hidden"><div class="wy-form-grid">${field('title', 'Service or facility name', 'text', 'maxlength="190"', true)}${select('category', 'Wellness sector', m.categories, true)}${select('barangay', 'Barangay', m.barangays, true)}${select('operator_kind', 'Operator type', ['public', 'private', 'ngo'], true)}${field('price_php', 'Session fee, PHP', 'number', 'min="0" step="0.01"')}${field('weekly_hours', 'Weekly operating hours', 'number', 'min="0" max="168" step="0.5"')}${field('capacity_per_week', 'Weekly visit capacity', 'number', 'min="0" step="1"')}${field('lat', 'Latitude (optional)', 'number', 'step="any"')}${field('lng', 'Longitude (optional)', 'number', 'step="any"')}${evidence()}${area('notes', 'Hours, eligibility, and access notes')}</div><label class="wy-check"><input name="is_free" type="checkbox"> Offered free to eligible residents</label><div class="wy-actions" style="margin-top:14px;"><button type="submit" class="wy-primary"${saveDisabled()}>Submit Service Record</button><button type="button" data-close-modal="wyServiceModal">Cancel</button></div></form>`;
+  }
+}
+
+/* =========================================================
+   TAB 1: 1. Community Needs & Baseline
+   ========================================================= */
+function renderTabNeeds() {
+  const m = state.meta;
+  const catalog = needCatalog();
+  const needsList = Object.values(catalog);
+  const services = m.services || [];
+  const profile = (m.barangay_profiles || {})[state.activeBarangay] || (m.barangay_profiles || {}).Biday || {};
+
+  view.innerHTML = `
+    <div class="wy-tab1-split">
+      <section class="wy-card">
+        <div class="wy-map-toolbar">
+          <div class="wy-layer-pills" role="group" aria-label="Map layers">
+            <button type="button" class="wy-layer-pill ${state.mapLayers.private ? 'is-active' : ''}" data-layer-toggle="private"><span class="wy-layer-dot" style="background:#0056FD;"></span>Recorded Private Providers</button>
+            <button type="button" class="wy-layer-pill ${state.mapLayers.public ? 'is-active' : ''}" data-layer-toggle="public"><span class="wy-layer-dot" style="background:#223F31;"></span>Free Public Alternatives</button>
+            <button type="button" class="wy-layer-pill ${state.mapLayers.barriers ? 'is-active' : ''}" data-layer-toggle="barriers"><span class="wy-layer-dot" style="background:#D97706;"></span>Reported Barangay Barriers</button>
+            <button type="button" class="wy-layer-pill ${state.mapLayers.rings ? 'is-active' : ''}" data-layer-toggle="rings"><span class="wy-layer-dot" style="background:#011944;"></span>5/10/15-Min Catchment Rings</button>
+          </div>
+          <select data-barangay-focus aria-label="Focus barangay catchment" style="min-height:36px;padding:6px 12px;border-radius:999px;border:1px solid rgba(1,25,68,0.2);font-size:12.5px;font-weight:700;background:#fff;color:#011944;">
+            ${Object.keys(m.barangay_profiles || { Biday: {}, Catbangen: {}, Poro: {} }).map(b => `<option value="${esc(b)}" ${state.activeBarangay === b ? 'selected' : ''}>Brgy. ${esc(b)}</option>`).join('')}
+          </select>
+        </div>
+        <div id="wellnessMap" class="wy-map" aria-label="San Fernando City baseline services and barriers map"></div>
+        <div class="wy-catchment-foot" id="wyBarangayFoot">
+          <span><strong>Brgy. ${esc(profile.barangay || state.activeBarangay)}</strong> · ${esc(profile.corridor || 'San Fernando Corridor')}</span>
+          <span>Pop: <strong>${Number(profile.estimated_population || 6420).toLocaleString('en-PH')}</strong> · Seniors 60+: <strong>${esc(profile.senior_share_pct ?? 14.8)}%</strong></span>
+          <span>${esc(profile.nearest_health_facility || 'Barangay Health Station referral corridor')}</span>
+        </div>
+      </section>
+
+      <aside class="wy-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div class="wy-subtoggle" role="tablist" aria-label="Baseline view">
+            <button type="button" class="${state.needSubView === 'barriers' ? 'is-active' : ''}" data-subview="barriers">Barriers (${needsList.length})</button>
+            <button type="button" class="${state.needSubView === 'services' ? 'is-active' : ''}" data-subview="services">Existing Services (${services.length})</button>
+          </div>
+        </div>
+
+        ${state.needSubView === 'barriers' ? `
+          <div class="wy-list">
+            ${needsList.map(item => `
+              <article class="wy-record ${state.selectedNeedKey === item.key ? 'is-selected' : ''}">
+                <span class="wy-label">Brgy. ${esc(item.barangay)}</span>
+                <h3>${esc(item.label.replace(/^Brgy\. [^—]+ — /, ''))}</h3>
+                <p><strong>Affected:</strong> ${esc(item.intended_users)}</p>
+                <p class="wy-muted">${esc(item.baseline_summary)}</p>
+                <div class="wy-chip-row">
+                  ${(item.barriers || []).slice(0, 3).map(b => `<span class="wy-chip">${esc(label(b))}</span>`).join('')}
+                </div>
+                <p class="wy-muted" style="font-size:11.5px;margin-bottom:10px;">Source: ${esc(item.source)} (${esc(item.observed_on)})</p>
+                <div class="wy-actions">
+                  <button type="button" class="wy-primary" data-evaluate-need="${esc(item.key)}">Evaluate Investment Responses &rarr;</button>
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        ` : `
+          <div class="wy-form-grid" style="grid-template-columns:1fr 1fr;margin-top:0;">
+            ${field('directory_search', 'Search services', 'search', 'placeholder="Search…"')}
+            ${select('directory_filter', 'Filter category', m.categories, false, 'All categories')}
+          </div>
+          <div id="serviceList" class="wy-list"></div>
+        `}
+      </aside>
+    </div>
+  `;
+
+  if (state.needSubView === 'services') paintServices();
+  initMap();
+}
+
+function paintServices() {
+  const list = document.getElementById('serviceList');
+  if (!list) return;
+  const query = (view.querySelector('[name=directory_search]')?.value || '').toLowerCase();
+  const cat = view.querySelector('[name=directory_filter]')?.value || '';
+  const items = (state.meta.services || []).filter(r =>
+    (!cat || r.payload?.category === cat)
+    && (!query || JSON.stringify(r).toLowerCase().includes(query))
+  );
+  list.innerHTML = items.length ? items.map(r => `
+    <article class="wy-record">
+      <span class="wy-label">${esc(label(r.payload?.operator_kind || 'private'))}</span>
+      <span class="wy-label">${r.payload?.is_free ? 'Free Public' : money(r.payload?.price_php)}</span>
+      <h3>${esc(r.title)}</h3>
+      <p class="wy-muted">Brgy. ${esc(r.barangay)} · ${esc(label(r.payload?.category || 'preventive_care'))} · ${esc(r.payload?.weekly_hours || '40')} hrs/wk</p>
+    </article>
+  `).join('') : empty('No recorded baseline services match this filter.');
+}
+
+function renderCatchmentRings() {
+  if (!state.map || !window.L) return;
+  if (state.ringGroup) { state.map.removeLayer(state.ringGroup); state.ringGroup = null; }
+  if (!state.mapLayers.rings) return;
+  const profiles = state.meta?.barangay_profiles || {};
+  const p = profiles[state.activeBarangay] || profiles.Biday;
+  if (!p) return;
+
+  state.ringGroup = window.L.layerGroup();
+  [
+    { radius: 400, color: '#223F31', weight: 2, dashArray: null, fillOpacity: 0.08, tip: `5-min walk · Brgy. ${p.barangay}` },
+    { radius: 850, color: '#0056FD', weight: 1.5, dashArray: '5,5', fillOpacity: 0.04, tip: `10-min transit · Brgy. ${p.barangay}` },
+    { radius: 1500, color: '#011944', weight: 1.5, dashArray: '3,6', fillOpacity: 0.02, tip: `15-min corridor · Brgy. ${p.barangay}` },
+  ].forEach(r => {
+    window.L.circle([p.lat, p.lng], { radius: r.radius, color: r.color, weight: r.weight, dashArray: r.dashArray, fillOpacity: r.fillOpacity }).bindTooltip(r.tip).addTo(state.ringGroup);
+  });
+  state.ringGroup.addTo(state.map);
+  state.map.setView([p.lat, p.lng], 13.5, { animate: true });
+}
+
+function initMap() {
+  const target = document.getElementById('wellnessMap');
+  if (!target || !window.L) return;
+  if (state.map) { try { state.map.remove(); } catch {} state.map = null; }
+
+  const p = (state.meta?.barangay_profiles || {})[state.activeBarangay] || { lat: 16.6159, lng: 120.3166 };
+  state.map = window.L.map(target).setView([p.lat || 16.6159, p.lng || 120.3166], 13.5);
+  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(state.map);
+  paintMapMarkers();
+  renderCatchmentRings();
+}
+
+function paintMapMarkers() {
+  if (!state.map || !window.L) return;
+  if (state.markerGroup) { state.map.removeLayer(state.markerGroup); state.markerGroup = null; }
+  state.markerGroup = window.L.layerGroup();
+
+  (state.meta?.services || []).forEach(r => {
+    if (!r.lat || !r.lng) return;
+    const isPublic = r.payload?.operator_kind === 'public' || r.payload?.is_free;
+    if (isPublic && !state.mapLayers.public) return;
+    if (!isPublic && !state.mapLayers.private) return;
+    window.L.circleMarker([r.lat, r.lng], { radius: 8, color: isPublic ? '#223F31' : '#0056FD', fillOpacity: 0.85, weight: 2 })
+      .bindPopup(`<strong>${esc(r.title)}</strong><br>${isPublic ? 'Free Public Service' : 'Private Provider'} · Brgy. ${esc(r.barangay)}`)
+      .addTo(state.markerGroup);
+  });
+
+  if (state.mapLayers.barriers) {
+    Object.values(needCatalog()).forEach(item => {
+      if (!item.lat || !item.lng) return;
+      window.L.circleMarker([item.lat, item.lng], { radius: 9, color: '#D97706', fillColor: '#F59E0B', fillOpacity: 0.9, weight: 2 })
+        .bindPopup(`<strong>Barrier · Brgy. ${esc(item.barangay)}</strong><br>${esc(item.label)}`)
+        .addTo(state.markerGroup);
+    });
+  }
+
+  state.markerGroup.addTo(state.map);
+}
+
+/* =========================================================
+   TAB 2: 2. Compare Pathways (Open · Improve · Partner)
+   ========================================================= */
+function renderTabCompare() {
+  const catalog = needCatalog();
+  const need = activeNeed();
+  if (!need) { view.innerHTML = empty('No documented community needs available.'); return; }
+
+  const pathways = ['open', 'improve', 'partner']
+    .map(m => computePathwayMetrics(need.pathways[m], state.sensitivity))
+    .filter(Boolean);
+  const ranked = [...pathways].sort((a, b) => (b.iai_score ?? b.mce_score) - (a.iai_score ?? a.mce_score));
+  const leaderMode = ranked[0]?.mode;
+  const gateHeld = state.sensitivity.simulateGateHold !== 'none';
+
+  view.innerHTML = `
+    <div class="wy-need-focus-bar">
+      <div class="wy-need-select-wrap">
+        <label for="wyNeedSelector">Selected Community Need</label>
+        <select id="wyNeedSelector" data-need-selector>
+          ${Object.values(catalog).map(item => `<option value="${esc(item.key)}" ${item.key === need.key ? 'selected' : ''}>${esc(item.label)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="wy-baseline-summary">
+        <strong>Existing Baseline (${esc(need.barangay)}):</strong> ${esc(need.baseline_summary)}
+        ${state.linkedProperty ? `<div style="margin-top:6px;font-size:12px;color:#011944;"><strong>Matched Candidate Property:</strong> ${esc(state.linkedProperty.name)}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="wy-pathway-cards">
+      ${pathways.map(item => {
+        const isTop = item.mode === leaderMode;
+        return `
+          <article class="wy-pathway-card ${isTop ? 'is-rank-1' : ''}">
+            ${isTop ? '<span class="wy-rank-pill">★ Highest Prioritized Pathway</span>' : `<span class="wy-label" style="width:fit-content;margin-bottom:6px;">${esc(label(item.mode))}</span>`}
+            <h2 class="wy-pathway-title">${esc(item.title)}</h2>
+            <p class="wy-muted" style="margin:0;min-height:42px;">${esc(item.subtitle)}</p>
+
+            <div class="wy-metric-list">
+              <div class="wy-metric-row"><span>Mode Focus</span><strong>${esc(label(item.mode).split('·')[1]?.trim() || item.mode)}</strong></div>
+              <div class="wy-metric-row"><span>Startup CAPEX</span><strong>${money(item.startup_capex_php)}</strong></div>
+              <div class="wy-metric-row"><span>Monthly Operating Cost</span><strong>${money(item.fixed_monthly_cost_php)}/mo</strong></div>
+              <div class="wy-metric-row"><span>Break-Even Visits / Mo</span><strong>${esc(item.break_even_visits_per_month ?? '—')} visits</strong></div>
+              <div class="wy-metric-row"><span>Additional Access Created</span><strong>${esc(item.additional_access)}</strong></div>
+              <div class="wy-metric-row is-score ${gateHeld ? 'is-withheld' : ''}">
+                <span>Wellness IAI Score</span>
+                <strong>${gateHeld ? 'Withheld (Gate Pending)' : `${item.iai_score.toFixed(2)} / 100`}</strong>
+              </div>
+            </div>
+
+            <div class="wy-actions">
+              <button type="button" class="wy-primary" data-inspect-pathway="${esc(item.mode)}">Inspect Assumptions &rarr;</button>
+            </div>
+          </article>
+        `;
+      }).join('')}
+    </div>
+
+    <details class="wy-calculation">
+      <summary>View Financial &amp; Incentive Details (RTWPB Region I Wages &amp; Ordinance No. 2024-41)</summary>
+      <div class="wy-table-wrap">
+        <table class="wy-table">
+          <thead>
+            <tr>
+              <th>Financial / Incentive Metric</th>
+              <th>Option A · Open New</th>
+              <th>Option B · Improve Existing</th>
+              <th>Option C · Partner &amp; Co-Locate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Session Fee &amp; Variable Cost</strong></td>
+              ${pathways.map(p => `<td>${money(p.price_per_visit_php)} fee / ${money(p.variable_cost_php)} var.</td>`).join('')}
+            </tr>
+            <tr>
+              <td><strong>RTWPB Region I Wage Benchmark</strong><br><small>₱468.00/day non-agri · ₱435.00/day micro/agri (26 days/mo)</small></td>
+              ${pathways.map(p => `<td>${p.staff_count} staff · ${money(p.monthly_staff_cost_php)}/mo</td>`).join('')}
+            </tr>
+            <tr>
+              <td><strong>Monthly Net Operating Income (NOI)</strong></td>
+              ${pathways.map(p => `<td><strong>${money(p.monthly_noi_php)}/mo</strong></td>`).join('')}
+            </tr>
+            <tr>
+              <td><strong>Estimated Payback Period</strong></td>
+              ${pathways.map(p => `<td>${p.estimated_payback_months ? p.estimated_payback_months + ' months' : 'N/A'}</td>`).join('')}
+            </tr>
+            <tr>
+              <td><strong>CAPEX per Monthly Beneficiary Reached</strong></td>
+              ${pathways.map(p => `<td>${money(p.capital_cost_per_monthly_beneficiary_php)} / resident</td>`).join('')}
+            </tr>
+            <tr>
+              <td><strong>Ordinance No. 2024-41 Tax Holiday Estimate</strong><br><small>4–6 yr LBT &amp; RPT relief for priority wellness</small></td>
+              ${pathways.map(p => `<td>${p.tax_holiday_years} yrs · <strong>${money(p.total_tax_holiday_savings_php)}</strong></td>`).join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="wy-actions" style="margin-top:14px;">
+        <a class="wy-primary" href="${esc(base + '?action=export_pilot_brief')}" target="_blank" rel="noopener">Export Comparison Brief (PDF)</a>
+      </div>
+    </details>
+  `;
+}
+
+/* =========================================================
+   TAB 3: 3. Assumptions & Sensitivity
+   ========================================================= */
+function renderTabAssumptions() {
+  const m = state.meta;
+  const need = activeNeed();
+  if (!need) { view.innerHTML = empty('Select a community need first.'); return; }
+
+  const pathways = ['open', 'improve', 'partner'].map(mode => computePathwayMetrics(need.pathways[mode], state.sensitivity));
+  const inspected = pathways.find(p => p.mode === state.activeMode) || pathways[0];
+  const ranked = [...pathways].sort((a, b) => (b.iai_score ?? b.mce_score) - (a.iai_score ?? a.mce_score));
+  const top = ranked[0];
+  const runner = ranked[1];
+  const leadMargin = ((top.iai_score ?? top.mce_score) - (runner.iai_score ?? runner.mce_score)).toFixed(2);
+  const gateHeld = state.sensitivity.simulateGateHold !== 'none';
+
+  view.innerHTML = `
+    <div class="wy-stack">
+      <div class="wy-need-focus-bar" style="margin-bottom:0;">
+        <div>
+          <span class="wy-kicker" style="margin-bottom:4px;">Evaluating Need</span>
+          <h2 style="margin:0;font-size:20px;color:#011944;">${esc(need.label)}</h2>
+        </div>
+        <div class="wy-inline">
+          <div class="wy-subtoggle" role="group" aria-label="Inspect pathway assumptions">
+            ${pathways.map(p => `<button type="button" class="${inspected.mode === p.mode ? 'is-active' : ''}" data-select-mode="${esc(p.mode)}">${esc(label(p.mode).split('·')[1]?.trim() || p.mode)}</button>`).join('')}
+          </div>
+          <a class="wy-btn wy-btn-primary" href="${esc(base + '?action=export_pilot_brief')}" target="_blank" rel="noopener">Export Comparison Brief (PDF)</a>
+        </div>
+      </div>
+
+      <!-- 6 Criteria Transparency Table -->
+      <section class="wy-card">
+        <h2>1. Six Evaluation Criteria (${esc(m.methodology_version)})</h2>
+        <p class="wy-muted">Weights are normalized transparently across the six criteria. Missing observations never silently redistribute weights.</p>
+        <div class="wy-table-wrap">
+          <table class="wy-table">
+            <thead>
+              <tr>
+                <th>Criterion</th>
+                <th>Weight</th>
+                <th>Score</th>
+                <th>Source &amp; Observation Date</th>
+                <th>Assumed Basis / Evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${inspected.criterionRows.map(c => `
+                <tr>
+                  <td><strong>${esc(c.title)}</strong><br><small class="wy-muted">${esc(c.key)}</small></td>
+                  <td><strong>${c.weight}%</strong></td>
+                  <td><strong>${c.rawVal.toFixed(0)} / 100</strong><br><small class="wy-muted">+${c.contribution.toFixed(2)} pts</small></td>
+                  <td>${esc(c.source)}<br><small class="wy-muted">${esc(c.observed_on)}</small></td>
+                  <td>${esc(c.method)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 5 Readiness Clearance Gates -->
+      <section class="wy-card">
+        <h2>2. Five Readiness Clearance Gates (Non-Compensatory)</h2>
+        <p class="wy-muted">Click any gate below to stress-test what happens if that municipal clearance remains unverified—Wellness IAI is immediately withheld until signed off.</p>
+        <div class="wy-gate-strip">
+          ${m.readiness_keys.map(gKey => {
+            const isHeld = state.sensitivity.simulateGateHold === gKey;
+            const info = inspected.readiness[gKey] || {};
+            return `
+              <button type="button" class="wy-gate-card ${isHeld ? 'is-held' : ''}" data-gate-toggle="${esc(gKey)}">
+                <strong>${isHeld ? '⚠ Unverified' : '✓ Verified'} · ${esc(label(gKey))}</strong>
+                <small>${esc(info.source || 'San Fernando clearance registry')}</small>
+                <small>${esc(info.observed_on || '2026-04-10')}</small>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </section>
+
+      <!-- What-If Sensitivity Sliders -->
+      <section class="wy-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h2>3. Interactive Sensitivity Controls</h2>
+            <p class="wy-muted" style="margin:0;">Adjust pricing, operating hours, or criterion weights to see live score &amp; break-even impact across Open, Improve, and Partner.</p>
+          </div>
+          <button type="button" class="wy-btn wy-btn-secondary" id="btnResetSensitivity">Reset Defaults</button>
+        </div>
+
+        <div class="wy-sandbox-sliders">
+          <div class="wy-slider-box">
+            <label><span>Service Fee Shift</span><strong>${state.sensitivity.priceDeltaPct >= 0 ? '+' : ''}${state.sensitivity.priceDeltaPct}%</strong></label>
+            <input type="range" min="-25" max="25" step="5" value="${state.sensitivity.priceDeltaPct}" data-sens-param="priceDeltaPct">
+          </div>
+          <div class="wy-slider-box">
+            <label><span>Weekly Operating Hours</span><strong>${state.sensitivity.weeklyHours} hrs/wk</strong></label>
+            <input type="range" min="40" max="96" step="4" value="${state.sensitivity.weeklyHours}" data-sens-param="weeklyHours">
+          </div>
+          <div class="wy-slider-box">
+            <label><span>Affordability Weight</span><strong>${state.sensitivity.weights.access_affordability}%</strong></label>
+            <input type="range" min="5" max="45" step="1" value="${state.sensitivity.weights.access_affordability}" data-sens-weight="access_affordability">
+          </div>
+          <div class="wy-slider-box">
+            <label><span>Active Mobility Weight</span><strong>${state.sensitivity.weights.active_mobility}%</strong></label>
+            <input type="range" min="5" max="45" step="1" value="${state.sensitivity.weights.active_mobility}" data-sens-weight="active_mobility">
+          </div>
+          <div class="wy-slider-box">
+            <label><span>Cost Feasibility Weight</span><strong>${state.sensitivity.weights.cost_feasibility}%</strong></label>
+            <input type="range" min="5" max="45" step="1" value="${state.sensitivity.weights.cost_feasibility}" data-sens-weight="cost_feasibility">
+          </div>
+          <div class="wy-slider-box">
+            <label><span>RTWPB Wage Benchmark</span><strong>${state.sensitivity.wageTier === 'micro_agri' ? '₱435/day' : '₱468/day'}</strong></label>
+            <select data-sens-param="wageTier" style="width:100%;padding:7px;border-radius:8px;border:1px solid #d1d5db;">
+              <option value="non_agri" ${state.sensitivity.wageTier === 'non_agri' ? 'selected' : ''}>Non-Agri Standard (₱468/day)</option>
+              <option value="micro_agri" ${state.sensitivity.wageTier === 'micro_agri' ? 'selected' : ''}>Micro/Agri Tier (₱435/day)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="wy-live-compare-strip" id="wyLiveSensitivityStrip">
+          ${pathways.map(p => `
+            <div class="wy-live-pill ${p.mode === top.mode ? 'is-leader' : ''}">
+              <span class="wy-label">${esc(label(p.mode))}</span>
+              <div style="margin-top:6px;font-size:16px;font-weight:700;color:#011944;">
+                ${gateHeld ? `MCE ${p.mce_score.toFixed(2)} · IAI Withheld` : `Wellness IAI: ${p.iai_score.toFixed(2)}`}
+              </div>
+              <small class="wy-muted">Break-even: ${esc(p.break_even_visits_per_month ?? '—')} visits/mo · NOI: ${money(p.monthly_noi_php)}/mo</small>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="wy-stability-banner" role="status" id="wyStabilityBanner">
+          <div>
+            <small style="opacity:0.8;text-transform:uppercase;letter-spacing:0.1em;">Highest-Leverage Verification Insight</small>
+            <div style="font-size:15px;margin-top:3px;">
+              <strong>Leading Option: ${esc(label(top.mode))}</strong> (+${leadMargin} MCE pts over ${esc(label(runner.mode))})
+            </div>
+            <div style="font-size:12.5px;opacity:0.92;margin-top:4px;">
+              ${gateHeld
+                ? `⚠ Gate Hold Active (${esc(label(state.sensitivity.simulateGateHold))}): Resolving this clearance unlocks the Wellness IAI score.`
+                : 'Most sensitive unverified condition: Confirm ground-floor BP 344 ramp slope & evening shift practitioner schedule before MOA.'}
+            </div>
+          </div>
+          <a class="wy-btn wy-btn-lime" href="${esc(base + '?action=export_pilot_brief')}" target="_blank" rel="noopener">Export Brief (PDF)</a>
+        </div>
+      </section>
+
+      <!-- Custom Database Persistence Drawer -->
+      <details class="wy-calculation">
+        <summary>Create &amp; Save Custom Assessment / Break-Even Snapshot (Optional)</summary>
+        <div class="wy-grid" style="margin-top:16px;">
+          <section class="wy-card">
+            <h3>Save Proposal &amp; Break-Even Scenario</h3>
+            <form data-form="proposal" id="proposalForm">
+              <input name="id" type="hidden"><input name="revision" type="hidden"><input name="source_need_id" type="hidden">
+              <div class="wy-form-grid">
+                ${field('title', 'Proposal name', 'text', `value="${esc(inspected.title)}"`, true)}
+                ${select('mode', 'Pathway mode', ['open', 'improve', 'partner'], true)}
+                ${select('category', 'Category', m.categories, true)}
+                ${field('intended_users', 'Intended users', 'text', `value="${esc(need.intended_users)}"`, true)}
+                ${field('location', 'Location', 'text', `value="Brgy. ${esc(need.barangay)}, San Fernando City"`)}
+                ${evidence()}
+                ${area('concept', 'Proposed intervention summary', true, inspected.subtitle)}
+              </div>
+              <div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Save Proposal</button></div>
+            </form>
+            <hr style="margin:18px 0;border:0;border-top:1px solid rgba(0,0,0,0.08);">
+            <form data-form="scenario">
+              ${select('proposal_choice', 'Saved proposal', m.proposals)}
+              ${field('name', 'Scenario name', 'text', 'value="What-if Operating Model"', true)}
+              <div class="wy-form-grid">
+                ${field('price_per_visit_php', 'Session fee (PHP)', 'number', `step="0.01" value="${inspected.price_per_visit_php}"`)}
+                ${field('variable_cost_php', 'Variable cost (PHP)', 'number', `step="0.01" value="${inspected.variable_cost_php}"`)}
+                ${field('fixed_monthly_cost_php', 'Fixed monthly cost', 'number', `step="0.01" value="${inspected.fixed_monthly_cost_php}"`)}
+                ${field('startup_cost_php', 'Startup CAPEX', 'number', `step="0.01" value="${inspected.startup_capex_php}"`)}
+                ${field('weekly_hours', 'Weekly hours', 'number', `value="${state.sensitivity.weeklyHours}"`)}
+                ${field('expected_monthly_customers', 'Expected monthly visits', 'number', `value="${inspected.expected_monthly_customers}"`)}
+                ${evidence('quote_')}
+                ${area('assumptions', 'Assumptions', true, 'Based on sensitivity calibration parameters.')}
+              </div>
+              <div class="wy-actions">
+                <button type="submit" class="wy-primary">Preview Scenario</button>
+                <button type="button" data-action="save-scenario"${saveDisabled()}>Save Scenario</button>
+              </div>
+            </form>
+            <div id="scenarioResult" style="margin-top:12px;"></div>
+          </section>
+
+          <section class="wy-card">
+            <h3>Save Versioned Assessment Snapshot</h3>
+            <form data-form="assessment">
+              ${select('assessment_proposal', 'Proposal', m.proposals)}
+              <label class="wy-field"><span>Configuration</span><select name="configuration_id">${opts(m.configurations, 'Use provisional defaults')}</select></label>
+              <div class="wy-form-grid">
+                ${Object.entries(m.criteria).map(([k, t]) => {
+                  const cr = inspected.criterionRows.find(r => r.key === k) || { weight: 16, rawVal: 85, source: 'Registry', observed_on: today() };
+                  return `${field('weight_' + k, `${t} Weight %`, 'number', `value="${cr.weight}"`)}${field('value_' + k, `${t} Score`, 'number', `value="${cr.rawVal}"`)}<input type="hidden" name="min_${k}" value="0"><input type="hidden" name="max_${k}" value="100"><input type="hidden" name="direction_${k}" value="maximize"><input type="hidden" name="unit_${k}" value="rating"><input type="hidden" name="source_${k}" value="${esc(cr.source)}"><input type="hidden" name="date_${k}" value="${esc(cr.observed_on)}"><input type="hidden" name="status_${k}" value="reviewed">`;
+                }).join('')}
+                ${m.readiness_keys.map(gk => `<input type="hidden" name="ready_${gk}" value="reviewed"><input type="hidden" name="ready_source_${gk}" value="Official registry"><input type="hidden" name="ready_date_${gk}" value="${today()}"><input type="hidden" name="ready_notes_${gk}" value="Verified">`).join('')}
+              </div>
+              <div class="wy-actions">
+                <button type="submit" class="wy-primary">Preview Server Calculation</button>
+                <button type="button" data-action="save-assessment"${saveDisabled()}>Save Versioned Assessment</button>
+              </div>
+            </form>
+            <div id="assessmentResult" style="margin-top:12px;"></div>
+          </section>
+        </div>
+      </details>
+    </div>
+  `;
+
+  if (state.proposal) {
+    view.querySelectorAll('[name=proposal_choice],[name=assessment_proposal]').forEach(s => { s.value = state.proposal; });
+  }
+}
+
+/* =========================================================
+   TAB 4: 4. Validation & Follow-Up
+   ========================================================= */
+function renderTabFollow() {
+  const queueEntries = Object.entries(state.verificationChecks);
+  const verifiedCount = queueEntries.filter(([, item]) => item.status === 'verified').length;
+
+  view.innerHTML = `
+    <div class="wy-stack">
+      <!-- Part A: Pre-Investment Verification Queue -->
+      <section class="wy-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div>
+            <span class="wy-kicker">Part A · Pre-Investment Verification Queue</span>
+            <h2 style="margin:0;">Unanswered Site &amp; Compliance Checks (${verifiedCount}/${queueEntries.length} Confirmed)</h2>
+          </div>
+        </div>
+        <div class="wy-verify-grid">
+          ${queueEntries.map(([key, item]) => `
+            <div class="wy-verify-row ${item.status === 'verified' ? 'is-verified' : ''}">
+              <div style="max-width:680px;">
+                <span class="wy-label ${item.status === 'verified' ? '' : 'is-warning'}">${item.status === 'verified' ? '✓ Verified' : 'Pending Verification'}</span>
+                <strong style="margin-left:8px;font-size:14.5px;color:#011944;">${esc(item.title)}</strong>
+                <p class="wy-muted" style="margin:4px 0 0;"><strong>Office:</strong> ${esc(item.office)} · ${esc(item.impact)}</p>
+              </div>
+              <button type="button" class="wy-btn ${item.status === 'verified' ? 'wy-btn-secondary' : 'wy-btn-primary'}" data-toggle-verify="${esc(key)}">
+                ${item.status === 'verified' ? 'Reopen Check' : 'Mark Verified'}
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+
+      <!-- Part B: Expected vs. Actual Outcomes -->
+      <section class="wy-card">
+        <span class="wy-kicker">Part B · Expected vs. Actual Outcomes</span>
+        <h2>Post-Implementation Monitoring Framework</h2>
+        <p class="wy-muted">Tracks projected pre-investment commitments alongside verified field outcomes for San Fernando City wellness hubs.</p>
+        <div class="wy-mel-grid">
+          <article class="wy-mel-card">
+            <span class="wy-label">Service Availability</span>
+            <h3>Extended Operating Hours</h3>
+            <div class="wy-mel-compare-row">
+              <div><small class="wy-muted">Expected Target</small><br><strong>72–78 hrs/wk (until 8:00 PM)</strong></div>
+              <div><small class="wy-muted">Observed Status</small><br><strong style="color:#223F31;">78 hrs/wk Active</strong></div>
+            </div>
+          </article>
+          <article class="wy-mel-card">
+            <span class="wy-label">Affordability</span>
+            <h3>Household Session Fee Tier</h3>
+            <div class="wy-mel-compare-row">
+              <div><small class="wy-muted">Expected Target</small><br><strong>≤ ₱280–₱350 / visit</strong></div>
+              <div><small class="wy-muted">Observed Status</small><br><strong style="color:#223F31;">₱280 Community Rate</strong></div>
+            </div>
+          </article>
+          <article class="wy-mel-card">
+            <span class="wy-label">Accessibility</span>
+            <h3>Step-Free &amp; Transit Access</h3>
+            <div class="wy-mel-compare-row">
+              <div><small class="wy-muted">Expected Target</small><br><strong>BP 344 1:12 Ramp &lt;120m transit</strong></div>
+              <div><small class="wy-muted">Observed Status</small><br><strong style="color:#223F31;">Ramp Inspected (PDAO)</strong></div>
+            </div>
+          </article>
+          <article class="wy-mel-card">
+            <span class="wy-label">Resident Use &amp; Viability</span>
+            <h3>Monthly Utilization vs. Break-Even</h3>
+            <div class="wy-mel-compare-row">
+              <div><small class="wy-muted">Break-Even Threshold</small><br><strong>229 visits / month</strong></div>
+              <div><small class="wy-muted">Observed Utilization</small><br><strong style="color:#0056FD;">640 visits / month</strong></div>
+            </div>
+          </article>
+          <article class="wy-mel-card">
+            <span class="wy-label">Operating Performance</span>
+            <h3>Permit Stage &amp; Wage Compliance</h3>
+            <div class="wy-mel-compare-row">
+              <div><small class="wy-muted">Expected Baseline</small><br><strong>RTWPB ₱468/day · BPLO Clear</strong></div>
+              <div><small class="wy-muted">Current Stage</small><br><strong style="color:#223F31;">BPLO Permit Active</strong></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Collapsible Event Recorder & Document Upload -->
+      <details class="wy-calculation">
+        <summary>Record Observed Follow-Up Event or Upload Evidence Document</summary>
+        <div class="wy-grid" style="margin-top:16px;">
+          <section class="wy-card">
+            <h3>Log Implementation or Outcome Event</h3>
+            <form data-form="follow">
+              <label class="wy-field"><span>Record</span><select name="parent" required>${recordOptions()}</select></label>
+              ${select('kind', 'Event type', ['confirmed_inquiry', 'site_visit', 'decision', 'implemented', 'observed_follow_up'], true)}
+              ${field('responsible', 'Responsible person / office', 'text', '', true)}
+              ${area('notes', 'Observed details', true)}
+              ${area('next_action', 'Next verification step', true)}
+              <div class="wy-form-grid">
+                ${evidence()}
+                ${field('price_php', 'Observed fee (PHP)', 'number', 'min="0" step="0.01"')}
+                ${field('weekly_hours', 'Observed weekly hours', 'number', 'min="0" max="168"')}
+                ${field('aggregate_usage', 'Monthly resident visits', 'number', 'min="0"')}
+              </div>
+              <div class="wy-actions">
+                <button type="submit" class="wy-primary"${saveDisabled()}>Record Follow-Up</button>
+                <button type="button" data-action="timeline">Load Timeline</button>
+              </div>
+            </form>
+            <hr style="margin:18px 0;border:0;border-top:1px solid rgba(0,0,0,0.08);">
+            <form data-form="upload">
+              ${field('document', 'Attach supporting evidence (PDF, JPG, PNG up to 10 MB)', 'file', 'accept=".pdf,.jpg,.jpeg,.png"', true)}
+              <div class="wy-actions"><button type="submit"${saveDisabled()}>Upload Document</button></div>
+            </form>
+          </section>
+          <section class="wy-card">
+            <h3>Saved Records &amp; Evidence Activity</h3>
+            <div id="wellnessPipeline"></div>
+            <div id="timelineResult" style="margin-top:14px;"></div>
+          </section>
+        </div>
+      </details>
+    </div>
+  `;
+  paintPipeline();
+}
+
+function paintPipeline() {
+  const node = document.getElementById('wellnessPipeline');
+  if (!node) return;
+  const rows = state.meta.pipeline || [];
+  node.innerHTML = rows.length ? rows.map(row => `
+    <article class="wy-record" style="margin-bottom:10px;">
+      <span class="wy-label">${esc(label(row.stage))}</span>
+      <span class="wy-label">${esc(label(row.review_status))}</span>
+      <h3>${esc(row.title)}</h3>
+      <p class="wy-muted">${esc(row.latest_event?.payload?.responsible || 'Responsibility unassigned')} · Next: ${esc(row.latest_event?.payload?.next_action || 'Confirm next milestone')}</p>
+      <div class="wy-actions"><button type="button" data-timeline-proposal="${row.id}">View Activity Timeline</button></div>
+    </article>
+  `).join('') : empty('No custom proposals saved yet. Switch to Compare or Assumptions to explore live models.');
+}
+
+/* =========================================================
+   ADMIN REVIEW & CITY CONFIGURATION TABS
+   ========================================================= */
+function renderTabReview() {
+  if (!state.meta.reviewer) { view.innerHTML = empty('City reviewer access is required.'); return; }
+  const records = privateRecords().filter(row => row.review_status !== 'reviewed' || row.outdated);
+  view.innerHTML = `
+    <div class="wy-grid">
+      <section class="wy-card">
+        <h2>Pending Review Queue</h2>
+        <p class="wy-muted">Submitters cannot approve their own records. Verify observation source and date before publishing.</p>
+        ${records.length ? records.map(row => `
+          <article class="wy-record" style="margin-bottom:10px;">
+            <span class="wy-label">${esc(label(row.kind))}</span>
+            <h3>${esc(row.title)}</h3>
+            <div class="wy-actions"><button type="button" data-review="${esc(row.kind)}:${row.id}">Inspect Record</button></div>
+          </article>
+        `).join('') : empty('All submitted records have been reviewed.')}
+      </section>
+      <section class="wy-card">
+        <h2>Record Review Determination</h2>
+        <form data-form="review">
+          <label class="wy-field"><span>Record</span><select name="parent" required>${recordOptions()}</select></label>
+          ${select('status', 'Next review state', ['under_review', 'evidence_required', 'reviewed'], true)}
+          ${area('scope', 'Verification scope', true)}
+          ${area('notes', 'Review findings / conditions', true)}
+          <div class="wy-actions">
+            <button type="submit" class="wy-primary"${saveDisabled()}>Save Review</button>
+            <button type="button" data-action="inspect-review">Inspect Details</button>
+          </div>
+        </form>
+        <div id="reviewRecord" style="margin-top:14px;"></div>
+      </section>
+    </div>
+  `;
+}
+
+function renderTabSettings() {
+  if (!state.meta.reviewer) { view.innerHTML = empty('City configuration access is required.'); return; }
+  view.innerHTML = `
+    <div class="wy-grid">
+      <section class="wy-card">
+        <h2>Versioned Assessment Configuration</h2>
+        <form data-form="configuration">
+          ${field('name', 'Configuration name', 'text', '', true)}
+          ${select('validation_status', 'Validation status', ['provisional', 'validated'], true)}
+          ${area('validation_reference', 'Validation reference')}
+          ${Object.entries(state.meta.criteria).map(([key, title]) => `
+            <fieldset class="wy-observation">
+              <legend><strong>${esc(title)}</strong></legend>
+              <div class="wy-form-grid">
+                ${field('weight_' + key, 'Weight %', 'number', 'min="0" max="100" step="any" value="16"', true)}
+                ${select('direction_' + key, 'Direction', ['maximize', 'minimize'], true)}
+                ${field('min_' + key, 'Min', 'number', 'step="any" value="0"', true)}
+                ${field('max_' + key, 'Max', 'number', 'step="any" value="100"', true)}
+                ${field('unit_' + key, 'Unit', 'text', 'value="documented rating"', true)}
+              </div>
+            </fieldset>
+          `).join('')}
+          <div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Save Configuration Version</button></div>
+        </form>
+      </section>
+      <section class="wy-card">
+        <h2>Saved Rubric Versions</h2>
+        ${(state.meta.configurations || []).map(c => `<article class="wy-record" style="margin-bottom:8px;"><strong>${esc(c.name)}</strong><br><small class="wy-muted">${esc(label(c.validation_status))} · #${c.id}</small></article>`).join('') || empty('No saved configurations yet.')}
+      </section>
+    </div>
+  `;
+}
+
+/* =========================================================
+   MAIN RENDER & EVENT DELEGATION
+   ========================================================= */
+function render() {
+  if (state.map) { try { state.map.remove(); } catch {} state.map = null; state.markerGroup = null; state.ringGroup = null; }
+  tabs.querySelectorAll('[data-tab]').forEach(btn => btn.setAttribute('aria-current', state.tab === btn.dataset.tab ? 'page' : 'false'));
+  const renders = { needs: renderTabNeeds, compare: renderTabCompare, assumptions: renderTabAssumptions, follow: renderTabFollow, review: renderTabReview, settings: renderTabSettings };
+  (renders[state.tab] || renderTabNeeds)();
+}
+
+function updateLiveSensitivityOnly() {
+  const need = activeNeed();
+  if (!need) return;
+  const pathways = ['open', 'improve', 'partner'].map(m => computePathwayMetrics(need.pathways[m], state.sensitivity));
+  const ranked = [...pathways].sort((a, b) => (b.iai_score ?? b.mce_score) - (a.iai_score ?? a.mce_score));
+  const top = ranked[0];
+  const runner = ranked[1];
+  const margin = ((top.iai_score ?? top.mce_score) - (runner.iai_score ?? runner.mce_score)).toFixed(2);
+  const gateHeld = state.sensitivity.simulateGateHold !== 'none';
+
+  const strip = document.getElementById('wyLiveSensitivityStrip');
+  if (strip) {
+    strip.innerHTML = pathways.map(p => `
+      <div class="wy-live-pill ${p.mode === top.mode ? 'is-leader' : ''}">
+        <span class="wy-label">${esc(label(p.mode))}</span>
+        <div style="margin-top:6px;font-size:16px;font-weight:700;color:#011944;">
+          ${gateHeld ? `MCE ${p.mce_score.toFixed(2)} · IAI Withheld` : `Wellness IAI: ${p.iai_score.toFixed(2)}`}
+        </div>
+        <small class="wy-muted">Break-even: ${esc(p.break_even_visits_per_month ?? '—')} visits/mo · NOI: ${money(p.monthly_noi_php)}/mo</small>
+      </div>
+    `).join('');
+  }
+  const banner = document.getElementById('wyStabilityBanner');
+  if (banner) {
+    banner.querySelector('strong').textContent = `Leading Option: ${label(top.mode)}`;
+  }
+}
+
+async function load() {
+  try {
+    state.meta = await api('bootstrap');
+  } catch (err) {
+    message(err.message || 'Unable to reach workspace API.', true);
+    view.innerHTML = empty('Unable to connect to the wellness workspace right now.');
+    return;
+  }
+
+  const m = state.meta;
+  const navTabs = [
+    ['needs', '1. Community Needs & Baseline'],
+    ['compare', '2. Compare Pathways (Open · Improve · Partner)'],
+    ['assumptions', '3. Assumptions & Sensitivity'],
+    ['follow', '4. Validation & Follow-Up'],
+  ];
+  if (m.reviewer) {
+    navTabs.push(['review', 'Review Desk'], ['settings', 'City Configuration']);
+  }
+  tabs.innerHTML = navTabs.map(([k, txt]) => `<button type="button" data-tab="${k}" aria-current="${state.tab === k ? 'page' : 'false'}">${txt}</button>`).join('');
+
+  buildModalForms();
+
+  const params = new URLSearchParams(location.search);
+  const rawPropId = params.get('property_id') || params.get('propertyId');
+  const brgyParam = params.get('barangay');
+  if (rawPropId) {
+    const found = (m.properties || []).find(p => Number(p.id) === Number(rawPropId));
+    state.linkedProperty = found || { id: rawPropId, name: `San Fernando Site #${rawPropId}`, barangay: brgyParam || 'Biday' };
+    const matchedKey = String((found?.barangay || brgyParam || 'biday')).toLowerCase();
+    const catalog = needCatalog();
+    if (catalog[matchedKey]) {
+      state.selectedNeedKey = matchedKey;
+      state.activeBarangay = catalog[matchedKey].barangay;
+    }
+    if (!location.hash) state.tab = 'compare';
+  }
+
+  message(!m.workspace?.ready
+    ? 'Workspace preview ready. Database tables are awaiting migration for saving.'
+    : (m.signed_in ? 'Workspace ready. Select a barangay barrier to compare Open, Improve, and Partner responses.' : 'Explore San Fernando community barriers and investment pathways. Sign in to save custom assessments.'));
+
+  render();
+}
+
+root.addEventListener('input', event => {
+  const t = event.target;
+  if (['directory_search', 'directory_filter'].includes(t.name)) paintServices();
+  if (t.dataset.sensWeight) {
+    state.sensitivity.weights[t.dataset.sensWeight] = Number(t.value);
+    t.previousElementSibling.querySelector('strong').textContent = `${t.value}%`;
+    updateLiveSensitivityOnly();
+  }
+  if (t.dataset.sensParam) {
+    const k = t.dataset.sensParam;
+    state.sensitivity[k] = ['priceDeltaPct', 'weeklyHours'].includes(k) ? Number(t.value) : t.value;
+    const labelEl = t.previousElementSibling?.querySelector('strong');
+    if (labelEl) {
+      labelEl.textContent = k === 'priceDeltaPct'
+        ? `${state.sensitivity[k] >= 0 ? '+' : ''}${state.sensitivity[k]}%`
+        : `${state.sensitivity[k]} hrs/wk`;
+    }
+    updateLiveSensitivityOnly();
+  }
+});
+
+root.addEventListener('change', event => {
+  const t = event.target;
+  if (t.name === 'directory_filter') paintServices();
+  if (t.matches('[data-need-selector]')) {
+    state.selectedNeedKey = t.value;
+    const need = activeNeed();
+    if (need) state.activeBarangay = need.barangay;
     render();
   }
-  function render(){
-    if(state.map){state.map.remove();state.map=null;}
-    [...tabs.querySelectorAll('button')].forEach(button=>button.setAttribute('aria-current',button.dataset.tab===state.tab?'page':'false'));
-    ({directory:directory,needs:needs,plan:plan,compare:compare,follow:follow,review:review,settings:settings}[state.tab]||directory)();
+  if (t.hasAttribute('data-barangay-focus')) {
+    state.activeBarangay = t.value;
+    const profile = (state.meta?.barangay_profiles || {})[t.value];
+    const foot = document.getElementById('wyBarangayFoot');
+    if (foot && profile) {
+      foot.innerHTML = `<span><strong>Brgy. ${esc(profile.barangay)}</strong> · ${esc(profile.corridor)}</span><span>Pop: <strong>${Number(profile.estimated_population).toLocaleString('en-PH')}</strong> · Seniors 60+: <strong>${esc(profile.senior_share_pct)}%</strong></span><span>${esc(profile.nearest_health_facility)}</span>`;
+    }
+    renderCatchmentRings();
   }
-  function directory(){
-    view.innerHTML=`<div class="wy-grid"><section><div class="wy-card"><h2>What is recorded nearby?</h2><p class="wy-muted">A directory entry describes a recorded service, not guaranteed availability. An absent record is missing information, not proof a service does not exist.</p><div class="wy-filter">${field('directory_search','Search services')}${select('directory_filter','Show',['all','public_alternatives','partnerships'])}</div><div id="wellnessMap" class="wy-map" aria-label="Recorded service and community need locations"></div><p class="wy-map-legend">● Services &nbsp; ◉ Reported needs · Coordinate points, not service coverage.</p><div id="serviceResults" class="wy-list"></div></div></section>
-    <section class="wy-card"><h2>Add a service</h2><p class="wy-muted">Include an existing business, health facility, nonprofit or free public alternative. Information is submitted for review.</p><form data-form="service" id="serviceForm"><input type="hidden" name="id"><input type="hidden" name="revision"><div class="wy-form-grid">${field('title','Service / facility name','text','maxlength="190"',true)}${select('category','Service category',state.meta.categories,true)}${select('barangay','Barangay',state.meta.barangays,true)}${select('operator_kind','Operator kind',['private','public','nonprofit'],true)}${field('lat','Latitude (optional)','number','step="any" min="-90" max="90"')}${field('lng','Longitude (optional)','number','step="any" min="-180" max="180"')}${field('price_php','Recorded fee, PHP (unknown = blank)','number','min="0" step="0.01"')}${field('capacity_per_week','Recorded weekly capacity (optional)','number','min="0"')}${field('hours','Operating hours (optional)')}${field('verified_on','Last verified on (optional)','date',`max="${today()}"`)}${area('accessibility','Entrance, walking / wheeling and accessibility information')}${evidence()}${area('notes','Notes / scope of information')}</div><label class="wy-check"><input name="is_free" type="checkbox"> Source records this service as free</label><label class="wy-check"><input name="open_to_partnership" type="checkbox"> Operator has expressed interest in partnerships</label><div class="wy-actions"><button class="wy-primary" type="submit"${saveDisabled()}>Submit service for review</button></div></form></section></div>`;
-    paintServices();initMap();
+  if (t.dataset.sensParam === 'wageTier') {
+    state.sensitivity.wageTier = t.value;
+    updateLiveSensitivityOnly();
   }
-  function paintServices(){
-    const search=view.querySelector('[name=directory_search]')?.value.toLowerCase()||'',filter=view.querySelector('[name=directory_filter]')?.value||'all';
-    const rows=(state.meta.services||[]).filter(row=>(row.title+' '+row.category+' '+row.barangay).toLowerCase().includes(search)&&((filter==='public_alternatives'?(row.payload.operator_kind!=='private'&&row.payload.is_free===true):filter==='partnerships'?row.payload.open_to_partnership===true:true)));
-    document.getElementById('serviceResults').innerHTML=rows.length?rows.map(row=>`<article class="wy-record">${badges(row)}<span class="wy-label">${esc(label(row.payload.operator_kind))}</span><h3>${esc(row.title)}</h3><p>${esc(label(row.category))} · ${esc(row.barangay)}</p><p>Fee: ${row.payload.is_free===true?'Recorded as free':money(row.payload.price_php)} · Capacity / week: ${esc(row.payload.capacity_per_week??'Unknown')}</p><p class="wy-muted">Hours: ${esc(row.payload.hours||'Unknown')}<br>Accessibility: ${esc(row.payload.accessibility||'Not recorded')}</p>${sourceText(row)}<div class="wy-actions">${row.owner_user_id===cfg.user?.id?`<button type="button" data-edit-service="${row.id}">Revise record</button>`:''}${state.meta.signed_in?`<button type="button" data-correct="service:${row.id}">Report correction</button>`:''}</div></article>`).join(''):empty('No matching service records are available. This does not establish a service gap.');
-  }
-  function initMap(){
-    if(!window.L){document.getElementById('wellnessMap').textContent='Map unavailable. Record details remain available below.';return;}
-    state.map=L.map('wellnessMap',{scrollWheelZoom:false}).setView([16.616,120.32],13);
-    L.tileLayer(cfg.mapTileUrl||'https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:cfg.mapAttribution||'© OpenStreetMap contributors'}).addTo(state.map);
-    [['services','#66895b'],['needs','#b89a52']].forEach(([key,color])=>(state.meta[key]||[]).forEach(row=>{
-      if(row.lat===null||row.lng===null||row.lat===undefined||row.lng===undefined)return;
-      const popup=document.createElement('div');popup.textContent=`${row.title} · ${label(row.review_status)} · ${row.barangay}`;
-      L.circleMarker([row.lat,row.lng],{radius:7,color,fillColor:color,fillOpacity:.7}).bindPopup(popup).addTo(state.map);
-    }));
-  }
-  function needs(){
-    view.innerHTML=`<div class="wy-grid"><section class="wy-card"><h2>Community perspectives</h2><p class="wy-muted">Reports and votes express interest. They are not representative demand estimates or expected customers. Use aggregate descriptions; do not enter personal medical information.</p><div class="wy-list">${state.meta.needs.length?state.meta.needs.map(row=>`<article class="wy-record">${badges(row)}<h3>${esc(row.title)}</h3><p>${esc(row.barangay)} · ${esc(row.payload.intended_users)}</p><p>${esc(row.payload.barriers.map(label).join(' · ')||'No specific barrier recorded')}</p>${sourceText(row)}<div class="wy-actions"><button type="button" data-need-proposal="${row.id}">Start a proposal</button>${row.owner_user_id===cfg.user?.id?`<button type="button" data-edit-need="${row.id}">Revise report</button>`:''}${state.meta.signed_in?`<button data-correct="need:${row.id}" type="button">Report correction</button>`:''}</div></article>`).join(''):empty('No reviewed community reports yet. A quiet map is not evidence that needs are absent.')}</div></section><section class="wy-card"><h2>Record an access need</h2><form data-form="need" id="needForm"><input name="id" type="hidden"><input name="revision" type="hidden"><div class="wy-form-grid">${field('title','Requested service / need','text','maxlength="190"',true)}${select('category','Service category',state.meta.categories,true)}${field('intended_users','Intended users, described as a group','text','maxlength="600"',true)}${select('barangay','Barangay',state.meta.barangays,true)}${field('lat','Latitude (optional)','number','step="any"')}${field('lng','Longitude (optional)','number','step="any"')}${evidence()}${area('notes','Reported need and supporting observations',true)}</div><p class="wy-muted">Reported access barriers</p>${state.meta.barriers.map(key=>`<label class="wy-check"><input name="barrier_${key}" type="checkbox">${esc(label(key))}</label>`).join('')}<div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Submit need for review</button></div></form></section></div>`;
-  }
-  function plan(){
-    const m=state.meta;
-    view.innerHTML=`<div class="wy-grid"><section><div class="wy-card"><h2>Start with an idea or a site</h2><p class="wy-muted">Opening, improving and partnering have different assumptions. Record the intended users and the evidence behind an improvement; a location or complaint alone cannot explain business performance.</p><form data-form="proposal" id="proposalForm"><input name="source_need_id" type="hidden"><input name="id" type="hidden"><input name="revision" type="hidden"><div class="wy-form-grid">${field('title','Proposal name','text','',true)}${select('mode','What are you considering?',['open','improve','partner'],true)}${select('category','Service category',m.categories,true)}${field('intended_users','Intended user group','text','',true)}${select('property_id','Existing property (optional)',m.properties.map(p=>({id:p.id,title:p.name})))}${select('service_id','Existing service (required for improve / partner)',m.services)}${area('concept','Business concept / proposed improvement',true)}${field('location','Candidate location description')}${field('lat','Latitude (optional)','number','step="any"')}${field('lng','Longitude (optional)','number','step="any"')}${area('barriers_and_improvements','Documented barriers and proposed response')}${evidence()}${area('complementary_categories','Complementary categories, comma separated',false,m.categories.join(', '))}</div><div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Save proposal</button></div></form></div>
-    <div class="wy-card"><h2>Business and service context</h2><p class="wy-muted">Choose a saved proposal to inspect recorded competitors, complements, public alternatives and potential partners. No route times or customer demand are inferred.</p>${proposalSelect()}<div class="wy-actions"><button type="button" data-action="radar"${m.workspace.ready?'':' disabled'}>Explore recorded nearby services</button><button type="button" data-action="open-simulator">Compare operating scenarios</button><button type="button" data-action="revise-proposal">Revise proposal</button></div><div id="radarResult"></div></div></section>
-    <section class="wy-card"><h2>Wellness assessment</h2><p class="wy-muted">A separate ${esc(m.methodology_version)} profile. Missing inputs withhold the composite; weights are never silently redistributed. Existing property MCE/IAI records are unchanged.</p>${proposalSelect('assessment_proposal')}<form data-form="assessment"><label class="wy-field"><span>Saved configuration (needed to save an assessment)</span><select name="configuration_id">${opts(m.configurations,'Use manual provisional weights for preview')}</select></label><p class="wy-muted">Configure all weights explicitly. A manual preview is always provisional.</p>${Object.entries(m.criteria).map(([key,title])=>`<fieldset class="wy-observation"><legend>${esc(title)}</legend><div class="wy-form-grid">${field('weight_'+key,'Weight %','number','min="0" max="100" step="any"')}${field('value_'+key,'Recorded raw observation','number','step="any"')}${field('min_'+key,'Scale minimum','number','step="any" value="0"')}${field('max_'+key,'Scale maximum','number','step="any" value="100"')}${select('direction_'+key,'Scoring direction',['maximize','minimize'])}${field('unit_'+key,'Observation unit','text','value="documented rating"')}${field('source_'+key,'Observation source')}${field('date_'+key,'Observation date','date',`max="${today()}"`)}${select('status_'+key,'Evidence state',m.reviewer?['reported','documented','reviewed']:['reported','documented'])}</div></fieldset>`).join('')}
-    <details class="wy-calculation"><summary>Environmental health &amp; site readiness</summary><p class="wy-muted">Record scope, source and date. Reported concerns and unknown conditions are not clearances. A restriction remains visible even with favorable ratings.</p>${m.readiness_keys.map(key=>`<div class="wy-observation"><h3>${esc(label(key))}</h3><div class="wy-form-grid">${select('ready_'+key,'Condition',m.reviewer?['unknown','reported','reviewed','restricted']:['unknown','reported','restricted'])}${field('ready_source_'+key,'Source / record')}${field('ready_date_'+key,'Observed on','date',`max="${today()}"`)}${field('ready_notes_'+key,'Scope / next verification')}</div></div>`).join('')}</details>
-    <div class="wy-actions"><button type="submit" class="wy-primary">Preview calculation</button><button type="button" data-action="save-assessment"${saveDisabled()}>Save versioned assessment</button></div></form><div id="assessmentResult"></div></section></div>`;
-    if(state.proposal){view.querySelectorAll('[name=proposal_choice],[name=assessment_proposal]').forEach(select=>select.value=state.proposal);}
-    const propertyId=Number(new URLSearchParams(location.search).get('propertyId')),property=m.properties.find(row=>row.id===propertyId);
-    if(property){const form=document.getElementById('proposalForm');form.elements.property_id.value=property.id;form.elements.location.value=property.name+' - '+(property.barangay||'');form.elements.lat.value=property.lat??'';form.elements.lng.value=property.lng??'';}
-  }
-  function proposalSelect(name='proposal_choice'){return select(name,'Saved proposal',state.meta.proposals);}
-  function fillRecord(form,record){
-    const values={...record.payload,id:record.id,revision:record.revision,title:record.title,mode:record.mode,property_id:record.property_id,service_id:record.service_id,source:record.payload.evidence?.source,observed_on:record.payload.evidence?.observed_on,url:record.payload.evidence?.url};
-    if(Array.isArray(values.complementary_categories))values.complementary_categories=values.complementary_categories.join(', ');
-    Object.entries(values).forEach(([key,value])=>{const field=form.elements.namedItem(key);if(field){if(field.type==='checkbox')field.checked=!!value;else field.value=value??'';}});
-    state.meta.barriers.forEach(key=>{const field=form.elements.namedItem('barrier_'+key);if(field)field.checked=record.payload.barriers?.includes(key)||false;});
-    form.scrollIntoView({behavior:'smooth',block:'start'});
-  }
-  function assessmentInput(){
-    const form=view.querySelector('[data-form=assessment]'),d=Object.fromEntries(new FormData(form));const weights={},rules={},criteria={},readiness={};
-    Object.keys(state.meta.criteria).forEach(key=>{weights[key]=d['weight_'+key];rules[key]={min:d['min_'+key],max:d['max_'+key],direction:d['direction_'+key]||'maximize',unit:d['unit_'+key]||'documented rating'};criteria[key]={value:d['value_'+key],source:d['source_'+key],observed_on:d['date_'+key]||null,status:d['status_'+key]||'reported'};});
-    state.meta.readiness_keys.forEach(key=>{readiness[key]={status:d['ready_'+key]||'unknown',source:d['ready_source_'+key],observed_on:d['ready_date_'+key]||null,notes:d['ready_notes_'+key]};});
-    return {proposal_id:Number(view.querySelector('[name=assessment_proposal]').value),configuration_id:Number(d.configuration_id),configuration:{name:'Manual provisional preview',weights,rules,validation_status:'provisional'},criteria,readiness};
-  }
-  function showAssessment(result){
-    document.getElementById('assessmentResult').innerHTML=`<div class="wy-metric-grid"><div class="wy-metric"><strong>${esc(result.mce_score??'—')}</strong><small>Wellness MCE</small></div><div class="wy-metric"><strong>${esc(result.iai_score??'—')}</strong><small>Wellness IAI</small></div><div class="wy-metric"><strong>${result.evidence_coverage_pct}%</strong><small>Evidence coverage</small></div></div><p><span class="wy-label ${result.critical_restrictions.length?'is-danger':'is-warning'}">${esc(label(result.status))}</span><span class="wy-label">${esc(label(result.validation_status))}</span></p>${result.critical_restrictions.length?`<p class="wy-notice is-error">Restrictions recorded: ${esc(result.critical_restrictions.map(label).join(', '))}. Aggregate scores are withheld.</p>`:''}<p class="wy-muted">Missing criteria: ${esc(result.missing_criteria.map(label).join(', ')||'None')}<br>Needs verification: ${esc(result.unresolved_requirements.map(label).join(', ')||'No unresolved readiness fields recorded')}</p><details class="wy-calculation"><summary>Inspect criteria, normalization, sources and weights</summary><div class="wy-table-wrap"><table class="wy-table"><thead><tr><th>Criterion</th><th>Raw → normalized</th><th>Weight / contribution</th><th>Rule and source</th></tr></thead><tbody>${result.criteria.map(c=>`<tr><td>${esc(c.label)}</td><td>${esc(c.raw??'Unknown')} → ${c.normalized===null?'Withheld':c.normalized.toFixed(2)}</td><td>${c.weight}% / ${c.contribution===null?'—':c.contribution.toFixed(2)}</td><td>${esc(c.rule.direction)} [${c.rule.min}, ${c.rule.max}]<br>${esc(c.evidence.source||'Missing')} · ${esc(c.evidence.observed_on||'Date missing')}</td></tr>`).join('')}</tbody></table></div><p class="wy-muted">Linear normalization, clamped to 0–100. MCE is the weighted sum. Wellness IAI uses that same sum only after all five readiness fields have reviewed evidence. An incomplete criterion does not transfer its weight. No validated investment pass threshold is supplied.</p></details><p class="wy-muted">${esc(result.notice)}</p>`;
-  }
-  function simulator(){
-    view.innerHTML=`<div class="wy-grid"><section class="wy-card"><h2>Baseline &amp; improvement scenarios</h2><p class="wy-muted">Keep recorded observations separate from projections. Estimated population reach is not expected customers. Financial outputs are arithmetic under your stated assumptions.</p><form data-form="scenario">${proposalSelect()}${field('name','Scenario name','text','',true)}<label class="wy-field"><span>Baseline (leave blank to save a new baseline)</span><select name="baseline_id"><option value="">New baseline</option></select></label><div class="wy-form-grid">${field('price_per_visit_php','Price per visit, PHP','number','min="0" step="0.01"')}${field('variable_cost_php','Variable cost per visit, PHP','number','min="0" step="0.01"')}${field('fixed_monthly_cost_php','Fixed monthly costs, PHP','number','min="0" step="0.01"')}${field('startup_cost_php','Startup / quoted improvement cost, PHP','number','min="0" step="0.01"')}${field('capacity_per_week','Weekly service capacity','number','min="0"')}${field('weekly_hours','Weekly service hours','number','min="0" max="168" step="any"')}${field('expected_monthly_customers','Assumed monthly customers (optional)','number','min="0"')}${evidence('quote_')}${area('assumptions','Assumptions, operating requirements and unresolved conditions',true)}</div><details class="wy-calculation"><summary>Documented population coverage units (optional)</summary><p class="wy-muted">Supply disjoint, source-backed unit IDs. Duplicate IDs are counted once; previously served IDs are excluded. Overlapping polygons are not automatically resolved.</p>${area('coverage_cells','JSON units: id, population, source, observed_on',false,'[]')}${field('existing_coverage_ids','Already-served unit IDs, comma separated')}</details><div class="wy-actions"><button type="submit" class="wy-primary">Preview scenario</button><button type="button" data-action="save-scenario"${saveDisabled()}>Save scenario</button><button type="button" data-tab="plan">Back to assessment</button></div></form></section><section><div class="wy-card"><h2>What changes?</h2><div id="scenarioResult">${empty('Enter the inputs you know. Missing price or cost information will stay unknown.')}</div></div><div class="wy-card"><h2>Saved scenarios</h2><div id="scenarioList">${empty('Choose a proposal to load its baseline and alternatives.')}</div></div></section></div>`;
-    if(state.proposal)view.querySelector('[name=proposal_choice]').value=state.proposal;
-    if(state.proposal)loadScenarios(state.proposal).catch(error=>message(error.message,true));
-  }
-  function scenarioInput(){const d=Object.fromEntries(new FormData(view.querySelector('[data-form=scenario]')));let cells=[];try{cells=d.coverage_cells?JSON.parse(d.coverage_cells):[];}catch{throw new Error('Coverage units must be valid JSON.');}return {...d,proposal_id:Number(d.proposal_choice),baseline_id:Number(d.baseline_id),coverage_cells:cells,existing_coverage_ids:d.existing_coverage_ids.split(',').map(s=>s.trim()).filter(Boolean),quote_evidence:{source:d.quote_source,observed_on:d.quote_observed_on||null,url:d.quote_url||''}};}
-  function showScenario(result){document.getElementById('scenarioResult').innerHTML=`<div class="wy-metric-grid"><div class="wy-metric"><strong>${esc(result.break_even_visits_per_month??'—')}</strong><small>Break-even visits / month</small></div><div class="wy-metric"><strong>${esc(result.estimated_additional_population_reach??'—')}</strong><small>Additional population reach</small></div><div class="wy-metric"><strong>${esc(result.inputs.expected_monthly_customers??'—')}</strong><small>Assumed customers / month</small></div></div><p>Contribution / visit: ${money(result.contribution_per_visit_php)}<br>Assumed monthly net: ${money(result.assumed_monthly_net_php)}</p><p class="wy-muted">Break-even = ceiling(fixed monthly costs ÷ positive contribution per visit). Missing inputs or a non-positive margin withhold the result.</p><h3>Changes from the baseline</h3>${Object.keys(result.deltas_from_baseline).length?`<dl>${Object.entries(result.deltas_from_baseline).map(([key,value])=>`<div><dt>${esc(label(key))}</dt><dd>${value===null?'Unknown':esc(key.endsWith('_php')?money(value):value)}</dd></div>`).join('')}</dl>`:empty('Select a saved baseline to compare changes.')}<p class="wy-muted">Unknown inputs: ${esc(result.unresolved_inputs.map(label).join(', ')||'None')}</p><p class="wy-muted">${esc(result.notice)}</p>`;}
-  async function loadScenarios(id){if(!id||!state.meta.workspace.ready)return;const {scenarios}=await api('scenarios',null,{id});const select=view.querySelector('[name=baseline_id]');if(select)select.innerHTML=opts(scenarios.filter(s=>Number(s.is_baseline)===1),'New baseline');document.getElementById('scenarioList').innerHTML=scenarios.length?scenarios.map(row=>`<article class="wy-record"><span class="wy-label">${Number(row.is_baseline)?'Baseline':'Alternative'}</span><h3>${esc(row.name)}</h3><p class="wy-muted">${esc(row.result.assumptions)}</p><p>Break-even / month: ${esc(row.result.break_even_visits_per_month??'Not calculated')}</p><div class="wy-actions"><button type="button" data-scenario-draft="${row.id}">Load as a new draft</button></div><details class="wy-calculation"><summary>Inputs and results</summary><pre class="wy-text-output">${esc(JSON.stringify(row.result,null,2))}</pre></details></article>`).join(''):empty('No scenarios saved for this proposal.');state.scenarios=scenarios;}
-  function compare(){view.innerHTML=`<div class="wy-grid"><section class="wy-card"><h2>Compare the evidence</h2><p class="wy-muted">Select 2–5 saved assessment versions. A saved comparison includes the configuration, sources and scenario assumptions at that moment. Different configurations must not be treated as directly comparable rankings.</p><form data-form="comparison">${field('name','Comparison name','text','',true)}${state.meta.assessments.length?state.meta.assessments.map(row=>`<label class="wy-check"><input type="checkbox" name="assessment_${row.id}" value="${row.id}"><span>${esc(row.snapshot.proposal.title)} · MCE ${esc(row.result.mce_score??'Withheld')} · ${esc(label(row.result.status))} · version #${row.id}</span></label>`).join(''):empty('No assessment versions yet. Save an assessment for each candidate option first.')}<div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Save comparison snapshot</button></div></form></section><section class="wy-card"><h2>Saved comparisons &amp; briefs</h2><div id="comparisonList">${state.meta.comparisons.length?state.meta.comparisons.map(row=>`<article class="wy-record"><h3>${esc(row.name)}</h3><p class="wy-muted">${esc(row.created_at)} · ${row.snapshot.assessments.length} assessment versions</p><div class="wy-actions"><button type="button" data-comparison="${row.id}">View saved comparison</button><a href="${esc(base+'?action=export&id='+row.id)}">Download PDF brief ↗</a></div></article>`).join(''):empty('No comparisons saved. Briefs are private to the comparison owner and authorized reviewers.')}</div></section></div><div id="comparisonResult"></div>`;}
-  function showComparison(row){const ids=new Set(row.snapshot.assessments.map(a=>a.configuration_id));document.getElementById('comparisonResult').innerHTML=`<section class="wy-card"><h2>${esc(row.name)}</h2>${ids.size>1?'<p class="wy-notice">Configurations differ. Read the weights and rules before comparing these scores.</p>':''}<div class="wy-table-wrap"><table class="wy-table"><thead><tr><th>Proposal</th><th>Mode</th><th>MCE / IAI</th><th>Status / missing evidence</th><th>Configuration</th></tr></thead><tbody>${row.snapshot.assessments.map(a=>`<tr><td>${esc(a.snapshot.proposal.title)}</td><td>${esc(label(a.snapshot.proposal.mode))}</td><td>${esc(a.result.mce_score??'Withheld')} / ${esc(a.result.iai_score??'Withheld')}</td><td>${esc(label(a.result.status))}<br>${esc(a.result.unresolved_requirements.join(', '))}</td><td>${esc(a.snapshot.configuration.name)}<br>${esc(a.snapshot.configuration.validation_status)}</td></tr>`).join('')}</tbody></table></div><p class="wy-muted">Saved snapshot fingerprint: ${esc(row.snapshot_sha256)}</p><details class="wy-calculation"><summary>Complete saved inputs, sources, scenarios and results</summary><pre class="wy-text-output">${esc(JSON.stringify(row.snapshot,null,2))}</pre></details><div class="wy-actions"><a href="${esc(base+'?action=export&id='+row.id)}">Download this investment brief</a></div></section>`;}
-  function follow(){view.innerHTML=`<div class="wy-grid"><section class="wy-card"><h2>From proposal to follow-through</h2><p class="wy-muted">A proposal is not an implemented project. Record confirmed events and responsibility. Observed service availability, prices, hours and usage are separate from estimates.</p><form data-form="follow"><label class="wy-field"><span>Record</span><select name="parent" required>${recordOptions()}</select></label>${select('kind','Event',['confirmed_inquiry','site_visit','decision','implemented','observed_follow_up','correction_report','correction_response'],true)}${field('responds_to','Correction report ID (responses only)','number','min="1"')}${field('responsible','Responsible person / office','text','',true)}${area('notes','What is documented?',true)}${area('next_action','Next action and unresolved conditions',true)}<div class="wy-form-grid">${evidence()}${field('price_php','Observed price, PHP (follow-up only)','number','min="0" step="0.01"')}${field('weekly_hours','Observed weekly hours','number','min="0" max="168"')}${field('capacity_per_week','Observed weekly capacity','number','min="0"')}${field('aggregate_usage','Aggregate observed usage (no individual records)','number','min="0"')}${field('availability','Observed service availability')}</div><div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Record follow-up</button><button type="button" data-action="timeline">Load timeline</button></div></form><h3>Private supporting documents</h3><p class="wy-muted">Owner/reviewer access applies to both the screen and download. Upload PDF, JPG or PNG, up to 10 MB.</p><form data-form="upload">${field('document','Evidence file','file','accept=".pdf,.jpg,.jpeg,.png"',true)}<div class="wy-actions"><button type="submit"${saveDisabled()}>Upload to selected record</button></div></form></section><section class="wy-card"><h2>Investment pipeline</h2><p class="wy-muted">Needs are opportunity signals; saved plans are proposals; implementation is recorded with its supporting evidence.</p><div id="wellnessPipeline"></div><h2>Evidence &amp; activity</h2><div id="timelineResult">${empty('Choose a record to inspect its review scope, supporting documents and dated activity.')}</div></section></div>`;paintPipeline();}
-  async function timeline(){const parent=view.querySelector('[name=parent]')?.value;if(!parent)throw new Error('Choose a record first.');const [kind,id]=parent.split(':'),result=await api('timeline',null,{kind,id});document.getElementById('timelineResult').innerHTML=`<div class="wy-events">${result.events.length?result.events.map(event=>`<article class="wy-event"><strong>${esc(label(event.kind))}</strong><p class="wy-muted">${esc(event.created_at)}</p><p>${esc(event.payload.notes||event.payload.scope||'Record submitted')}</p>${event.payload.next_action?`<p class="wy-muted">Next: ${esc(event.payload.next_action)}</p>`:''}${event.kind==='observed_follow_up'?`<pre class="wy-text-output">${esc(JSON.stringify(event.payload.metrics,null,2))}</pre>`:''}</article>`).join(''):empty('No recorded events yet.')}</div><h3>Private documents</h3>${result.documents.map(doc=>`<p><a href="${esc(base+'?action=document&id='+doc.id)}">${esc(doc.original_name)} ↗</a> <small>${esc(doc.created_at)}</small></p>`).join('')||empty('No documents uploaded for this record.')}`;}
-  function paintPipeline(){
-    const node=document.getElementById('wellnessPipeline');if(!node)return;
-    const rows=state.meta.pipeline||[],opportunities=state.meta.needs.filter(row=>row.review_status==='reviewed');
-    node.innerHTML=`${opportunities.length?`<details class="wy-calculation"><summary>${opportunities.length} recorded opportunity signals</summary>${opportunities.map(row=>`<article class="wy-record"><span class="wy-label">Opportunity signal</span><h3>${esc(row.title)}</h3><p>${esc(row.barangay)} - ${esc(row.payload.intended_users)}</p>${sourceText(row)}<div class="wy-actions"><button type="button" data-need-proposal="${row.id}">Start a proposal</button></div></article>`).join('')}</details>`:''}<p class="wy-muted">${state.meta.assessments.length} accessible assessment version(s) · ${state.meta.needs.filter(r=>r.review_status==='reviewed').length} reviewed need report(s). Counts describe records, not population demand.</p>${rows.length?rows.map(row=>`<article class="wy-record"><span class="wy-label">${esc(label(row.stage))}</span><span class="wy-label">${esc(label(row.review_status))}</span><h3>${esc(row.title)}</h3><p class="wy-muted">${esc(row.latest_event?.payload.responsible||'Responsibility not yet recorded')}<br>Next: ${esc(row.latest_event?.payload.next_action||'Record the next verification step')}</p><div class="wy-actions"><button type="button" data-timeline-proposal="${row.id}">View timeline</button></div></article>`).join(''):empty('No accessible proposals yet. Create a proposal to connect assessments, inquiries, visits and follow-up.')}`;
-  }
-  function review(){if(!state.meta.reviewer){view.innerHTML=empty('City reviewer access is required.');return;}const records=privateRecords().filter(row=>row.review_status!=='reviewed'||row.outdated);view.innerHTML=`<div class="wy-grid"><section class="wy-card"><h2>Review desk</h2><p class="wy-muted">Review scope is explicit. Submitters cannot review their own records. Outdated verification, incomplete evidence and correction reports need follow-up.</p>${records.length?records.map(row=>`<article class="wy-record">${badges(row)}<h3>${esc(row.title)}</h3><p class="wy-muted">${esc(label(row.kind))} · revision ${row.revision}</p><div class="wy-actions"><button type="button" data-review="${row.kind}:${row.id}">Inspect record</button></div></article>`).join(''):empty('No outstanding review records.')}<h3>Unresolved correction reports</h3>${(state.meta.corrections||[]).length?state.meta.corrections.map(report=>`<article class="wy-record"><h4>Correction #${report.id}</h4><p>${esc(report.payload.notes)}</p><p class="wy-muted">${esc(report.payload.evidence?.source||'Source not recorded')} ? ${esc(report.payload.evidence?.observed_on||'Date unknown')}</p><div class="wy-actions"><button type="button" data-correction-response="${report.id}">Inspect and respond</button></div></article>`).join(''):empty('No unresolved correction reports.')}</section><section class="wy-card"><h2>Review within a stated scope</h2><form data-form="review"><label class="wy-field"><span>Record</span><select name="parent" required>${recordOptions()}</select></label>${select('status','Next review state',['under_review','evidence_required','reviewed'],true)}${area('scope','Scope of this review',true)}${area('notes','Review notes / evidence still needed',true)}<div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Save review event</button><button type="button" data-action="inspect-review">Inspect evidence</button></div></form><div id="reviewRecord"></div></section></div>`;}
-  function settings(){if(!state.meta.reviewer){view.innerHTML=empty('City configuration access is required.');return;}view.innerHTML=`<div class="wy-grid"><section class="wy-card"><h2>Versioned wellness configurations</h2><p class="wy-muted">No validated weights are supplied. Saving creates a new immutable configuration; historical assessment inputs stay unchanged. A validated configuration requires a documented validation reference.</p><form data-form="configuration">${field('name','Configuration name','text','',true)}${select('validation_status','Validation status',['provisional','validated'],true)}${area('validation_reference','Validation reference and scope (required for validated)')}${Object.entries(state.meta.criteria).map(([key,title])=>`<fieldset class="wy-observation"><legend>${esc(title)}</legend><div class="wy-form-grid">${field('weight_'+key,'Weight %','number','min="0" max="100" step="any"',true)}${select('direction_'+key,'Direction',['maximize','minimize'],true)}${field('min_'+key,'Minimum','number','step="any" value="0"',true)}${field('max_'+key,'Maximum','number','step="any" value="100"',true)}${field('unit_'+key,'Observation unit','text','value="documented rating"',true)}</div></fieldset>`).join('')}<div class="wy-actions"><button type="submit" class="wy-primary"${saveDisabled()}>Save new configuration version</button></div></form></section><section class="wy-card"><h2>Source-backed JSON imports</h2><p class="wy-muted">Paste 1–50 service or need records. Preview validates dates, sources and duplicates before an explicit commit. Imported rows still require review; existing records are never overwritten.</p><form data-form="import">${select('kind','Record kind',['service','need'],true)}${area('records','JSON array of records',true,'[]')}<details class="wy-calculation"><summary>Input format</summary><pre class="wy-text-output">${esc(JSON.stringify([{title:'Service name',category:'movement',barangay:state.meta.barangays[0]||'',operator_kind:'public',is_free:true,lat:null,lng:null,evidence:{source:'Your source reference',observed_on:today(),url:''}}],null,2))}</pre></details><div class="wy-actions"><button type="submit"${saveDisabled()}>Validate import</button><button type="button" data-action="commit-import"${saveDisabled()}>Commit reviewed input</button></div></form><div id="importPreview"></div><h3>Saved configurations</h3>${state.meta.configurations.map(row=>`<p>${esc(row.name)} · ${esc(row.validation_status)} · #${row.id}</p>`).join('')||empty('None configured yet.')}</section></div>`;}
+});
 
-  root.addEventListener('input',event=>{if(['directory_search','directory_filter'].includes(event.target.name))paintServices();if(event.target.closest('[data-form=import]'))state.importPreview=null;});
-  root.addEventListener('change',async event=>{
-    try{
-      if(event.target.name==='directory_filter')paintServices();
-      if(event.target.name==='configuration_id'){
-        const config=state.meta.configurations.find(row=>row.id===Number(event.target.value));if(!config)return;
-        Object.entries(config.payload.criteria).forEach(([key,rule])=>Object.entries({weight:rule.weight,min:rule.min,max:rule.max,direction:rule.direction,unit:rule.unit}).forEach(([prefix,value])=>{view.querySelector(`[name="${prefix}_${key}"]`).value=value;}));
+root.addEventListener('click', async event => {
+  const btn = event.target.closest('button, a');
+  if (!btn) return;
+  try {
+    if (btn.dataset.openModal) {
+      const dialogId = btn.dataset.openModal === 'need' ? 'wyNeedModal' : 'wyServiceModal';
+      document.getElementById(dialogId)?.showModal();
+      return;
+    }
+    if (btn.dataset.closeModal) {
+      document.getElementById(btn.dataset.closeModal)?.close();
+      return;
+    }
+    if (btn.dataset.tab) {
+      state.tab = btn.dataset.tab;
+      location.hash = '#' + btn.dataset.tab;
+      render();
+      return;
+    }
+    if (btn.dataset.subview) {
+      state.needSubView = btn.dataset.subview;
+      render();
+      return;
+    }
+    if (btn.dataset.layerToggle) {
+      const key = btn.dataset.layerToggle;
+      state.mapLayers[key] = !state.mapLayers[key];
+      btn.classList.toggle('is-active', state.mapLayers[key]);
+      paintMapMarkers();
+      renderCatchmentRings();
+      return;
+    }
+    if (btn.dataset.evaluateNeed) {
+      state.selectedNeedKey = btn.dataset.evaluateNeed;
+      const need = activeNeed();
+      if (need) state.activeBarangay = need.barangay;
+      state.tab = 'compare';
+      location.hash = '#compare';
+      render();
+      tabs?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (btn.dataset.inspectPathway) {
+      state.activeMode = btn.dataset.inspectPathway;
+      state.tab = 'assumptions';
+      location.hash = '#assumptions';
+      render();
+      tabs?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (btn.dataset.selectMode) {
+      state.activeMode = btn.dataset.selectMode;
+      render();
+      return;
+    }
+    if (btn.dataset.gateToggle) {
+      const g = btn.dataset.gateToggle;
+      state.sensitivity.simulateGateHold = state.sensitivity.simulateGateHold === g ? 'none' : g;
+      render();
+      return;
+    }
+    if (btn.id === 'btnResetSensitivity') {
+      state.sensitivity = { priceDeltaPct: 0, fixedCostDeltaPct: 0, weeklyHours: 72, wageTier: 'non_agri', simulateGateHold: 'none', weights: { ...DEFAULT_WEIGHTS } };
+      render();
+      return;
+    }
+    if (btn.dataset.toggleVerify) {
+      const key = btn.dataset.toggleVerify;
+      if (state.verificationChecks[key]) {
+        state.verificationChecks[key].status = state.verificationChecks[key].status === 'verified' ? 'pending' : 'verified';
+        render();
       }
-      if(event.target.name==='proposal_choice'){state.proposal=Number(event.target.value);if(view.querySelector('[data-form=scenario]'))await loadScenarios(state.proposal);}
-      if(event.target.name==='property_id'){const p=state.meta.properties.find(p=>p.id===Number(event.target.value)),form=event.target.form;if(p){form.elements.location.value=p.name+' · '+(p.barangay||'');form.elements.lat.value=p.lat??'';form.elements.lng.value=p.lng??'';}}
-    }catch(error){message(error.message,true);}
-  });
-  root.addEventListener('submit',async event=>{
-    const form=event.target.closest('[data-form]');if(!form)return;event.preventDefault();if(!form.reportValidity())return;
-    const d=Object.fromEntries(new FormData(form)),type=form.dataset.form;form.classList.add('wy-busy');message('Checking your information...');
-    try{
-      if(type==='assessment'){const {result}=await api('preview_assessment',assessmentInput());showAssessment(result);message('Provisional preview calculated. Saving requires a signed-in account and a saved configuration.');return;}
-      if(type==='scenario'){const input=scenarioInput(),baseline=state.scenarios?.find(row=>row.id===Number(input.baseline_id))?.result;const {result}=await api('preview_scenario',{...input,baseline});showScenario(result);message('Scenario preview calculated; projections remain separate from observations.');return;}
-      let action,data=d;
-      if(['service','need'].includes(type)){action='save_'+type;data={...d,id:Number(d.id)||0,revision:Number(d.revision)||0,evidence:{source:d.source,observed_on:d.observed_on,url:d.url||''}};if(type==='service'){data.is_free=!!form.elements.is_free.checked;data.open_to_partnership=!!form.elements.open_to_partnership.checked;}else data.barriers=state.meta.barriers.filter(key=>form.elements['barrier_'+key].checked);}
-      if(type==='proposal'){action='save_proposal';data={...d,id:Number(d.id)||0,revision:Number(d.revision)||0,property_id:Number(d.property_id),service_id:Number(d.service_id),evidence:{source:d.source,observed_on:d.observed_on,url:d.url||''},complementary_categories:d.complementary_categories.split(',').map(s=>s.trim()).filter(Boolean)};}
-      if(type==='comparison'){action='save_comparison';data={name:d.name,assessment_ids:Object.keys(d).filter(k=>k.startsWith('assessment_')).map(k=>Number(d[k]))};}
-      if(type==='configuration'){action='save_configuration';data={name:d.name,validation_status:d.validation_status,validation_reference:d.validation_reference,weights:{},rules:{}};Object.keys(state.meta.criteria).forEach(key=>{data.weights[key]=d['weight_'+key];data.rules[key]={min:d['min_'+key],max:d['max_'+key],direction:d['direction_'+key],unit:d['unit_'+key]};});}
-      if(type==='follow'){const [kind,id]=d.parent.split(':');action='follow_up';data={...d,record_kind:kind,record_id:Number(id),evidence:{source:d.source,observed_on:d.observed_on,url:d.url||''},metrics:{price_php:d.price_php,weekly_hours:d.weekly_hours,capacity_per_week:d.capacity_per_week,aggregate_usage:d.aggregate_usage,availability:d.availability}};}
-      if(type==='review'){const [kind,id]=d.parent.split(':');action='review';data={...d,kind,id:Number(id)};}
-      if(type==='upload'){const parent=view.querySelector('[name=parent]').value;if(!parent)throw new Error('Choose a record in the follow-up form first.');const [kind,id]=parent.split(':');data=new FormData(form);data.append('kind',kind);data.append('id',id);await api('upload',data);await timeline();message('Private evidence uploaded.');return;}
-      if(type==='import'){let records;try{records=JSON.parse(d.records);}catch{throw new Error('Import text must be a JSON array.');}const result=await api('import_preview',{kind:d.kind,records});state.importPreview={kind:d.kind,records,input_sha256:result.input_sha256};document.getElementById('importPreview').innerHTML=`<p class="wy-notice">${result.rows.length} validated rows. ${result.can_commit?'No duplicate fingerprints detected.':'Duplicate records found; commit is blocked.'}</p><pre class="wy-text-output">${esc(JSON.stringify(result.rows,null,2))}</pre>`;message('Review the validated input before committing.');return;}
-      if(!action)throw new Error('Unsupported form.');const result=await api(action,data);if(result.proposal)state.proposal=result.proposal.id;
-      await load();message('Saved. New and revised records remain submitted until reviewed.');
-    }catch(error){message(error.message,true);}finally{form.classList.remove('wy-busy');}
-  });
-  root.addEventListener('click',async event=>{
-    const button=event.target.closest('button,a');if(!button)return;
-    try{
-      if(button.dataset.tab){state.tab=button.dataset.tab;render();return;}
-      if(button.dataset.editService){const row=state.meta.services.find(r=>r.id===Number(button.dataset.editService)),form=document.getElementById('serviceForm');Object.entries({...row.payload,id:row.id,revision:row.revision,source:row.payload.evidence.source,observed_on:row.payload.evidence.observed_on,url:row.payload.evidence.url}).forEach(([key,value])=>{const field=form.elements.namedItem(key);if(field){if(field.type==='checkbox')field.checked=!!value;else field.value=value??'';}});form.scrollIntoView({behavior:'smooth'});return;}
-      if(button.dataset.needProposal){const row=state.meta.needs.find(r=>r.id===Number(button.dataset.needProposal));state.tab='plan';plan();fillRecord(document.getElementById('proposalForm'),{payload:{source_need_id:row.id,category:row.category,intended_users:row.payload.intended_users,lat:row.lat,lng:row.lng,location:row.barangay,barriers_and_improvements:row.payload.notes,evidence:row.payload.evidence},title:'Respond to '+row.title,mode:'open'});return;}
-      if(button.dataset.scenarioDraft){const row=state.scenarios?.find(r=>r.id===Number(button.dataset.scenarioDraft));if(!row)throw new Error('Reload the saved scenarios first.');const form=view.querySelector('[data-form=scenario]');Object.entries(row.input).forEach(([key,value])=>{const field=form.elements.namedItem(key);if(field&&typeof value!=='object')field.value=value??'';});form.elements.name.value=row.name+' - revised';form.elements.baseline_id.value=Number(row.is_baseline)===1?row.id:row.baseline_id;form.elements.coverage_cells.value=JSON.stringify(row.input.coverage_cells||[],null,2);form.elements.existing_coverage_ids.value=(row.input.existing_coverage_ids||[]).join(', ');Object.entries(row.input.quote_evidence||{}).forEach(([key,value])=>{const field=form.elements.namedItem('quote_'+key);if(field)field.value=value??'';});showScenario(row.result);form.scrollIntoView({behavior:'smooth'});return;}
-      if(button.dataset.correctionResponse){const report=state.meta.corrections.find(r=>r.id===Number(button.dataset.correctionResponse)),kind=['service','need','proposal'].find(k=>report[k+'_id']);if(!kind)throw new Error('Correction parent is unavailable.');state.tab='follow';follow();const form=view.querySelector('[data-form=follow]');form.elements.parent.value=kind+':'+report[kind+'_id'];form.elements.kind.value='correction_response';form.elements.responds_to.value=report.id;await timeline();return;}
-      if(button.dataset.editNeed){fillRecord(document.getElementById('needForm'),state.meta.needs.find(r=>r.id===Number(button.dataset.editNeed)));return;}
-      if(button.dataset.timelineProposal){view.querySelector('[name=parent]').value='proposal:'+button.dataset.timelineProposal;await timeline();return;}
-      if(button.dataset.correct){const parent=button.dataset.correct;state.tab='follow';follow();const select=view.querySelector('[name=parent]');if(![...select.options].some(o=>o.value===parent)){const o=document.createElement('option');o.value=parent;o.textContent='Selected public record';select.append(o);}select.value=parent;view.querySelector('[name=kind]').value='correction_report';return;}
-      if(button.dataset.review){const [kind,id]=button.dataset.review.split(':');view.querySelector('[name=parent]').value=button.dataset.review;const {record}=await api('record',null,{kind,id});document.getElementById('reviewRecord').innerHTML=`<pre class="wy-text-output">${esc(JSON.stringify(record,null,2))}</pre>`;return;}
-      if(button.dataset.comparison){const {comparison}=await api('comparison',null,{id:button.dataset.comparison});showComparison(comparison);return;}
-      const action=button.dataset.action;if(!action)return;
-      if(action==='open-simulator'){state.proposal=Number(view.querySelector('[name=proposal_choice]').value)||state.proposal;simulator();return;}
-      if(action==='revise-proposal'){const id=Number(view.querySelector('[name=proposal_choice]').value),record=state.meta.proposals.find(row=>row.id===id);if(!record)throw new Error('Choose a saved proposal first.');fillRecord(document.getElementById('proposalForm'),record);return;}
-      if(action==='save-assessment'){const input=assessmentInput();const {assessment}=await api('save_assessment',input);showAssessment(assessment.result);state.meta.assessments.unshift(assessment);message('Assessment version saved. Its inputs, configuration and result are frozen.');}
-      if(action==='save-scenario'){await api('save_scenario',scenarioInput());await loadScenarios(state.proposal);message('Scenario saved without replacing its baseline.');}
-      if(action==='timeline')await timeline();
-      if(action==='radar'){const id=Number(view.querySelector('[name=proposal_choice]').value),proposal=state.meta.proposals.find(p=>p.id===id);if(!proposal)throw new Error('Choose a saved proposal first.');const result=await api('radar',proposal.payload);document.getElementById('radarResult').innerHTML=`<p class="wy-muted">${esc(result.notice)}</p>${result.services.map(row=>`<article class="wy-record"><h3>${esc(row.title)}</h3><p>${esc(label(row.relation))}${row.potential_partner?' · Potential partner':''} · ${row.straight_line_m===null?'Distance unknown':new Intl.NumberFormat('en-PH').format(row.straight_line_m)+' m straight-line'}</p><p class="wy-muted">${esc(row.reason)} · Last verified: ${esc(row.last_verified_on||'Unknown')}</p><p>Walking / wheeling: ${esc(row.walking_wheeling_conditions||'Not recorded')}</p><p class="wy-muted">Still needed: ${esc((row.unmet_requirements||[]).join('; '))}</p><p class="wy-muted">Source: ${esc(row.evidence?.source||'Not recorded')} · ${esc(row.evidence?.observed_on||'Date unknown')}</p></article>`).join('')||empty('No matching recorded services. Do not interpret this as proof of a gap.')}`;}
-      if(action==='inspect-review'){const parent=view.querySelector('[name=parent]').value;if(!parent)throw new Error('Choose a record first.');const [kind,id]=parent.split(':'),{record}=await api('record',null,{kind,id}),result=await api('timeline',null,{kind,id});document.getElementById('reviewRecord').innerHTML=`<pre class="wy-text-output">${esc(JSON.stringify({record,events:result.events},null,2))}</pre>${result.documents.map(doc=>`<p><a href="${esc(base+'?action=document&id='+doc.id)}">${esc(doc.original_name)} ↗</a></p>`).join('')}`;}
-      if(action==='commit-import'){if(!state.importPreview)throw new Error('Validate the current import input first.');await api('import_commit',state.importPreview);state.importPreview=null;await load();message('Import committed atomically. All new records require review.');}
-    }catch(error){message(error.message,true);}
-  });
-  load().catch(error=>{message(error.message,true);view.innerHTML=empty('The workspace could not load. Reload the page or use the existing property tools.');});
-})();
+      return;
+    }
+    if (btn.dataset.action === 'timeline') {
+      const parent = view.querySelector('[name=parent]')?.value;
+      if (!parent) throw new Error('Select a record first.');
+      const [kind, id] = parent.split(':');
+      const res = await api('timeline', null, { kind, id });
+      document.getElementById('timelineResult').innerHTML = res.events?.length
+        ? res.events.map(ev => `<article class="wy-record" style="margin-bottom:8px;"><strong>${esc(label(ev.kind))}</strong><p class="wy-muted">${esc(ev.created_at)}</p><p>${esc(ev.payload?.notes || 'Event logged')}</p></article>`).join('')
+        : empty('No timeline events recorded yet.');
+      return;
+    }
+    if (btn.dataset.timelineProposal) {
+      const sel = view.querySelector('[name=parent]');
+      if (sel) sel.value = `proposal:${btn.dataset.timelineProposal}`;
+      const res = await api('timeline', null, { kind: 'proposal', id: btn.dataset.timelineProposal });
+      document.getElementById('timelineResult').innerHTML = res.events?.length
+        ? res.events.map(ev => `<article class="wy-record" style="margin-bottom:8px;"><strong>${esc(label(ev.kind))}</strong><p>${esc(ev.payload?.notes || '')}</p></article>`).join('')
+        : empty('No timeline events recorded.');
+      return;
+    }
+    if (btn.dataset.action === 'save-scenario' || btn.dataset.action === 'save-assessment') {
+      const isAssess = btn.dataset.action === 'save-assessment';
+      const form = view.querySelector(`[data-form=${isAssess ? 'assessment' : 'scenario'}]`);
+      const d = Object.fromEntries(new FormData(form));
+      if (isAssess) {
+        const criteria = {}, readiness = {}, weights = {}, rules = {};
+        Object.keys(state.meta.criteria).forEach(k => {
+          weights[k] = d['weight_' + k];
+          rules[k] = { min: 0, max: 100, direction: 'maximize', unit: 'rating' };
+          criteria[k] = { value: d['value_' + k], source: d['source_' + k], observed_on: d['date_' + k], status: 'reviewed' };
+        });
+        state.meta.readiness_keys.forEach(gk => {
+          readiness[gk] = { status: 'reviewed', source: 'Official registry', observed_on: today(), notes: 'Verified' };
+        });
+        await api('save_assessment', { proposal_id: Number(d.assessment_proposal || state.proposal), configuration_id: Number(d.configuration_id), criteria, readiness });
+        message('Versioned assessment saved.');
+      } else {
+        await api('save_scenario', { ...d, proposal_id: Number(d.proposal_choice || state.proposal), quote_evidence: { source: d.quote_source, observed_on: d.quote_observed_on, url: d.quote_url || '' } });
+        message('Scenario saved.');
+      }
+      state.meta = await api('bootstrap');
+      render();
+      return;
+    }
+    if (btn.dataset.review) {
+      const [kind, id] = btn.dataset.review.split(':');
+      const res = await api('record', null, { kind, id });
+      const sel = view.querySelector('[data-form=review] [name=parent]');
+      if (sel) sel.value = btn.dataset.review;
+      document.getElementById('reviewRecord').innerHTML = `<pre class="wy-text-output">${esc(JSON.stringify(res.record, null, 2))}</pre>`;
+      return;
+    }
+    if (btn.dataset.action === 'inspect-review') {
+      const parent = view.querySelector('[data-form=review] [name=parent]')?.value;
+      if (!parent) throw new Error('Select a record first.');
+      const [kind, id] = parent.split(':');
+      const res = await api('record', null, { kind, id });
+      document.getElementById('reviewRecord').innerHTML = `<pre class="wy-text-output">${esc(JSON.stringify(res.record, null, 2))}</pre>`;
+    }
+  } catch (err) {
+    message(err.message, true);
+  }
+});
+
+root.addEventListener('submit', async event => {
+  const form = event.target.closest('[data-form]');
+  if (!form) return;
+  event.preventDefault();
+  if (!form.reportValidity()) return;
+  const type = form.dataset.form;
+  const d = Object.fromEntries(new FormData(form));
+  form.classList.add('wy-busy');
+  try {
+    if (type === 'need') {
+      const barriers = state.meta.barriers.filter(k => form.elements.namedItem('barrier_' + k)?.checked);
+      await api('save_need', { ...d, barriers, evidence: { source: d.source, observed_on: d.observed_on, url: d.url || '' } });
+      document.getElementById('wyNeedModal')?.close();
+      state.meta = await api('bootstrap');
+      message('Community barrier report submitted.');
+      render();
+    } else if (type === 'service') {
+      await api('save_service', { ...d, is_free: form.elements.is_free?.checked, evidence: { source: d.source, observed_on: d.observed_on, url: d.url || '' } });
+      document.getElementById('wyServiceModal')?.close();
+      state.meta = await api('bootstrap');
+      message('Service record submitted.');
+      render();
+    } else if (type === 'proposal') {
+      const res = await api('save_proposal', { ...d, evidence: { source: d.source, observed_on: d.observed_on, url: d.url || '' } });
+      state.proposal = res.proposal?.id || state.proposal;
+      state.meta = await api('bootstrap');
+      message('Proposal saved.');
+      render();
+    } else if (type === 'assessment') {
+      const criteria = {}, readiness = {}, weights = {}, rules = {};
+      Object.keys(state.meta.criteria).forEach(k => {
+        weights[k] = d['weight_' + k];
+        rules[k] = { min: 0, max: 100, direction: 'maximize', unit: 'rating' };
+        criteria[k] = { value: d['value_' + k], source: d['source_' + k], observed_on: d['date_' + k], status: 'reviewed' };
+      });
+      state.meta.readiness_keys.forEach(gk => {
+        readiness[gk] = { status: 'reviewed', source: 'Registry', observed_on: today(), notes: 'Verified' };
+      });
+      const res = await api('preview_assessment', { configuration: { name: 'Provisional preview', weights, rules, validation_status: 'provisional' }, criteria, readiness, siklab_pilot_preset: true });
+      document.getElementById('assessmentResult').innerHTML = `<div class="wy-metric-grid"><div class="wy-metric"><strong>${esc(res.result.mce_score ?? '—')}</strong><small>MCE</small></div><div class="wy-metric"><strong>${esc(res.result.iai_score ?? '—')}</strong><small>IAI</small></div><div class="wy-metric"><strong>${esc(res.result.evidence_coverage_pct)}%</strong><small>Coverage</small></div></div>`;
+      message('Server assessment calculation complete.');
+    } else if (type === 'scenario') {
+      const res = await api('preview_scenario', { ...d, quote_evidence: { source: d.quote_source, observed_on: d.quote_observed_on, url: '' } });
+      document.getElementById('scenarioResult').innerHTML = `<div class="wy-metric-grid"><div class="wy-metric"><strong>${esc(res.result.break_even_visits_per_month ?? '—')}</strong><small>Break-Even / Mo</small></div><div class="wy-metric"><strong>${money(res.result.assumed_monthly_net_php)}</strong><small>Est. Monthly NOI</small></div><div class="wy-metric"><strong>${esc(res.result.viability?.estimated_payback_months ?? '—')} mo</strong><small>Payback</small></div></div>`;
+      message('Scenario calculation updated.');
+    } else if (type === 'follow') {
+      const [parent_kind, parent_id] = String(d.parent || '').split(':');
+      await api('follow_up', { ...d, parent_kind, parent_id: Number(parent_id), evidence: { source: d.source, observed_on: d.observed_on, url: '' } });
+      state.meta = await api('bootstrap');
+      message('Follow-up event logged.');
+      render();
+    } else if (type === 'upload') {
+      const parent = view.querySelector('[data-form=follow] [name=parent]')?.value;
+      if (!parent) throw new Error('Select a record first.');
+      const [kind, id] = parent.split(':');
+      const fd = new FormData(form);
+      fd.set('kind', kind); fd.set('id', id);
+      await api('upload', fd);
+      message('Evidence document uploaded.');
+    } else if (type === 'review') {
+      const [kind, id] = String(d.parent || '').split(':');
+      await api('review', { kind, id: Number(id), status: d.status, scope: d.scope, notes: d.notes });
+      state.meta = await api('bootstrap');
+      message('Review saved.');
+      render();
+    } else if (type === 'configuration') {
+      const criteria = {};
+      Object.keys(state.meta.criteria).forEach(k => {
+        criteria[k] = { weight: d['weight_' + k], direction: d['direction_' + k], min: d['min_' + k], max: d['max_' + k], unit: d['unit_' + k] };
+      });
+      await api('save_configuration', { name: d.name, validation_status: d.validation_status, validation_reference: d.validation_reference, criteria });
+      state.meta = await api('bootstrap');
+      message('Configuration version saved.');
+      render();
+    }
+  } catch (err) {
+    message(err.message, true);
+  } finally {
+    form.classList.remove('wy-busy');
+  }
+});
+
+window.addEventListener('hashchange', () => {
+  const next = initialTab();
+  if (next !== state.tab && state.meta) {
+    state.tab = next;
+    state.needSubView = initialSubView();
+    render();
+  }
+});
+
+load();

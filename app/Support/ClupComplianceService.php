@@ -274,7 +274,10 @@ final class ClupComplianceService
     public function decorateProperty(array $property, ?string $selectedUse = null): array
     {
         $property['clupEvaluations'] = $this->evaluateMatrix($property);
-        $use = $selectedUse !== null ? $this->normalizeType($selectedUse) : $this->normalizeType((string) ($property['type'] ?? ''));
+        $candidate = $selectedUse !== null
+            ? $selectedUse
+            : (string) ($property['proposed_activity'] ?? ($property['clupProfile']['proposed_activity'] ?? ($property['type'] ?? '')));
+        $use = $this->normalizeType($candidate, $selectedUse !== null);
         $property['clupCompliance'] = $property['clupEvaluations'][$use];
         return $property;
     }
@@ -315,22 +318,46 @@ final class ClupComplianceService
         return $this->useTypeCache = $types;
     }
 
-    private function normalizeType(string $type): string
+    private function normalizeType(string $type, bool $strict = true): string
     {
-        $type = strtolower(trim($type));
-        $aliases = [
-            'tourism' => 'hotel',
-            'resort' => 'hotel',
-            'office' => 'bpo',
-            'industrial' => 'manufacturing',
-            'healthcare' => 'hospital',
-            'education' => 'university',
-        ];
-        $type = $aliases[$type] ?? $type;
-        if ($type === '' || !isset($this->useTypes()[$type])) {
-            throw new InvalidArgumentException('Select a supported proposed investment use from the controlled CLUP catalog.');
+        $types = $this->useTypes();
+        $normalized = strtolower(trim($type));
+        if ($normalized !== '' && isset($types[$normalized])) {
+            return $normalized;
         }
-        return $type;
+        $aliases = [
+            'commercial' => ['office_professional', 'retail_convenience', 'commercial'],
+            'building' => ['office_professional', 'retail_convenience', 'commercial'],
+            'land' => ['commercial', 'office_professional', 'retail_convenience'],
+            'mixed_use' => ['office_professional', 'mixed_use'],
+            'mixed-use' => ['office_professional', 'mixed_use'],
+            'hospitality' => ['tour_hotel', 'tour_recreation', 'hotel'],
+            'tourism' => ['tour_hotel', 'hotel'],
+            'resort' => ['tour_resort', 'tour_hotel', 'hotel'],
+            'hotel' => ['tour_hotel', 'hotel'],
+            'recreation' => ['tour_recreation', 'hotel'],
+            'office' => ['office_professional', 'office_bpo', 'bpo'],
+            'bpo' => ['office_bpo', 'bpo'],
+            'industrial' => ['ind_light_manufacturing', 'manufacturing'],
+            'manufacturing' => ['ind_light_manufacturing', 'manufacturing'],
+            'logistics' => ['log_warehouse', 'logistics'],
+            'healthcare' => ['inst_hospital', 'hospital'],
+            'hospital' => ['inst_hospital', 'hospital'],
+            'wellness' => ['inst_hospital', 'tour_recreation', 'office_professional', 'hospital'],
+            'education' => ['inst_school', 'university'],
+            'university' => ['inst_school', 'university'],
+            'residential' => ['res_apartments', 'res_detached', 'mixed_use'],
+            'retail' => ['retail_convenience', 'commercial'],
+        ];
+        foreach ($aliases[$normalized] ?? [] as $candidate) {
+            if (isset($types[$candidate])) {
+                return $candidate;
+            }
+        }
+        if (!$strict && $types !== []) {
+            return isset($types['office_professional']) ? 'office_professional' : (string) array_key_first($types);
+        }
+        throw new InvalidArgumentException('Select a supported proposed investment use from the controlled CLUP catalog.');
     }
 
     private function activeDataset(): ?array

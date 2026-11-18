@@ -1,0 +1,937 @@
+{
+  "type": "FeatureCollection",
+  "generated": "2026-04-12",
+  "title": "San Fernando City, La Union — 10-Category Healthcare & Wellness Inventory",
+  "source": "DOH Region I / CHO San Fernando / BPLO / DRRMO Baseline",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "hlth-itrmc",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3208,
+          16.5978
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-itrmc",
+        "name": "Ilocos Training and Regional Medical Center (ITRMC)",
+        "category": "hospital",
+        "businessType": "hospital",
+        "categoryKey": "hospital",
+        "inventoryCategory": "Hospitals (Tertiary & Secondary)",
+        "careSector": "public_free",
+        "operatingHours": "24/7 Emergency & Inpatient Care",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Parian",
+        "address": "MacArthur Highway, Brgy. Parian, San Fernando City",
+        "note": "Public Tertiary Referral Hospital · High daily patient, caregiver & staff footfall; fragmented outpatient wellness & respite support nearby.",
+        "verified": true,
+        "source": "DOH Region I Hospital Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-lorma",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3198,
+          16.6345
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-lorma",
+        "name": "Lorma Medical Center",
+        "category": "hospital",
+        "businessType": "hospital",
+        "categoryKey": "hospital",
+        "inventoryCategory": "Hospitals (Tertiary & Secondary)",
+        "careSector": "private",
+        "operatingHours": "24/7 Emergency & Tertiary Care",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Carlatan",
+        "address": "MacArthur Highway, Brgy. Carlatan, San Fernando City",
+        "note": "Private Tertiary Hospital · Major inpatient, surgical & PT referral anchor in Northern corridor.",
+        "verified": true,
+        "source": "DOH Region I Hospital Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-bethany",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3174,
+          16.6152
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-bethany",
+        "name": "Bethany Hospital, Inc.",
+        "category": "hospital",
+        "businessType": "hospital",
+        "categoryKey": "hospital",
+        "inventoryCategory": "Hospitals (Tertiary & Secondary)",
+        "careSector": "private",
+        "operatingHours": "24/7 Emergency & Inpatient Care",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Barangay II (CBD)",
+        "address": "Widdoes St., Brgy. II, San Fernando City",
+        "note": "Secondary/Tertiary CBD hospital · High caregiver & ambulatory clinic footfall.",
+        "verified": true,
+        "source": "DOH Region I Hospital Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-lumed",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3216,
+          16.6186
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-lumed",
+        "name": "La Union Medical Diagnostic Center and Hospital (LUMED)",
+        "category": "hospital",
+        "businessType": "hospital",
+        "categoryKey": "hospital",
+        "inventoryCategory": "Hospitals (Tertiary & Secondary)",
+        "careSector": "private",
+        "operatingHours": "24/7 Hospital & Diagnostic Services",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Tanqui",
+        "address": "Ancheta St., Brgy. Tanqui, San Fernando City",
+        "note": "Hospital & diagnostic center creating dense daytime patient & caregiver dwell times.",
+        "verified": true,
+        "source": "DOH Region I Hospital Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-hemotek",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3204,
+          16.6176
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-hemotek",
+        "name": "Hemotek Renal Center, Inc.",
+        "category": "dialysis",
+        "businessType": "dialysis",
+        "categoryKey": "dialysis",
+        "inventoryCategory": "Freestanding Dialysis Centers",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 6:00 AM–9:00 PM",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Tanqui",
+        "address": "Ancheta St. cor. Bucaneg St., San Fernando City",
+        "note": "Freestanding dialysis center · Recurring 4-hour sessions 2–3x/week; companions need caregiver respite & renal-safe meals.",
+        "verified": true,
+        "source": "DOH / BPLO San Fernando City Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-luckd",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3196,
+          16.6331
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-luckd",
+        "name": "La Union Center for Kidney Diseases (LUCKD)",
+        "category": "dialysis",
+        "businessType": "dialysis",
+        "categoryKey": "dialysis",
+        "inventoryCategory": "Freestanding Dialysis Centers",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 8:00 AM–8:00 PM",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Carlatan",
+        "address": "MacArthur Highway, Brgy. Carlatan, San Fernando City",
+        "note": "Freestanding dialysis clinic near Lorma Medical Center; high caregiver wait-time window.",
+        "verified": true,
+        "source": "DOH / BPLO San Fernando City Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-avitus",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3212,
+          16.6054
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-avitus",
+        "name": "Avitus Kidney Care and Dialysis Center",
+        "category": "dialysis",
+        "businessType": "dialysis",
+        "categoryKey": "dialysis",
+        "inventoryCategory": "Freestanding Dialysis Centers",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 6:00 AM–6:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Sevilla",
+        "address": "National Highway, San Fernando City",
+        "note": "Regional dialysis care hub along National Hwy; unmet low-sodium nutrition & respite demand nearby.",
+        "verified": true,
+        "source": "DOH / BPLO San Fernando City Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-fmc-renal",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3136,
+          16.6134
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-fmc-renal",
+        "name": "FMC Renal Care — Catbangen",
+        "category": "dialysis",
+        "businessType": "dialysis",
+        "categoryKey": "dialysis",
+        "inventoryCategory": "Freestanding Dialysis Centers",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 6:00 AM–7:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Catbangen",
+        "address": "Quezon Ave / Catbangen Corridor, San Fernando City",
+        "note": "High-frequency renal patients & caregivers requiring ground-floor dining & gentle mobility rest spaces.",
+        "verified": true,
+        "source": "DOH / BPLO San Fernando City Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-pmp-pain",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3204,
+          16.6032
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-pmp-pain",
+        "name": "PMP Pain Center La Union",
+        "category": "rehab",
+        "businessType": "rehab",
+        "categoryKey": "rehab",
+        "inventoryCategory": "Physical Therapy & Pain Rehab",
+        "careSector": "private",
+        "operatingHours": "Mon–Sun, 9:00 AM–6:00 PM",
+        "afterHours": false,
+        "isAnchor": false,
+        "barangay": "Sevilla",
+        "address": "Uno Fuel Bldg., Ground Floor, Brgy. Sevilla, San Fernando City",
+        "note": "Daytime physical & pain rehabilitation (closes 6:00 PM) · Underserves evening BPO & working-adult schedules.",
+        "verified": true,
+        "source": "San Fernando City Allied Health Inventory"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-lorma-pt",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3195,
+          16.6348
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-lorma-pt",
+        "name": "Lorma Hospital Physical Therapy & Rehab Unit",
+        "category": "rehab",
+        "businessType": "physiotherapist",
+        "categoryKey": "physiotherapist",
+        "inventoryCategory": "Physical Therapy & Pain Rehab",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Carlatan",
+        "address": "Lorma Campus, Brgy. Carlatan, San Fernando City",
+        "note": "Hospital-based PT unit limited to daytime appointments; community step-down evening demand unserved.",
+        "verified": true,
+        "source": "DOH / Hospital Directory"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-doh-trc",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3222,
+          16.5972
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-doh-trc",
+        "name": "DOH Treatment and Rehabilitation Center (DOH-TRC) La Union",
+        "category": "mental_health",
+        "businessType": "mental_health",
+        "categoryKey": "mental_health",
+        "inventoryCategory": "DOH-TRC & Mental / Psychosocial Care",
+        "careSector": "public_free",
+        "operatingHours": "24/7 Inpatient · Outpatient Daytime",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Parian",
+        "address": "ITRMC / Parian Compound, Brgy. Parian, San Fernando City",
+        "note": "Clinical recovery & psychiatric rehabilitation concentrated in Parian · Highlights gap for non-stigmatized community counseling & stress-recovery studios.",
+        "verified": true,
+        "source": "DOH Treatment & Rehabilitation Network"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-itrmc-behav",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3205,
+          16.5982
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-itrmc-behav",
+        "name": "ITRMC Behavioral Medicine Department",
+        "category": "mental_health",
+        "businessType": "mental_health",
+        "categoryKey": "mental_health",
+        "inventoryCategory": "DOH-TRC & Mental / Psychosocial Care",
+        "careSector": "public_free",
+        "operatingHours": "Mon–Fri, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Parian",
+        "address": "Brgy. Parian, San Fernando City",
+        "note": "Clinical behavioral medicine anchor · Community wellness studios in Catbangen & Sevilla handle sub-clinical burnout & prevention.",
+        "verified": true,
+        "source": "DOH Region I Hospital Directory"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-mercury-hwy",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3228,
+          16.6252
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-mercury-hwy",
+        "name": "Mercury Drug — Biday / Highway 24/7",
+        "category": "pharmacy",
+        "businessType": "pharmacy",
+        "categoryKey": "pharmacy",
+        "inventoryCategory": "Pharmacies (24/7 & Daytime)",
+        "careSector": "private",
+        "operatingHours": "24/7 Daily",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Biday",
+        "address": "MacArthur Highway, Brgy. Biday, San Fernando City",
+        "note": "24/7 highway pharmacy anchor driving patient & commuter trip chaining.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-watsons-sm",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3242,
+          16.6264
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-watsons-sm",
+        "name": "Watsons — SM City La Union (Biday)",
+        "category": "pharmacy",
+        "businessType": "pharmacy",
+        "categoryKey": "pharmacy",
+        "inventoryCategory": "Pharmacies (24/7 & Daytime)",
+        "careSector": "private",
+        "operatingHours": "Mon–Sun, 10:00 AM–9:00 PM",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Biday",
+        "address": "SM City La Union, Brgy. Biday, San Fernando City",
+        "note": "Major commercial wellness & personal care anchor in Biday growth node.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-tgp-catbangen",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3126,
+          16.6146
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-tgp-catbangen",
+        "name": "The Generics Pharmacy (TGP) — Catbangen",
+        "category": "pharmacy",
+        "businessType": "pharmacy",
+        "categoryKey": "pharmacy",
+        "inventoryCategory": "Pharmacies (24/7 & Daytime)",
+        "careSector": "private",
+        "operatingHours": "Mon–Sun, 7:00 AM–8:00 PM",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Catbangen",
+        "address": "Quezon Ave, Brgy. Catbangen, San Fernando City",
+        "note": "Community affordable pharmacy anchor supporting preventive rehab & nutrition compliance.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-st-joseph-cbd",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3185,
+          16.6168
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-st-joseph-cbd",
+        "name": "St. Joseph Drug — CBD Town Proper",
+        "category": "pharmacy",
+        "businessType": "pharmacy",
+        "categoryKey": "pharmacy",
+        "inventoryCategory": "Pharmacies (24/7 & Daytime)",
+        "careSector": "private",
+        "operatingHours": "Mon–Sun, 7:00 AM–9:00 PM",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Barangay II (CBD)",
+        "address": "Quezon Ave, CBD, San Fernando City",
+        "note": "CBD pharmacy anchor near walk-up clinics.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-cbd-dental-cluster",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3189,
+          16.6174
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-cbd-dental-cluster",
+        "name": "Quezon Ave / Ortega St. 2nd-Floor Dental & OB-GYN Cluster",
+        "category": "dentist",
+        "businessType": "dentist",
+        "categoryKey": "dentist",
+        "inventoryCategory": "Dental & Specialty Clinics",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 9:00 AM–5:00 PM",
+        "afterHours": false,
+        "accessBarrier": "2nd/3rd floor stairs · no PWD ramp",
+        "isAnchor": false,
+        "barangay": "Barangay III (CBD)",
+        "address": "Quezon Ave & Ortega St., CBD, San Fernando City",
+        "note": "Walk-up 2nd/3rd floor dental, optical & specialty clinics without elevators/ramps — senior/PWD mobility barrier cluster.",
+        "verified": true,
+        "source": "PDAO / CHO Accessibility Inventory"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-anytime-fitness-sm",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3245,
+          16.6261
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-anytime-fitness-sm",
+        "name": "Anytime Fitness — SM City La Union (24/7)",
+        "category": "fitness_centre",
+        "businessType": "fitness_centre",
+        "categoryKey": "fitness_centre",
+        "inventoryCategory": "Gyms, Fitness & Movement Studios",
+        "careSector": "private",
+        "operatingHours": "24/7 Keycard Access",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Biday",
+        "address": "SM City La Union, Diversion Rd, Brgy. Biday",
+        "note": "24/7 commercial gym geared toward young adults; huge whitespace nearby for low-impact senior active ageing & guided rehab.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-barbells-brew",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3179,
+          16.6138
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-barbells-brew",
+        "name": "Barbells & Brew Elyu Strength Lab",
+        "category": "fitness_centre",
+        "businessType": "gym",
+        "categoryKey": "gym",
+        "inventoryCategory": "Gyms, Fitness & Movement Studios",
+        "careSector": "private",
+        "operatingHours": "Mon–Sun, 6:00 AM–9:00 PM",
+        "afterHours": true,
+        "isAnchor": false,
+        "barangay": "Catbangen",
+        "address": "Quezon Ave Corridor, San Fernando City",
+        "note": "Strength-oriented gym · Demonstrates active demand along Quezon Ave while senior/post-injury mobility remains underserved.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-spartan-gym",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3191,
+          16.6164
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-spartan-gym",
+        "name": "El & Ar Spartan Fitness Gym",
+        "category": "fitness_centre",
+        "businessType": "gym",
+        "categoryKey": "gym",
+        "inventoryCategory": "Gyms, Fitness & Movement Studios",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 6:00 AM–9:00 PM",
+        "afterHours": true,
+        "isAnchor": false,
+        "barangay": "Barangay II (CBD)",
+        "address": "Mabini St., San Fernando City",
+        "note": "High-intensity athlete & strength training gym in Mabini CBD corridor.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-rga-gym",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3221,
+          16.6202
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-rga-gym",
+        "name": "RGA (R Gym Access) & Union-Athletics Corridor",
+        "category": "fitness_centre",
+        "businessType": "gym",
+        "categoryKey": "gym",
+        "inventoryCategory": "Gyms, Fitness & Movement Studios",
+        "careSector": "private",
+        "operatingHours": "Mon–Sat, 6:00 AM–8:30 PM",
+        "afterHours": true,
+        "isAnchor": false,
+        "barangay": "Lingsat / Tanqui",
+        "address": "MacArthur Hwy (North San Juan Boundary Corridor)",
+        "note": "Athletic strength club corridor with opportunity to co-locate guided stretching & low-impact senior movement.",
+        "verified": true,
+        "source": "San Fernando City BPLO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-poro-baywalk",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.2962,
+          16.6098
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-poro-baywalk",
+        "name": "Poro Point Baywalk & Sillag Wellness Grounds",
+        "category": "park",
+        "businessType": "park",
+        "categoryKey": "park",
+        "inventoryCategory": "Wellness Parks & Active Public Spaces",
+        "careSector": "public_free",
+        "operatingHours": "Daily, 5:00 AM–9:00 PM",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Poro",
+        "address": "Poro Point Boulevard, Brgy. Poro, San Fernando City",
+        "note": "Flagship coastal running, cycling & active sunrise/sunset trail · Ideal for co-located active recovery, contrast-therapy & hydration hub.",
+        "verified": true,
+        "source": "CPDO / Poro Point Management Inventory"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-city-plaza",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3186,
+          16.6159
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-city-plaza",
+        "name": "San Fernando City Plaza — Active Civic Commons",
+        "category": "park",
+        "businessType": "park",
+        "categoryKey": "park",
+        "inventoryCategory": "Wellness Parks & Active Public Spaces",
+        "careSector": "public_free",
+        "operatingHours": "Daily Public Access",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Barangay II (CBD)",
+        "address": "Quezon Ave, Town Proper, San Fernando City",
+        "note": "Central civic walking & community zumba plaza connecting CBD clinic and church corridors.",
+        "verified": true,
+        "source": "CPDO Urban Open Space Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-pagoda-macho",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3168,
+          16.6215
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-pagoda-macho",
+        "name": "Ma-Cho Temple & Pagoda Hill Wellness Trail",
+        "category": "park",
+        "businessType": "park",
+        "categoryKey": "park",
+        "inventoryCategory": "Wellness Parks & Active Public Spaces",
+        "careSector": "public_free",
+        "operatingHours": "Daily, 6:00 AM–6:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Barangay II / Pagoda Hill",
+        "address": "Pagoda Hill, San Fernando City",
+        "note": "High morning walker footfall with steep elevation gradient — needs hydration, shaded rest & foot-recovery nodes.",
+        "verified": true,
+        "source": "City Tourism & CPDO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-botanical-garden",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3442,
+          16.5955
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-botanical-garden",
+        "name": "La Union Botanical Garden",
+        "category": "park",
+        "businessType": "park",
+        "categoryKey": "park",
+        "inventoryCategory": "Wellness Parks & Active Public Spaces",
+        "careSector": "public_free",
+        "operatingHours": "Daily, 7:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Cadaclan",
+        "address": "Brgy. Cadaclan, San Fernando City",
+        "note": "20-hectare highland botanical sanctuary suited for eco-therapy, gentle nature trails & shade/hydration stops.",
+        "verified": true,
+        "source": "City Tourism & CPDO Registry"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-cdrrmo-ems",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3198,
+          16.6156
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-cdrrmo-ems",
+        "name": "CDRRMO San Fernando City — Rescue & EMS",
+        "category": "emergency",
+        "businessType": "emergency",
+        "categoryKey": "emergency",
+        "inventoryCategory": "DRRMO & Emergency Response",
+        "careSector": "public_free",
+        "operatingHours": "24/7 Emergency Dispatch",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Barangay I / City Hall",
+        "address": "City Hall / Marcos Bldg., San Fernando City",
+        "note": "24/7 municipal EMS & hazard rescue dispatch supporting flood-free care continuity.",
+        "verified": true,
+        "source": "CDRRMO San Fernando City"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-pdrrmo-prc",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3214,
+          16.6078
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-pdrrmo-prc",
+        "name": "PDRRMO La Union & Philippine Red Cross Emergency Hub",
+        "category": "emergency",
+        "businessType": "emergency",
+        "categoryKey": "emergency",
+        "inventoryCategory": "DRRMO & Emergency Response",
+        "careSector": "public_free",
+        "operatingHours": "24/7 Emergency & Blood Services",
+        "afterHours": true,
+        "isAnchor": true,
+        "barangay": "Sevilla / Capitol",
+        "address": "Capitol Complex, San Fernando City",
+        "note": "Provincial EMS, blood bank & rapid ambulance catchment hub.",
+        "verified": true,
+        "source": "PDRRMO / Philippine Red Cross La Union"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-cho-main",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3192,
+          16.6151
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-cho-main",
+        "name": "San Fernando City Health Office (CHO) Main RHU",
+        "category": "health_station",
+        "businessType": "health_station",
+        "categoryKey": "health_station",
+        "inventoryCategory": "Barangay Health Stations (BHS) & RHU",
+        "careSector": "public_free",
+        "operatingHours": "Mon–Fri, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Barangay II",
+        "address": "City Health Office Compound, San Fernando City",
+        "note": "Free public primary care, maternal checkups & immunization baseline (government hours only).",
+        "verified": true,
+        "source": "CHO San Fernando City (59-Barangay Network)"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-bhs-biday",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3231,
+          16.6272
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-bhs-biday",
+        "name": "Barangay Biday Health Station (BHS)",
+        "category": "health_station",
+        "businessType": "barangay_health_station",
+        "categoryKey": "barangay_health_station",
+        "inventoryCategory": "Barangay Health Stations (BHS) & RHU",
+        "careSector": "public_free",
+        "operatingHours": "Mon–Fri, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Biday",
+        "address": "Barangay Hall Compound, Brgy. Biday, San Fernando City",
+        "note": "Free public BHS baseline · Closes 5 PM; high synergy for Partnered Evening PT & Senior Mobility referrals.",
+        "verified": true,
+        "source": "CHO San Fernando City (59-Barangay Network)"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-bhs-catbangen",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3122,
+          16.6139
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-bhs-catbangen",
+        "name": "Barangay Catbangen Health Station (BHS)",
+        "category": "health_station",
+        "businessType": "barangay_health_station",
+        "categoryKey": "barangay_health_station",
+        "inventoryCategory": "Barangay Health Stations (BHS) & RHU",
+        "careSector": "public_free",
+        "operatingHours": "Mon–Fri, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Catbangen",
+        "address": "Brgy. Catbangen, San Fernando City",
+        "note": "Free daytime public maternal & primary care hub · Complements after-hours counseling & ground-floor clinic upgrades.",
+        "verified": true,
+        "source": "CHO San Fernando City (59-Barangay Network)"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-bhs-poro",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3012,
+          16.6104
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-bhs-poro",
+        "name": "Barangay Poro Health Station (BHS)",
+        "category": "health_station",
+        "businessType": "barangay_health_station",
+        "categoryKey": "barangay_health_station",
+        "inventoryCategory": "Barangay Health Stations (BHS) & RHU",
+        "careSector": "public_free",
+        "operatingHours": "Mon–Fri, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Poro",
+        "address": "Brgy. Poro, San Fernando City",
+        "note": "Free coastal BHS primary baseline · Connects Baywalk active-living demand to preventive health screenings.",
+        "verified": true,
+        "source": "CHO San Fernando City (59-Barangay Network)"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hlth-bhs-sevilla",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3207,
+          16.6012
+        ]
+      },
+      "properties": {
+        "status": "operating",
+        "id": "hlth-bhs-sevilla",
+        "name": "Barangay Sevilla Health Station (BHS)",
+        "category": "health_station",
+        "businessType": "barangay_health_station",
+        "categoryKey": "barangay_health_station",
+        "inventoryCategory": "Barangay Health Stations (BHS) & RHU",
+        "careSector": "public_free",
+        "operatingHours": "Mon–Fri, 8:00 AM–5:00 PM",
+        "afterHours": false,
+        "isAnchor": true,
+        "barangay": "Sevilla",
+        "address": "Brgy. Sevilla, San Fernando City",
+        "note": "Free public BHS anchor near DMMMSU / Robinsons workforce belt.",
+        "verified": true,
+        "source": "CHO San Fernando City (59-Barangay Network)"
+      }
+    }
+  ]
+}

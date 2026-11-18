@@ -97,14 +97,14 @@ export function CivicMetrics() {
     <section ref={root} className="civic-canvas cw-bg-[#F6F4EF] cw-px-8 cw-py-10 cw-text-zinc-900" aria-labelledby="civicTitle" data-art-motion={animate ? 'on' : 'off'} data-art-running={animate && inView && visible ? 'true' : 'false'} data-civic-ready={ready ? 'true' : 'false'}>
       <header className="civic-header cw-flex cw-flex-wrap cw-items-center cw-justify-between cw-gap-5">
         <div className="civic-title-row cw-flex cw-flex-wrap cw-items-center cw-gap-3">
-          <h3 id="civicTitle" className="cw-text-3xl cw-font-semibold cw-tracking-tight">Get to know the city.</h3>
-          <span className="civic-overview cw-rounded-full cw-bg-black/5 cw-px-3 cw-py-1 cw-text-xs cw-font-medium">Overview</span>
+          <h3 id="civicTitle" className="cw-text-3xl cw-font-semibold cw-tracking-tight">Health ecosystem overview.</h3>
+          <span className="civic-overview cw-rounded-full cw-bg-black/5 cw-px-3 cw-py-1 cw-text-xs cw-font-medium">10-Category Baseline</span>
         </div>
         <div className="civic-settings cw-flex cw-items-center cw-gap-3">
           <button className="civic-switch" type="button" role="switch" aria-checked={animate} aria-label="Animate illustrations" title={reducedMotion ? 'Animation follows your reduced-motion preference' : 'Animate illustrations'} disabled={!ready || reducedMotion} onClick={() => setMotionEnabled(value => !value)}>
             <m.span className="civic-switch-thumb" initial={false} animate={{ x: animate ? 18 : 0 }} transition={animate ? { duration: .12, ease: [.22, 1, .36, 1] } : { duration: 0 }} />
           </button>
-          <span className="civic-date cw-text-sm cw-font-medium cw-text-zinc-700">2023–2024 Figures</span>
+          <span className="civic-date cw-text-sm cw-font-medium cw-text-zinc-700">San Fernando Health Baseline</span>
         </div>
       </header>
 
@@ -138,7 +138,7 @@ export function CivicMetrics() {
         </div>
       </LayoutGroup>
 
-      <p className="civic-credit cw-mt-6 cw-text-xs cw-text-zinc-500">Source: City government and agency figures, 2023–2024.</p>
+      <p className="civic-credit cw-mt-6 cw-text-xs cw-text-zinc-500">Source: DOH Region I, City Health Office (CHO), BPLO, and CDRRMO San Fernando inventory baseline.</p>
       <p className="civic-announcement" role="status" aria-live="polite" aria-atomic="true" data-civic-announcement />
     </section>
   </LazyMotion>;

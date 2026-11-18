@@ -3,7 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/app/Support/web.php';
 require_once __DIR__ . '/app/Support/ZoningRulesEngine.php';
 $context = sfc_web_context();
-sfc_render_head('Property Details | LOCUS-SF', $context, ['page' => 'city-details', 'role' => $context['user']['role'] ?? 'guest']);
+sfc_render_head('Property Details | wELYU', $context, ['page' => 'city-details', 'role' => $context['user']['role'] ?? 'guest']);
 ?>
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/property-details.css<?= sfc_asset_version('css/property-details.css') ?>">
 <link rel="stylesheet" href="<?= htmlspecialchars($context['assetBase'], ENT_QUOTES, 'UTF-8') ?>/css/v2-assessment.css<?= sfc_asset_version('css/v2-assessment.css') ?>">
@@ -14,8 +14,9 @@ sfc_render_header($context, 'explorer');
 ?>
 <main class="city-container city-workspace">
     <div class="property-page-toolbar no-print print:tw-hidden">
+        <div class="property-toolbar-links">
         <p class="city-back-nav"><a class="city-link" href="<?= htmlspecialchars(sfc_path('/property-explorer.php'), ENT_QUOTES, 'UTF-8') ?>">← Properties</a></p>
-        <a class="city-link" href="<?= htmlspecialchars(sfc_path('/wellness.php') . '?propertyId=' . max(0, (int) ($_GET['id'] ?? 0)) . '#plan', ENT_QUOTES, 'UTF-8') ?>">Plan a wellness investment</a>
+        <a class="city-link" href="<?= htmlspecialchars(sfc_path('/wellness.php') . '?propertyId=' . max(0, (int) ($_GET['id'] ?? 0)) . '#plan', ENT_QUOTES, 'UTF-8') ?>">Plan a wellness investment</a></div>
         <?php sfc_investor_view_control($context); ?>
     </div>
     <div id="cityPropertyDetails" aria-live="polite"><div class="city-loading">Loading property…</div></div>

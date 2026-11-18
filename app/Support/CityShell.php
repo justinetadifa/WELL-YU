@@ -110,6 +110,7 @@ function sfc_render_head(string $title, array $context, array $bodyData = []): v
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/locus-interactions.css<?= sfc_asset_version('css/locus-interactions.css') ?>">
   <?php if ($page === 'city-landing'): ?><link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/home-experience.css<?= sfc_asset_version('css/home-experience.css') ?>"><?php endif; ?>
   <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/welyu-theme.css<?= sfc_asset_version('css/welyu-theme.css') ?>">
+  <link rel="stylesheet" href="<?= $e($context['assetBase']) ?>/css/wellness-navigation.css<?= sfc_asset_version('css/wellness-navigation.css') ?>">
   <script defer src="<?= $e($context['assetBase']) ?>/js/sound-manager.js<?= sfc_asset_version('js/sound-manager.js') ?>"></script>
   <script defer src="<?= $e($context['assetBase']) ?>/js/locus-hud.js<?= sfc_asset_version('js/locus-hud.js') ?>"></script>
   <script defer src="<?= $e($context['assetBase']) ?>/js/password-visibility.js<?= sfc_asset_version('js/password-visibility.js') ?>"></script>
@@ -153,10 +154,54 @@ function sfc_render_header(array $context, string $active = ''): void
         default => [['Explore places', '/index.php#properties', 'properties'], ['Our city', '/index.php#at-a-glance', 'why'], ['About wELYU', '/index.php#about', 'about']],
     };
     array_unshift($items, ['Wellness', '/wellness.php', 'wellness']);
+    array_splice($items, 1, 0, [['Wellness investments', '/wellness-investments.php', 'wellness-investments']]);
     $e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    $activeRoleKey = match ($role) {
+        'investor' => 'investor',
+        'seller' => 'broker',
+        'admin' => 'admin',
+        default => 'guest',
+    };
+    $currentScript = basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
+    $currentQuery = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    $currentRelative = $currentScript . ($currentQuery !== '' ? '?' . $currentQuery : '');
+    $switchBase = sfc_path('/api/demo-switch.php');
+    $roleButtons = [
+        ['key' => 'investor', 'label' => 'Investor', 'title' => 'Switch to Juan Dela Cruz (Verified Wellness Investor)'],
+        ['key' => 'broker', 'label' => 'PRC Broker', 'title' => 'Switch to Maria Santos, REB (PRC-Verified Broker #0028491)'],
+        ['key' => 'admin', 'label' => 'Admin / LEBDO', 'title' => 'Switch to Justine Tadifa (CICTO Admin & LEBDO/CAO Reviewer)'],
+        ['key' => 'guest', 'label' => 'Guest', 'title' => 'Switch to Public Guest View'],
+    ];
     ?>
   <div class="city-top-accent-line" aria-hidden="true"></div>
-  <header class="city-header">
+  <div class="welyu-demo-switcher-bar no-print" role="region" aria-label="Workspace role switcher" data-demo-role-switcher data-active-role="<?= $e($activeRoleKey) ?>">
+    <div class="welyu-demo-switcher-inner">
+      <div class="welyu-demo-switcher-meta">
+        <span class="welyu-demo-switcher-label">Workspace</span>
+        <span class="welyu-demo-switcher-sep" aria-hidden="true">/</span>
+        <span class="welyu-demo-switcher-status">
+          <?php if ($user !== null): ?>
+            <strong><?= $e((string) ($user['name'] ?? $role)) ?></strong>
+          <?php else: ?>
+            <strong>Public guest view</strong>
+          <?php endif; ?>
+        </span>
+      </div>
+      <div class="welyu-demo-switcher-pills" role="group" aria-label="Switch workspace role">
+        <?php foreach ($roleButtons as $btn):
+            $isActiveRole = $activeRoleKey === $btn['key'];
+            $switchHref = $switchBase . '?role=' . rawurlencode($btn['key']) . '&redirect=' . rawurlencode($currentRelative);
+        ?>
+          <a href="<?= $e($switchHref) ?>"
+             class="welyu-demo-role-pill <?= $isActiveRole ? 'is-active' : '' ?>"
+             data-demo-switch-role="<?= $e($btn['key']) ?>"
+             <?= $isActiveRole ? 'aria-current="true"' : '' ?>
+             title="<?= $e($btn['title']) ?>"><?= $e($btn['label']) ?></a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+  <header class="city-header city-header-with-investments">
     <div class="city-container city-nav">
       <a class="city-brand" href="<?= $e(sfc_path($home)) ?>">
         <span class="city-brand-badge"><img src="<?= $e($context['assetBase']) ?>/images/welyu-shield.png" alt="wELYU" width="40" height="39"></span>

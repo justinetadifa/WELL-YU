@@ -382,8 +382,9 @@ export function listingPriceEntries(property, { compact = false } = {}) {
   if (purpose !== "lease") entries.push({ kind: "sale", label: "Sale price", value: format(saleAskingPrice(property)) });
   if (purpose !== "sale") {
     const period = ["month", "year", "day"].includes(property?.leasePeriod) ? property.leasePeriod : "month";
-    const amount = safeNumber(property?.leasePrice);
-    entries.push({ kind: "lease", label: "Lease price", value: amount === null ? "Price on request" : `${format(amount)}${property?.leasePriceUnit === "sqm" ? " / m²" : ""} / ${period}` });
+    const amount = safeNumber(property?.leasePrice ?? property?.leaseRateMonthly);
+    const isPerSqm = ["sqm", "per_sqm"].includes(String(property?.leasePriceUnit || "").toLowerCase());
+    entries.push({ kind: "lease", label: "Lease price", value: amount === null ? "Price on request" : `${format(amount)}${isPerSqm ? " / m²" : ""} / ${period}` });
   }
   return entries;
 }

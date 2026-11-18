@@ -153,6 +153,7 @@
     if (root.dataset.cityWorkspace === 'overview') renderOverview();
     else renderProperties();
     message(status, '');
+    if (root.dataset.cityWorkspace === 'properties') document.dispatchEvent(new CustomEvent('sfc:properties-refreshed'));
   }
 
   function renderOverview() {
@@ -266,11 +267,11 @@
       const statusInfo = propertyOperationalStatus(property);
       const assessment = window.SFCPropertyEditorTools.listingAssessment(property);
       const assessmentCriteria = [
-        ['spatial_accessibility', 'Access', 'Spatial accessibility'],
-        ['infrastructure_readiness', 'Infra', 'Infrastructure'],
-        ['property_cost_market_competitiveness', 'Cost', 'Cost & market'],
-        ['nearby_businesses', 'Biz', 'Nearby businesses'],
-        ['risk_constraints', 'Risk', 'Risk & hazards']
+        ['spatial_accessibility', 'Mobility', 'Mobility & entrance (20%)'],
+        ['infrastructure_readiness', 'Hours', 'Hours & readiness (15%)'],
+        ['property_cost_market_competitiveness', 'Cost', 'Affordability & cost (20%)'],
+        ['nearby_businesses', 'Baseline', 'Service baseline (20%)'],
+        ['risk_constraints', 'Safety', 'Environment & safety (15%)']
       ];
       const assessmentProgress = assessmentCriteria.map(([key, code, label]) => {
         const rating = property.screeningAssessment?.criteria?.[key]?.score;

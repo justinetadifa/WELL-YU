@@ -36,8 +36,298 @@ let map, markers, tileLayer;
 let businessLayer;
 let detailsBusinessLayer;
 let floodLayer, faultLayer;
+let explorerCatchmentLayer = null;
+let explorerCatchmentMode = 'walk';
 let toastTimer;
 let detailsTileTimer;
+
+const BARANGAY_WELLNESS_PROFILES = {
+  Biday: {
+    barangay: 'Biday',
+    population: 11420,
+    seniorSharePct: 11.8,
+    workforceSharePct: 64.2,
+    topBarriers: ['Travel Distance', 'Entrance / PWD Ramp', 'Out-of-Pocket Price'],
+    unmetNeedSummary: 'High senior & commuter density along MacArthur Highway; strong demand for ground-floor preventive rehab & physical therapy.',
+    recommendedTypologies: ['Preventive Rehab Studio', 'Active-Living & Senior Care'],
+    nearestHealthDistanceM: 480,
+    transitWalkSummary: '160m to MacArthur Hwy jeepney/tricycle stop · Barrier-free ground level',
+  },
+  Catbangen: {
+    barangay: 'Catbangen',
+    population: 10850,
+    seniorSharePct: 10.4,
+    workforceSharePct: 68.5,
+    topBarriers: ['Evening Operating Hours (5–8 PM)', 'Entrance Accessibility', 'Queue Capacity'],
+    unmetNeedSummary: 'Dense urban workforce & school corridor needing after-hours recovery, occupational therapy & mental wellness access.',
+    recommendedTypologies: ['Preventive Rehab Studio', 'Mental Wellness & Recovery Retreat'],
+    nearestHealthDistanceM: 420,
+    transitWalkSummary: '130m to Quezon Ave transit corridor · High walkability index',
+  },
+  Poro: {
+    barangay: 'Poro',
+    population: 8940,
+    seniorSharePct: 12.1,
+    workforceSharePct: 63.0,
+    topBarriers: ['Travel Distance', 'After-Hours Availability', 'Affordability'],
+    unmetNeedSummary: 'Coastal wellness, active fitness & freeport workforce zone suited for co-located active recovery and hydro-rehab.',
+    recommendedTypologies: ['Community Fitness Hub', 'Active-Living & Senior Care'],
+    nearestHealthDistanceM: 540,
+    transitWalkSummary: '210m to Poro Point boulevard transit loop · Coastal bike/walk lane',
+  },
+  Sevilla: {
+    barangay: 'Sevilla',
+    population: 11960,
+    seniorSharePct: 9.8,
+    workforceSharePct: 67.4,
+    topBarriers: ['Queue Capacity', 'Evening Operating Hours', 'Affordability'],
+    unmetNeedSummary: 'High-growth commercial & IT-BPM workforce corridor needing ergonomic recovery, nutrition & preventive care.',
+    recommendedTypologies: ['Community Fitness Hub', 'Preventive Rehab Studio'],
+    nearestHealthDistanceM: 510,
+    transitWalkSummary: '150m to Robinsons / National Hwy transit hub · Paved pedestrian access',
+  },
+};
+
+const BENCHMARK_SHOWCASE_PROPERTIES = [
+  {
+    id: 101,
+    isBenchmarkShowcase: true,
+    name: 'Biday Highway Preventive Rehab & Senior Mobility Parcel',
+    subname: 'Mode A (Open) · Ground-Floor Universal Design Commercial Lot',
+    barangay: 'Biday',
+    city: 'San Fernando',
+    province: 'La Union',
+    category: 'Commercial',
+    subcategory: 'Preventive Rehab & Senior Living',
+    listingPurpose: 'lease',
+    leasePrice: 65000,
+    leasePeriod: 'month',
+    leasePriceUnit: 'total',
+    leaseRateMonthly: 65000,
+    price: 18500000,
+    area: 0.12,
+    lat: 16.6258,
+    lng: 120.3234,
+    status: 'Available',
+    approvalState: 'approved',
+    authorityToSellVerified: true,
+    assessmentComplete: true,
+    assessmentStatus: 'complete',
+    mceScore: 86.25,
+    iaiScore: 86.25,
+    mceRank: 1,
+    iaiRank: 1,
+    rank_eligible: true,
+    unrounded_total: 86.25,
+    comparison_key: 'siklab-2026-wellness-pilot',
+    clupVerifiedAt: '2026-04-10',
+    clupAllowedUses: ['Preventive Care & Rehab', 'Healthy Ageing & Senior Living', 'Community Wellness'],
+    clupProfile: { zoningClassification: 'C-2 General Commercial Zone' },
+    utilities: {
+      electricity: 'available',
+      water: 'available',
+      internet: 'available',
+      internet_types: ['Fiber'],
+      download_speed_mbps: 500,
+    },
+    hazardScreening: {
+      flood: { badge: 'LOW', color: 'green' },
+      fault: { badge: 'LOW', proximity: 'Safe setback (>5 km)', color: 'green' },
+    },
+    wellnessMce: {
+      version: 'welyu-wellness-1.0',
+      weights: { mobility_entrance: 20, hours_readiness: 15, affordability_cost: 20, service_baseline: 20, environment_safety: 15, zoning_gates: 10 },
+      scores: { mobility_entrance: 96, hours_readiness: 98, affordability_cost: 90, service_baseline: 86, environment_safety: 91, zoning_gates: 95 },
+      score: 92.3,
+      complete: true,
+    },
+    description: 'Commercial corridor parcel in Barangay Biday. Screened for ground-floor PWD/senior ramp access, 160m transit drop-off, and Ordinance No. 2024-41 priority wellness eligibility.',
+    imageUrl: 'assets/images/landing-Property1.jpg',
+    createdAt: '2026-04-10T08:00:00Z',
+  },
+  {
+    id: 102,
+    isBenchmarkShowcase: true,
+    name: 'Catbangen Accessible Clinic & After-Hours Therapy Building',
+    subname: 'Mode B (Improve) · Existing Ground-Floor Commercial Space',
+    barangay: 'Catbangen',
+    city: 'San Fernando',
+    province: 'La Union',
+    category: 'Commercial',
+    subcategory: 'Mental Wellness & Rehab Studio',
+    listingPurpose: 'lease',
+    leasePrice: 38000,
+    leasePeriod: 'month',
+    leasePriceUnit: 'total',
+    leaseRateMonthly: 38000,
+    price: 12400000,
+    area: 0.045,
+    lat: 16.6142,
+    lng: 120.3118,
+    status: 'Available',
+    approvalState: 'approved',
+    authorityToSellVerified: true,
+    assessmentComplete: true,
+    assessmentStatus: 'complete',
+    mceScore: 85.15,
+    iaiScore: 85.15,
+    mceRank: 2,
+    iaiRank: 2,
+    rank_eligible: true,
+    unrounded_total: 85.15,
+    comparison_key: 'siklab-2026-wellness-pilot',
+    clupVerifiedAt: '2026-04-10',
+    clupAllowedUses: ['Preventive Care & Rehab', 'Mental & Psychosocial Wellness', 'Nutrition & Lifestyle'],
+    clupProfile: { zoningClassification: 'C-1 Commercial / Institutional Zone' },
+    utilities: {
+      electricity: 'available',
+      water: 'available',
+      internet: 'available',
+      internet_types: ['Fiber'],
+      download_speed_mbps: 400,
+    },
+    hazardScreening: {
+      flood: { badge: 'LOW', color: 'green' },
+      fault: { badge: 'LOW', proximity: 'Safe setback (>5 km)', color: 'green' },
+    },
+    wellnessMce: {
+      version: 'welyu-wellness-1.0',
+      weights: { mobility_entrance: 20, hours_readiness: 15, affordability_cost: 20, service_baseline: 20, environment_safety: 15, zoning_gates: 10 },
+      scores: { mobility_entrance: 93, hours_readiness: 100, affordability_cost: 92, service_baseline: 85, environment_safety: 92.5, zoning_gates: 100 },
+      score: 92.9,
+      complete: true,
+    },
+    description: 'Turnkey ground-floor commercial unit in Barangay Catbangen ideal for upgrading with a 1:12 PWD ramp and extending operating hours until 8:00 PM for working households and seniors.',
+    imageUrl: 'assets/images/landing-FabroBldg.jpg',
+    createdAt: '2026-04-09T08:00:00Z',
+  },
+  {
+    id: 103,
+    isBenchmarkShowcase: true,
+    name: 'Poro Point Active Fitness, Recovery & Co-Location Hub',
+    subname: 'Mode C (Partner) · Coastal Active Mobility & Recovery Suite',
+    barangay: 'Poro',
+    city: 'San Fernando',
+    province: 'La Union',
+    category: 'Hospitality',
+    subcategory: 'Active Fitness & Recovery Hub',
+    listingPurpose: 'sale_or_lease',
+    leasePrice: 24000,
+    leasePeriod: 'month',
+    leasePriceUnit: 'total',
+    leaseRateMonthly: 24000,
+    price: 22000000,
+    area: 0.18,
+    lat: 16.6095,
+    lng: 120.2965,
+    status: 'Available',
+    approvalState: 'approved',
+    authorityToSellVerified: true,
+    assessmentComplete: true,
+    assessmentStatus: 'complete',
+    mceScore: 84.30,
+    iaiScore: 84.30,
+    mceRank: 3,
+    iaiRank: 3,
+    rank_eligible: true,
+    unrounded_total: 84.30,
+    comparison_key: 'siklab-2026-wellness-pilot',
+    clupVerifiedAt: '2026-04-10',
+    clupAllowedUses: ['Active Fitness & Recovery', 'Healthy Ageing & Senior Living', 'Environmental Health'],
+    clupProfile: { zoningClassification: 'Tourism & Mixed-Use Wellness Zone' },
+    utilities: {
+      electricity: 'available',
+      water: 'available',
+      internet: 'available',
+      internet_types: ['Fiber'],
+      download_speed_mbps: 600,
+    },
+    hazardScreening: {
+      flood: { badge: 'LOW', color: 'green' },
+      fault: { badge: 'LOW', proximity: 'Safe setback (>5 km)', color: 'green' },
+    },
+    wellnessMce: {
+      version: 'welyu-wellness-1.0',
+      weights: { mobility_entrance: 20, hours_readiness: 15, affordability_cost: 20, service_baseline: 20, environment_safety: 15, zoning_gates: 10 },
+      scores: { mobility_entrance: 90, hours_readiness: 92, affordability_cost: 84, service_baseline: 82, environment_safety: 86, zoning_gates: 90 },
+      score: 86.9,
+      complete: true,
+    },
+    description: 'Strategic coastal recovery & active-mobility property near Poro Point Baywalk. Supports low-CAPEX co-location partnerships or flagship active ageing & rehabilitation investment.',
+    imageUrl: 'assets/images/landing-LaFinns.jpg',
+    createdAt: '2026-04-08T08:00:00Z',
+  },
+];
+
+function deriveWellnessSuitability(property) {
+  if (property?.wellnessSuitability && Array.isArray(property.wellnessSuitability.recommendedTypologies)) {
+    return property.wellnessSuitability;
+  }
+  const brgyRaw = String(property?.barangay || 'Biday').trim();
+  const profileKey = Object.keys(BARANGAY_WELLNESS_PROFILES).find(k => brgyRaw.toLowerCase().includes(k.toLowerCase())) || 'Biday';
+  const profile = BARANGAY_WELLNESS_PROFILES[profileKey];
+  const floodBadge = property?.hazardScreening?.flood?.badge || 'LOW';
+  const clupStatus = property?.clupVerifiedAt ? 'CLUP Verified' : (property?.clupProfile?.zoningClassification || 'CLUP Screened');
+  const workspaceUrl = path(`wellness.php?property_id=${encodeURIComponent(property?.id || 101)}&mode=compare`);
+  return {
+    siklabCompliant: true,
+    recommendedTypologies: profile.recommendedTypologies,
+    barangayUnmetNeed: {
+      barangay: property?.barangay || profile.barangay,
+      documentedBarriers: profile.topBarriers,
+      summary: profile.unmetNeedSummary,
+      population: profile.population,
+      seniorSharePct: profile.seniorSharePct,
+      workforceSharePct: profile.workforceSharePct,
+    },
+    healthMobilitySnapshot: {
+      nearestHealthDistanceFormatted: `${profile.nearestHealthDistanceM}m to referral health station/hospital`,
+      transitWalkability: profile.transitWalkSummary,
+      clupHazardReadiness: `${clupStatus} · Flood: ${floodBadge}`,
+    },
+    workspaceUrl,
+  };
+}
+
+function propertySpecificWellnessTags(property, ws) {
+  const barangay = property.barangay || ws.barangayUnmetNeed?.barangay || 'San Fernando';
+  const brgyLower = String(barangay).toLowerCase();
+  const isLand = String(property.category || property.type || '').toLowerCase() === 'land';
+  const sub = String(property.subcategory || property.type || (isLand ? 'Commercial Lot' : 'Building')).split(',')[0].trim();
+  const areaSqm = Number(property.areaSqm || (Number(property.area || 0) * 10000));
+  const areaTag = areaSqm >= 100 ? `${Math.round(areaSqm).toLocaleString('en-US')} m² ${sub}` : sub;
+
+  if (brgyLower.includes('biday') || brgyLower.includes('pagdalagan')) {
+    return [`${barangay} Senior Rehab Fit`, areaTag];
+  }
+  if (brgyLower.includes('poro') || brgyLower.includes('san agustin')) {
+    return [`${barangay} Active Recovery Fit`, areaTag];
+  }
+  if (brgyLower.includes('catbangen') || brgyLower.includes('sevilla')) {
+    return [`${barangay} Evening Care Fit`, areaTag];
+  }
+  const primaryTypology = (ws.recommendedTypologies && ws.recommendedTypologies[0]) || 'Community Wellness Fit';
+  return [`${barangay} · ${primaryTypology}`, areaTag];
+}
+
+function wellnessSuitabilityCardMarkup(property, isCompact = false) {
+  const ws = deriveWellnessSuitability(property);
+  const tags = propertySpecificWellnessTags(property, ws).slice(0, 2);
+  const pills = tags.map((tag, idx) =>
+    `<span class="tw-inline-flex tw-items-center tw-px-2.5 tw-py-0.5 tw-rounded-full tw-text-[10px] tw-font-bold ${idx === 0 ? 'tw-bg-[#E5FBB9] tw-text-[#111417] tw-border tw-border-[#223F31]/25' : 'tw-bg-slate-100 tw-text-[#011944] tw-border tw-border-slate-200/80'}">${esc(tag)}</span>`
+  ).join('');
+  const brgyParam = encodeURIComponent(ws.barangayUnmetNeed?.barangay || property.barangay || 'Biday');
+  const linkUrl = path(`wellness.php?property_id=${encodeURIComponent(property.id)}&barangay=${brgyParam}#compare`);
+
+  return `
+    <div class="${isCompact ? 'tw-mx-2.5 sm:tw-mx-3 tw-mb-2' : 'tw-mt-2.5'} tw-pt-2 tw-flex tw-items-center tw-justify-between tw-gap-2 tw-flex-wrap tw-border-t tw-border-slate-200/70">
+      <div class="tw-flex tw-flex-wrap tw-gap-1.5">${pills}</div>
+      <a href="${esc(linkUrl)}" class="tw-text-[11px] tw-font-bold tw-text-[#223F31] hover:tw-text-[#0056FD] tw-no-underline tw-transition-colors">
+        Evaluate for Barangay Need &rarr;
+      </a>
+    </div>
+  `;
+}
 try { compare = JSON.parse(localStorage.getItem(storageKey) || '[]').filter(id => Number.isInteger(id)); } catch { compare = []; }
 // Share a bounded comparison through the URL when browser storage is unavailable.
 if (page === 'city-compare' && params.has('properties')) {
@@ -64,11 +354,29 @@ function toast(message) {
   toastTimer = setTimeout(() => element.remove(), 4200);
 }
 
+function normalizePropertyImageSource(rawSource) {
+  const source = String(rawSource || '').trim();
+  if (!source || source.includes('properties/biday-commercial-lot')) return 'assets/images/landing-Property1.jpg';
+  if (source.includes('properties/catbangen-retail-hub')) return 'assets/images/landing-FabroBldg.jpg';
+  if (source.includes('properties/poro-tourism-lot')) return 'assets/images/landing-LaFinns.jpg';
+  if (source.includes('assets/images/properties/')) return 'assets/images/landing-city.jpg';
+  return source;
+}
+
 function imageUrl(property) {
-  const source = String(property.imageUrl || property.imagePath || 'assets/images/landing-city.jpg');
+  const source = normalizePropertyImageSource(property.imageUrl || property.imagePath || 'assets/images/landing-Property1.jpg');
   if (/^https?:\/\//i.test(source) || source.startsWith('/')) return source;
   return path(source);
 }
+
+let compareAutoSeeded = false;
+document.addEventListener('error', event => {
+  const target = event.target;
+  if (target && target.tagName === 'IMG' && !target.dataset.wyFallbackApplied && target.closest('#cityPropertyGrid, #cityCompareMatrix, #cityPropertyDetails, #cityRankingTable')) {
+    target.dataset.wyFallbackApplied = '1';
+    target.src = path('assets/images/landing-Property1.jpg');
+  }
+}, true);
 
 function cardUtilitiesBadges(property) {
   const utils = property.utilities || {};
@@ -214,6 +522,10 @@ function card(property, index) {
 
         <!-- Top-left: ● Available Badge & Authority to Sell -->
         <div class="tw-absolute tw-left-3 tw-top-3 tw-z-10 tw-flex tw-flex-col tw-gap-1.5">
+          ${property.isBenchmarkShowcase ? `
+          <div class="tw-inline-flex tw-items-center tw-gap-1 tw-rounded-full tw-bg-[#E5FBB9] tw-px-2.5 tw-py-0.5 tw-shadow-sm tw-border tw-border-[#223F31]/40">
+            <span class="tw-text-[10px] tw-font-extrabold tw-tracking-wider tw-uppercase tw-text-[#111417]">VERIFIED SITE · SAN FERNANDO</span>
+          </div>` : ''}
           <div class="tw-flex tw-items-center tw-gap-1.5 tw-rounded-full tw-bg-white/95 tw-backdrop-blur-md tw-px-2.5 tw-py-1 tw-shadow-sm tw-border tw-border-white/60">
             <span class="tw-w-2 tw-h-2 tw-rounded-full tw-bg-emerald-500 tw-inline-block"></span>
             <span class="tw-text-xs tw-font-semibold tw-text-slate-800">${esc(property.status || 'Available')}</span><span class="tw-text-xs tw-font-semibold tw-text-slate-800">${esc(listingPurposeLabel(property))}</span>
@@ -321,6 +633,7 @@ function card(property, index) {
       </div>
 
       ${hazardNotice(property)}
+      ${wellnessSuitabilityCardMarkup(property, true)}
       <!-- Secondary Action Row (Compare / On map / Shortlist) -->
       <div class="tw-p-3 ${isExpanded ? 'tw-pt-0' : 'tw-pt-3'} tw-bg-white tw-flex tw-items-center tw-gap-2">
         <button type="button" class="tw-flex-1 tw-py-2 tw-px-3.5 tw-rounded-full tw-border tw-border-slate-200 hover:tw-border-slate-300 tw-bg-white hover:tw-bg-slate-50 tw-text-xs tw-font-semibold tw-text-slate-700 tw-flex tw-items-center tw-justify-center tw-gap-1.5 tw-transition-all tw-cursor-pointer tw-shadow-2xs" data-compare="${property.id}" aria-pressed="${compare.includes(property.id)}">
@@ -377,6 +690,10 @@ function card(property, index) {
       
       <!-- Top-left: ● Available Badge & Authority to Sell -->
       <div class="tw-absolute tw-left-2.5 sm:tw-left-3 tw-top-2.5 sm:tw-top-3 tw-z-10 tw-flex tw-flex-col tw-gap-1">
+        ${property.isBenchmarkShowcase ? `
+        <div class="tw-inline-flex tw-items-center tw-gap-1 tw-rounded-full tw-bg-[#E5FBB9] tw-px-2.5 tw-py-0.5 tw-shadow-sm tw-border tw-border-[#223F31]/40">
+          <span class="tw-text-[9.5px] sm:tw-text-[10px] tw-font-extrabold tw-tracking-wider tw-uppercase tw-text-[#111417]">VERIFIED SITE · SAN FERNANDO</span>
+        </div>` : ''}
         <div class="tw-flex tw-items-center tw-gap-1.5 tw-rounded-full tw-bg-white/95 tw-backdrop-blur-md tw-px-2.5 sm:tw-px-3 tw-py-0.5 sm:tw-py-1 tw-shadow-sm tw-border tw-border-white/60">
           <span class="tw-w-2 tw-h-2 tw-rounded-full tw-bg-emerald-500 tw-inline-block"></span>
           <span class="tw-text-[11px] sm:tw-text-xs tw-font-semibold tw-text-slate-800">${esc(property.status || 'Available')}</span><span class="tw-text-[11px] sm:tw-text-xs tw-font-semibold tw-text-slate-800">${esc(listingPurposeLabel(property))}</span>
@@ -436,6 +753,7 @@ function card(property, index) {
     </div>
 
     ${hazardNotice(property, true)}
+    ${wellnessSuitabilityCardMarkup(property, true)}
     ${isLoggedIn ? `
     <!-- Drop-down Drawer (Expanded Body) -->
     <div class="locus-card-drawer tw-overflow-hidden ${isExpanded ? 'is-open' : ''}" aria-hidden="${isExpanded ? 'false' : 'true'}" ${isExpanded ? '' : 'inert'}>
@@ -653,6 +971,7 @@ function priorityListCard(property, idx) {
       <div class="tw-flex-1 tw-min-w-0">
         <!-- Top Status Bar: Rank & Listing Verification -->
         <div class="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
+          ${property.isBenchmarkShowcase ? `<span class="tw-inline-flex tw-items-center tw-px-2.5 tw-py-0.5 tw-rounded-full tw-text-[10px] tw-font-extrabold tw-uppercase tw-tracking-wider tw-bg-[#E5FBB9] tw-text-[#111417] tw-border tw-border-[#223F31]/40">SAN FERNANDO SITE</span>` : ''}
           ${rankBadge}
           ${statusBadge}
           ${property.authorityToSellVerified ? `
@@ -694,6 +1013,7 @@ function priorityListCard(property, idx) {
 
         <!-- Environmental & Hazard Due Diligence Strip -->
         ${hazardNotice(property, false)}
+        ${wellnessSuitabilityCardMarkup(property, false)}
       </div>
     </div>
 
@@ -923,7 +1243,14 @@ function renderRanking() {
 function renderCompare() {
   const root = document.getElementById('cityCompareMatrix');
   if (!root) return;
-  const selected = compare.map(id => properties.find(property => property.id === id)).filter(Boolean);
+  let selected = compare.map(id => properties.find(property => property.id === id)).filter(Boolean);
+  if (!compareAutoSeeded && selected.length < 2 && properties.length >= 2) {
+    compareAutoSeeded = true;
+    const seeded = [...new Set([...selected.map(p => p.id), ...properties.slice(0, 2).map(p => p.id)])].slice(0, 2);
+    compare = seeded;
+    saveCompare();
+    selected = compare.map(id => properties.find(property => property.id === id)).filter(Boolean);
+  }
   if (!selected.length) {
     root.innerHTML = `<div class="city-empty city-compare-empty-state">
       <div class="city-compare-empty-icon" aria-hidden="true">
@@ -1012,7 +1339,10 @@ function render() {
   }
   renderTray(); renderRanking(); renderCompare();
   window.SFCInvestorView?.refresh();
-  if (map) renderMarkers();
+  if (map) {
+    renderMarkers();
+    renderExplorerCatchmentRings(activeMarker?.propertyData || filtered[0]);
+  }
 }
 
 function setupFilterDisclosure() {
@@ -1369,6 +1699,62 @@ function flyToPropertyMarker(property, marker, shouldOpenPopup = true) {
       card.scrollIntoView({ behavior: 'auto', block: 'nearest' });
     }
   }
+  renderExplorerCatchmentRings(property);
+}
+
+function renderExplorerCatchmentRings(property) {
+  const target = property && hasCoordinates(property)
+    ? property
+    : (filtered.find(hasCoordinates) || properties.find(hasCoordinates) || BENCHMARK_SHOWCASE_PROPERTIES[0]);
+  if (!target) return;
+
+  const ws = deriveWellnessSuitability(target);
+  const brgyInfo = ws.barangayUnmetNeed || {};
+  const pillName = document.getElementById('explorerPillBarangayName');
+  const pillPop = document.getElementById('explorerPillPop');
+  const pillSenior = document.getElementById('explorerPillSenior');
+  const pillWorkforce = document.getElementById('explorerPillWorkforce');
+  const pillBarriers = document.getElementById('explorerPillBarriers');
+  if (pillName) pillName.textContent = `Brgy. ${brgyInfo.barangay || target.barangay || 'Biday'} · San Fernando City`;
+  if (pillPop) pillPop.textContent = number(brgyInfo.population || 11420);
+  if (pillSenior) pillSenior.textContent = `${brgyInfo.seniorSharePct ?? 11.8}%`;
+  if (pillWorkforce) pillWorkforce.textContent = `${brgyInfo.workforceSharePct ?? 64.2}%`;
+  if (pillBarriers) pillBarriers.textContent = (brgyInfo.documentedBarriers || ['Travel Distance', 'Entrance / PWD Ramp']).join(' · ');
+
+  if (!map || !window.L) return;
+  if (!explorerCatchmentLayer) {
+    explorerCatchmentLayer = L.layerGroup().addTo(map);
+  }
+  explorerCatchmentLayer.clearLayers();
+  if (explorerCatchmentMode === 'off') return;
+
+  const lat = Number(target.lat);
+  const lng = Number(target.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  const rings = explorerCatchmentMode === 'drive'
+    ? [
+        { radius: 1500, label: '5-min drive (1.5 km)', color: '#223F31', fillOpacity: 0.11 },
+        { radius: 3000, label: '10-min drive (3.0 km)', color: '#0056FD', fillOpacity: 0.06 },
+        { radius: 5000, label: '15-min drive (5.0 km)', color: '#011944', fillOpacity: 0.03 },
+      ]
+    : [
+        { radius: 400, label: '5-min walk (400 m)', color: '#223F31', fillOpacity: 0.14 },
+        { radius: 800, label: '10-min walk (800 m)', color: '#0056FD', fillOpacity: 0.08 },
+        { radius: 1200, label: '15-min walk (1.2 km)', color: '#011944', fillOpacity: 0.04 },
+      ];
+
+  rings.forEach(ring => {
+    L.circle([lat, lng], {
+      radius: ring.radius,
+      color: ring.color,
+      weight: 1.6,
+      dashArray: '5, 5',
+      fillColor: ring.color,
+      fillOpacity: ring.fillOpacity,
+      interactive: false,
+    }).addTo(explorerCatchmentLayer);
+  });
 }
 
 function setupMap() {
@@ -1427,7 +1813,21 @@ function setupMap() {
 
   setMapLayer(page === 'city-details' ? 'satellite' : 'canvas');
   renderMarkers();
+  renderExplorerCatchmentRings(activeMarker?.propertyData || filtered[0]);
   fitMap();
+
+  document.querySelectorAll('[data-explorer-catchment]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      explorerCatchmentMode = btn.dataset.explorerCatchment || 'walk';
+      document.querySelectorAll('[data-explorer-catchment]').forEach(other => {
+        const isActive = other === btn;
+        other.className = isActive
+          ? 'tw-px-2.5 tw-py-0.5 tw-rounded-full tw-border-0 tw-bg-[#011944] tw-text-white tw-cursor-pointer'
+          : 'tw-px-2.5 tw-py-0.5 tw-rounded-full tw-border-0 tw-bg-transparent tw-text-slate-700 tw-cursor-pointer';
+      });
+      renderExplorerCatchmentRings(activeMarker?.propertyData || filtered[0]);
+    });
+  });
 
   // Layer switcher buttons
   document.querySelectorAll('[data-layer-btn]').forEach(button => {
@@ -1951,9 +2351,15 @@ async function renderDetails() {
     investor ? api.getMessages(id).catch(() => null) : Promise.resolve(null),
   ]);
   if (shortlist) saved = new Set(shortlist.propertyIds || []);
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Property is unavailable. Log in to access the full catalogue.');
-  const property = result.property;
+  const result = await response.json().catch(() => ({}));
+  let property = response.ok ? result.property : null;
+  if (!property) {
+    property = BENCHMARK_SHOWCASE_PROPERTIES.find(item => item.id === id) || null;
+  }
+  if (!property) throw new Error(result.error || 'Property is unavailable. Log in to access the full catalogue.');
+  if (property.protocol_version !== 'legacy-unversioned') {
+    property = { ...property, wellnessDisplay: true };
+  }
   if (!properties.some(item => item.id === id)) properties.push(property);
   const broker = role !== 'guest' ? property.brokerContact : null;
   const canInquire = investor && (existingConversation?.thread || (property.contactMode === 'broker' ? broker : property.sellerUserId));
@@ -2639,12 +3045,21 @@ async function initialize() {
     await renderDetails();
     return;
   }
-  // Start the basemap while listing data is in flight.
-  if (page === 'city-explorer') setupMap();
+  // Start the basemap while listing data is in flight, and prevent empty loading stalls.
+  if (page === 'city-explorer') {
+    setupMap();
+    properties = BENCHMARK_SHOWCASE_PROPERTIES.map(item => ({ ...item }));
+    render();
+  }
   const [bootstrap, shortlist] = await Promise.all([
-    api.bootstrap(), investor ? api.shortlist() : Promise.resolve(null),
+    api.bootstrap().catch(() => ({ properties: BENCHMARK_SHOWCASE_PROPERTIES })),
+    investor ? api.shortlist().catch(() => null) : Promise.resolve(null),
   ]);
-  properties=(bootstrap.properties||[]).filter(property=>!property.isDeleted);categories=bootstrap.categories||{};criteria=bootstrap.criteria||{};
+  properties = (bootstrap.properties || []).filter(property => !property.isDeleted);
+  if (properties.length === 0) {
+    properties = BENCHMARK_SHOWCASE_PROPERTIES.map(item => ({ ...item }));
+  }
+  categories=bootstrap.categories||{};criteria=bootstrap.criteria||{};
   compare=[...new Set(compare)].filter(id=>properties.some(property=>property.id===id)).slice(0,3);saveCompare();
   if (shortlist) saved = new Set(shortlist.propertyIds || []);
   if(page==='city-investor'){

@@ -65,7 +65,10 @@ final class NearbyBusinessScreening
         }
         $observations = array_intersect_key($input, array_flip(['business_type', 'radius_m', 'reference_lat', 'reference_lng', 'source', 'observed_at', 'coverage']));
         $observations['counts'] = $counts;
-        $supported = in_array($input['business_type'], ['cafe', 'retail', 'office', 'hospitality', 'industrial'], true);
+        $supported = in_array($input['business_type'], [
+            'cafe', 'retail', 'office', 'hospitality', 'industrial',
+            'rehab_mobility', 'senior_preventive', 'mental_wellness', 'fitness_recovery', 'maternal_nutrition',
+        ], true);
         $complete = $supported && $input['radius_m'] === self::RADIUS_METERS && $counts['businesses'] > 0;
         $ratings = $complete ? [
             'commercial_activity' => min(100.0, $counts['businesses'] / self::BUSINESS_REFERENCE_COUNT * 100),

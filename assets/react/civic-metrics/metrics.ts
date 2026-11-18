@@ -16,21 +16,21 @@ export interface CivicCategory { id: string; title: string; metrics: readonly Ci
 // Figures and additions supplied in the civic-widget brief. The SVGs are
 // conceptual illustrations; their coordinates do not encode additional data.
 export const civicCategories: readonly CivicCategory[] = [
-  { id: 'people', title: 'People', metrics: [
-    { id: 'residents', value: '128,024', label: 'Residents', source: 'PSA Census', caption: 'PSA Census · ▲ 1.4% YoY', theme: 'crimson' },
-    { id: 'households', value: '32,202', label: 'Households', source: 'PSA Census · 4.0 people per household', caption: 'PSA Census · Avg. 4.0 people per household', theme: 'peach' },
+  { id: 'people', title: 'Community & reach', metrics: [
+    { id: 'residents', value: '128,024', label: 'Residents Served', source: 'PSA Census · 59 Barangays · 10-Min Care Target', caption: '59 Barangays · 10-Min Care Reach', theme: 'crimson' },
+    { id: 'households', value: '59', label: 'Barangay Health Stations', source: 'City Health Office (CHO) · Mon–Fri 8 AM–5 PM', caption: 'Free Primary Baseline · Closes 5:00 PM', theme: 'peach' },
   ] },
-  { id: 'business', title: 'Business', metrics: [
-    { id: 'businesses', value: '9,129', label: 'Registered businesses', source: 'BPLO / CPDO', caption: 'BPLO / CPDO', growth: '▲ 2.7%', theme: 'amber' },
-    { id: 'finance', value: '170', label: 'Financial institutions', source: 'BSP Region I', caption: 'BSP Region I', theme: 'navy' },
+  { id: 'business', title: 'Clinical anchors', metrics: [
+    { id: 'businesses', value: '4', label: 'Tertiary & Secondary Hospitals', source: 'DOH Region I · ITRMC, Lorma, Bethany & LUMED', caption: 'ITRMC, Lorma, Bethany & LUMED', growth: '24/7 Care', theme: 'amber' },
+    { id: 'finance', value: '4', label: 'Freestanding Dialysis Centers', source: 'Hemotek, LUCKD, Avitus & FMC Renal Care', caption: '4-hr Session Caregiver Respite Gap', theme: 'navy' },
   ] },
-  { id: 'services', title: 'Education & health', metrics: [
-    { id: 'education', value: '11', label: 'Universities & colleges', source: 'CHED Region I', caption: 'CHED Region I', theme: 'cobalt' },
-    { id: 'health', value: '292', label: 'Healthcare facilities', source: 'DOH / City Health Office', caption: 'DOH / City Health Office', substat: 'Public: 84 · Private: 208', theme: 'mint' },
+  { id: 'services', title: 'Care continuum & gaps', metrics: [
+    { id: 'education', value: '1', label: 'PT & Pain Center (Closes 6 PM)', source: 'PMP Pain Center Sevilla + DOH-TRC Parian', caption: 'Evening (6–9 PM) & Step-Free Access Deficit', theme: 'cobalt' },
+    { id: 'health', value: '292', label: 'Health & Wellness Facilities', source: 'DOH / City Health Office / BPLO', caption: 'Pharmacies, Dental, Rehab & Gyms', substat: 'Public BHS/RHU: 84 · Private: 208', theme: 'mint' },
   ] },
-  { id: 'connections', title: 'City & connections', metrics: [
-    { id: 'land', value: '105.26', unit: 'km²', label: 'Land area', source: '59 barangays · City Assessor / CPDO', caption: '59 barangays · City Assessor / CPDO', theme: 'forest' },
-    { id: 'roads', value: '279.52', unit: 'km', label: 'Road network', source: 'DPWH / City Engineering', caption: 'DPWH / City Engineering', theme: 'slate' },
+  { id: 'connections', title: 'Healthy corridors & EMS', metrics: [
+    { id: 'land', value: '4', unit: 'nodes', label: 'Wellness Parks & Trails', source: 'Poro Baywalk, City Plaza, Pagoda & Botanical', caption: 'Poro Baywalk, Pagoda & Cadaclan', theme: 'forest' },
+    { id: 'roads', value: '3', unit: 'hubs', label: 'DRRMO & Emergency EMS Hubs', source: 'CDRRMO, PDRRMO La Union & PH Red Cross', caption: 'Flood-Free Ambulance Continuity', theme: 'slate' },
   ] },
 ];
 

@@ -1,0 +1,141 @@
+{
+  "checked_on": "2026-11-18",
+  "city": "San Fernando City, La Union, Philippines",
+  "selection_label": "Featured health and wellness facilities",
+  "selection_method": "Editorial selection of established city care providers with identifiable official sources and published services. These entries are not ranked by revenue, clinical quality, investment return, or market demand.",
+  "investment_notice": "No public equity, franchise, sale, or fundraising offer has been verified for these facilities. Contact each operator to ask whether an appropriate commercial partnership is available. Public facilities are care anchors, not private ownership investment listings.",
+  "featured": [
+    {
+      "id": "hlth-lorma",
+      "name": "Lorma Medical Center",
+      "category": "hospital",
+      "address": "Carlatan, San Fernando City, La Union 2500",
+      "barangay": "Carlatan",
+      "sector": "private",
+      "services": ["Physical therapy and rehabilitation", "Nutrition clinic", "Wellness services", "Hospital and specialist care"],
+      "description": "A private hospital whose published service directory includes rehabilitation, nutrition, and wellness care.",
+      "source_url": "https://lmc.lorma.org/contact-us/",
+      "source_title": "Lorma Medical Center contact directory",
+      "contact_url": "https://lmc.lorma.org/contact-us/",
+      "service_source_url": "https://lmc.lorma.org/hospital-services/",
+      "service_source_title": "Lorma Medical Center hospital services",
+      "ownership_source_url": "https://lmc.lorma.org/about-us/",
+      "investment_note": "Ask hospital management about suitable service, referral, or supplier collaborations. No current ownership investment or franchise offer has been verified.",
+      "offer_status": "not_verified",
+      "evidence_note": "The operator's contact and service pages support the displayed location and service types. Confirm present availability directly."
+    },
+    {
+      "id": "hlth-bethany",
+      "name": "Bethany Hospital, Inc.",
+      "category": "hospital",
+      "address": "Widdoes Street, Brgy. II, San Fernando City, La Union 2500",
+      "barangay": "Barangay II",
+      "sector": "private",
+      "services": ["Metabolic and wellness care", "Physical therapy and rehabilitation", "Dialysis", "Hospital and diagnostic services"],
+      "description": "A city hospital with published wellness, rehabilitation, renal care, and diagnostic services.",
+      "source_url": "https://bethanyhospitalinc.com/patients",
+      "source_title": "Bethany Hospital patient guide and address",
+      "contact_url": "https://bethanyhospitalinc.com/contact",
+      "service_source_url": "https://bethanyhospitalinc.com/services",
+      "service_source_title": "Bethany Hospital service directory",
+      "ownership_source_url": "https://bethanyhospitalinc.com/about",
+      "investment_note": "Explore appropriate collaborations with hospital management. The operator discusses private partnerships in its mission, but no active capital-raising, sale, or franchise offer has been verified.",
+      "offer_status": "not_verified",
+      "evidence_note": "Published services already include wellness and rehabilitation; their presence is not evidence of an unmet local service gap."
+    },
+    {
+      "id": "hlth-lumed",
+      "name": "LUMED Hospital",
+      "category": "hospital",
+      "address": "Ancheta Street corner Bucaneg Street, Catbangen, San Fernando City, La Union",
+      "barangay": "Catbangen",
+      "sector": "private",
+      "services": ["Outpatient consultations", "Laboratory and radiology", "Industrial clinic", "Hospital services"],
+      "description": "La Union Medical Diagnostic Center and Hospital, Inc., with published consultation and diagnostic services in Catbangen.",
+      "source_url": "https://lumed.com.ph/contact",
+      "source_title": "LUMED Hospital contact directory",
+      "contact_url": "https://lumed.com.ph/contact",
+      "service_source_url": "https://lumed.com.ph/services",
+      "service_source_title": "LUMED Hospital published services",
+      "ownership_source_url": "https://lumed.com.ph/about-lumed",
+      "investment_note": "Contact the hospital's management or marketing team about appropriate service partnerships. No current ownership investment, franchise, or sale offer has been verified.",
+      "offer_status": "not_verified",
+      "evidence_note": "The operator identifies Catbangen; the older local inventory identifies Tanqui. Use the operator address and withhold contradictory map coordinates pending verification."
+    },
+    {
+      "id": "hlth-itrmc",
+      "name": "Ilocos Training and Regional Medical Center",
+      "category": "hospital",
+      "address": "MacArthur Highway, Parian, San Fernando City, La Union 2500",
+      "barangay": "Parian",
+      "sector": "public",
+      "services": ["Hospital and outpatient care", "Nutrition counseling", "Diet prescription and meal planning", "Clinical training"],
+      "description": "A government teaching and training hospital serving as a public care anchor in Parian.",
+      "source_url": "https://itrmc.doh.gov.ph/images/2026/PROC_2026/BD_2026/rrg-BD-2-Rebidding_of_Optha_Implants.pdf",
+      "source_title": "ITRMC 2026 official procurement document and institutional address",
+      "contact_url": "https://itrmc.doh.gov.ph/",
+      "service_source_url": "https://itrmc.doh.gov.ph/images/2025/CC_2025/Citizens_Chapter.pdf",
+      "service_source_title": "ITRMC 2025 Citizen's Charter, published services",
+      "ownership_source_url": "https://itrmc.doh.gov.ph/images/2024/ITRMC-Citizens-Charter-7th-Edition-2024_1.pdf",
+      "investment_note": "This is a public care anchor. Explore complementary services nearby or official supplier processes; no private ownership investment is listed.",
+      "offer_status": "not_verified",
+      "evidence_note": "The 2026 institutional document supports its address. The dated Citizen's Charter supports listed service types, not a live appointment or capacity feed."
+    },
+    {
+      "id": "hlth-doh-trc",
+      "name": "DOH Treatment and Rehabilitation Center – La Union",
+      "category": "mental_health",
+      "address": "ITRMC Compound, Parian, San Fernando City, La Union 2500",
+      "barangay": "Parian",
+      "sector": "public",
+      "services": ["Substance use treatment and rehabilitation", "Outpatient program", "Aftercare support"],
+      "description": "A Department of Health center publishing residential, outpatient, and aftercare pathways for substance use treatment.",
+      "source_url": "https://trclu.doh.gov.ph/directory/",
+      "source_title": "DOH-TRC La Union official directory",
+      "contact_url": "https://trclu.doh.gov.ph/directory/",
+      "service_source_url": "https://trclu.doh.gov.ph/wp-content/uploads/2026/02/DOH-TRC-LU_CC_2026.pdf",
+      "service_source_title": "DOH-TRC La Union 2026 Citizen's Charter",
+      "investment_note": "This is a public treatment provider. Any collaboration must follow the center's requirements; it is not a private ownership investment listing.",
+      "offer_status": "not_verified",
+      "evidence_note": "The official directory supports the location. Published treatment programs concern substance use; do not present the center as a general mental health clinic."
+    }
+  ],
+  "idea_sources": [
+    {
+      "idea_id": "rehabilitation",
+      "evidence_summary": "Local hospitals already publish rehabilitation services. A community studio could be explored through operator interviews and a referral plan; unmet demand has not been established.",
+      "source_url": "https://lmc.lorma.org/hospital-services/",
+      "source_title": "Lorma hospital services: physical therapy and rehabilitation"
+    },
+    {
+      "idea_id": "nutrition",
+      "evidence_summary": "ITRMC publishes nutrition counseling and meal-plan services. A qualified dietitian-led complementary concept needs customer research and coordination with existing providers.",
+      "source_url": "https://itrmc.doh.gov.ph/images/2025/CC_2025/Citizens_Chapter.pdf",
+      "source_title": "ITRMC 2025 Citizen's Charter: nutrition and diet services"
+    },
+    {
+      "idea_id": "counseling",
+      "evidence_summary": "DOH-TRC publishes substance use treatment and aftercare programs. Any complementary support concept needs qualified professionals, a defined scope, and a confirmed referral arrangement.",
+      "source_url": "https://trclu.doh.gov.ph/wp-content/uploads/2026/02/DOH-TRC-LU_CC_2026.pdf",
+      "source_title": "DOH-TRC La Union 2026 Citizen's Charter: outpatient and aftercare programs"
+    },
+    {
+      "idea_id": "mobility",
+      "evidence_summary": "Bethany describes mobility, gait, balance, and strength work within its rehabilitation services. A separate movement studio would need safe access, qualified supervision, and locally validated demand.",
+      "source_url": "https://www.bethanyhospitalinc.com/service-details?id=32",
+      "source_title": "Bethany Physical Therapy and Rehabilitation Unit"
+    },
+    {
+      "idea_id": "prevention",
+      "evidence_summary": "Bethany already publishes a Metabolic and Wellness Center. A preventive practice should be researched as complementary service capacity rather than an assumed missing facility.",
+      "source_url": "https://bethanyhospitalinc.com/services",
+      "source_title": "Bethany published services: Metabolic and Wellness Center"
+    },
+    {
+      "idea_id": "caregiver",
+      "evidence_summary": "Bethany's patient guide discusses rooms, visiting arrangements, and companion rules. A caregiver respite concept is an inference to investigate with families and operators, not a documented shortage.",
+      "source_url": "https://bethanyhospitalinc.com/patients",
+      "source_title": "Bethany Hospital patient and companion guide"
+    }
+  ]
+}

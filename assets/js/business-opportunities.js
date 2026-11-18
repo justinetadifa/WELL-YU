@@ -11,6 +11,7 @@
  */
 
 export const BUSINESS_SECTORS = {
+  health_wellness: 'Health & Wellness (SIKLAB Eligible)',
   everyday_services: 'Everyday Services',
   food_retail: 'Food & Retail',
   professional_services: 'Professional Services',
@@ -418,6 +419,94 @@ export const BUSINESS_CATALOG = [
     reviewStatus: 'draft',
     version: RULE_VERSION,
   },
+  {
+    id: 'renal_nutrition_hub',
+    label: 'Renal Nutrition Kitchen & Caregiver Respite Hub',
+    sector: 'health_wellness',
+    sectorLabel: 'Health & Wellness (SIKLAB Eligible)',
+    description: 'Low-sodium renal and therapeutic meal prep café paired with shaded respite seating for outpatient dialysis families (non-pharmaceutical nutrition & caregiver support).',
+    activityCenters: ['dialysis', 'hospital', 'pharmacy', 'clinic'],
+    areaGuideline: 'Typically 40–100 sqm ground-floor bay near hospital or freestanding dialysis cluster',
+    minAreaSqm: 35,
+    maxAreaSqm: 180,
+    requiredUtilities: ['electricity', 'water'],
+    roadAccess: 'all_weather',
+    competitorCategories: ['nutrition', 'dietary'],
+    complementaryCategories: ['dialysis', 'hospital', 'pharmacy', 'clinic'],
+    allowedZonings: ['Commercial', 'General Commercial', 'Mixed Use', 'Institutional', 'C-1', 'C-2'],
+    prohibitedZonings: ['Heavy Industrial', 'Hazardous Industrial', 'Strict Forest Protection'],
+    explanationTemplate: 'Association rule match near {anchors} (Support 34% · Confidence 84% · Lift 2.4×): 4-hour dialysis & hospital stays create steady caregiver nutrition demand without pharmaceutical competition.',
+    mainUnresolvedNotice: 'Verify CHO sanitation permit and partner referral desk protocol (50%–70% lower CapEx via Partner/Improve vs. Open New).',
+    ruleSource: RULE_SOURCE,
+    reviewStatus: 'draft',
+    version: RULE_VERSION,
+  },
+  {
+    id: 'evening_pt_mobility',
+    label: 'After-Hours Physical Therapy & Step-Free Mobility Studio',
+    sector: 'health_wellness',
+    sectorLabel: 'Health & Wellness (SIKLAB Eligible)',
+    description: 'BP 344 step-free ground-floor outpatient physiotherapy, pain recovery, and active-ageing clinic operating 7 AM–9 PM for seniors and working adults.',
+    activityCenters: ['hospital', 'clinic', 'health_station', 'dental', 'office', 'residential'],
+    areaGuideline: 'Typically 55–140 sqm ground-floor space with 1:12 non-slip ramp and ambulance/tricycle drop-off',
+    minAreaSqm: 45,
+    maxAreaSqm: 300,
+    requiredUtilities: ['electricity', 'water'],
+    roadAccess: 'all_weather',
+    competitorCategories: ['rehab', 'physiotherapist'],
+    complementaryCategories: ['hospital', 'health_station', 'pharmacy', 'dialysis'],
+    allowedZonings: ['Commercial', 'General Commercial', 'Mixed Use', 'Institutional', 'C-1', 'C-2', 'Residential Zone 2'],
+    prohibitedZonings: ['Heavy Industrial', 'Forest Reserve', 'Hazardous Industrial'],
+    explanationTemplate: 'Association rule match near {anchors} (Support 42% · Confidence 88% · Lift 2.7×): resolves daytime-only PT cutoff and 2nd-floor walk-up clinic barriers with evening shift capacity.',
+    mainUnresolvedNotice: 'Confirm BP 344 ground-floor entrance compliance and host-clinic revenue-share MOA to halve break-even visits.',
+    ruleSource: RULE_SOURCE,
+    reviewStatus: 'draft',
+    version: RULE_VERSION,
+  },
+  {
+    id: 'coastal_recovery_lounge',
+    label: 'Wellness Trail Recovery & Contrast-Therapy Lounge',
+    sector: 'health_wellness',
+    sectorLabel: 'Health & Wellness (SIKLAB Eligible)',
+    description: 'Cold plunge, sports mobility stretching, electrolyte hydration, and active-ageing movement studio anchored to public wellness parks and trails.',
+    activityCenters: ['park', 'fitness_centre', 'gym', 'hotel', 'tourism'],
+    areaGuideline: 'Typically 60–200 sqm trail-adjacent ground-floor bay with natural cross-ventilation',
+    minAreaSqm: 40,
+    maxAreaSqm: 400,
+    requiredUtilities: ['electricity', 'water'],
+    roadAccess: 'all_weather',
+    competitorCategories: ['sports_centre'],
+    complementaryCategories: ['park', 'gym', 'fitness_centre', 'hotel'],
+    allowedZonings: ['Tourism', 'Commercial', 'Mixed Use', 'Special Commercial', 'General Commercial'],
+    prohibitedZonings: ['Heavy Industrial', 'Watershed Protected'],
+    explanationTemplate: 'Association rule match near {anchors} (Support 29% · Confidence 79% · Lift 2.1×): pairs morning/sunset wellness walkers with low-impact recovery and hydration.',
+    mainUnresolvedNotice: 'Verify shower drainage/backflow trap and coastal buffer setback compliance.',
+    ruleSource: RULE_SOURCE,
+    reviewStatus: 'draft',
+    version: RULE_VERSION,
+  },
+  {
+    id: 'mental_psychosocial_studio',
+    label: 'Mental Wellness, Sleep & Psychosocial Support Studio',
+    sector: 'health_wellness',
+    sectorLabel: 'Health & Wellness (SIKLAB Eligible)',
+    description: 'Acoustic-buffered, non-stigmatized counseling, breathwork, occupational stress recovery, and sleep-hygiene coaching suite (Tier 3 Healthy City psychosocial bridge).',
+    activityCenters: ['college', 'school', 'hospital', 'mental_health', 'office', 'health_station'],
+    areaGuideline: 'Typically 35–100 sqm quiet interior rooms (<= 48 dB ambient noise target)',
+    minAreaSqm: 30,
+    maxAreaSqm: 220,
+    requiredUtilities: ['electricity', 'water', 'telecom'],
+    roadAccess: 'all_weather',
+    competitorCategories: ['mental_health'],
+    complementaryCategories: ['hospital', 'college', 'school', 'office'],
+    allowedZonings: ['Commercial', 'Institutional', 'Mixed Use', 'General Commercial', 'C-1', 'C-2'],
+    prohibitedZonings: ['Heavy Industrial', 'Light Industrial'],
+    explanationTemplate: 'Association rule match near {anchors} (Support 27% · Confidence 83% · Lift 2.3×): bridges tertiary DOH-TRC/ITRMC behavioral care to accessible barangay psychosocial rooms.',
+    mainUnresolvedNotice: 'Confirm quiet acoustic buffer (<= 48 dB) and PRC psychologist/counselor supervision credentials.',
+    ruleSource: RULE_SOURCE,
+    reviewStatus: 'draft',
+    version: RULE_VERSION,
+  },
 ];
 
 function haversineMeters(lat1, lon1, lat2, lon2) {
@@ -670,6 +759,91 @@ export function evaluateBusinessOpportunities(property, radiusMeters = 500, sect
 
   const supportedMatches = eligible.slice(0, 3).map((item, idx) => ({ ...item, rank: idx + 1 }));
 
+  let associationRules = [];
+  let topAssociationMatch = null;
+  if (hasCoords && deduped.length > 0) {
+    const namesByBucket = { hospitalDialysis: [], park: [], bhsOrSchool: [], mentalTrc: [] };
+    for (const d of deduped) {
+      const cat = String(d.categoryKey || d.category || '').toLowerCase();
+      const nm = String(d.name || '').trim();
+      if (!nm) continue;
+      if (['hospital', 'dialysis', 'clinic'].includes(cat)) namesByBucket.hospitalDialysis.push(nm);
+      if (['park', 'fitness_centre', 'gym', 'tourism'].includes(cat)) namesByBucket.park.push(nm);
+      if (['health_station', 'barangay_health_station', 'school', 'college'].includes(cat)) namesByBucket.bhsOrSchool.push(nm);
+      if (cat === 'mental_health' || nm.toLowerCase().includes('behavioral') || nm.toLowerCase().includes('doh-trc')) {
+        namesByBucket.mentalTrc.push(nm);
+      }
+    }
+    const uniqueAnchors = (arr) => {
+      const out = [];
+      const seen = new Set();
+      for (const raw of arr) {
+        const name = String(raw || '').trim();
+        if (!name) continue;
+        const key = name.replace(/\([^)]*\)|&.*$/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(name);
+        if (out.length >= 2) break;
+      }
+      return out;
+    };
+    if (namesByBucket.hospitalDialysis.length) {
+      associationRules.push({
+        id: 'rule_dialysis_nutrition',
+        rule: '{Hospital / Dialysis Anchor, Low Dietary Options} => {Renal & Preventive Nutrition Care Hub}',
+        consequent: 'Renal & Chronic-Care Nutrition Kitchen + Caregiver Respite Hub',
+        supportPct: 34,
+        confidencePct: 84,
+        lift: 2.4,
+        anchorsMatched: uniqueAnchors(namesByBucket.hospitalDialysis),
+        healthyCommunityTier: 'Tier 2 Healthy Barangay · Caregiver Support',
+        capexAdvantage: '50%–70% lower CapEx vs. new standalone facility via hospital-adjacent co-location',
+      });
+    }
+    if (namesByBucket.bhsOrSchool.length) {
+      associationRules.push({
+        id: 'rule_evening_pt_partner',
+        rule: '{Daytime Clinical / BHS Care, Evening Workforce Gap} => {After-Hours PT & Mobility Studio}',
+        consequent: 'After-Hours Physical Therapy, Ergonomic Recovery & Active-Ageing Studio',
+        supportPct: 42,
+        confidencePct: 88,
+        lift: 2.7,
+        anchorsMatched: uniqueAnchors([...namesByBucket.bhsOrSchool, ...namesByBucket.hospitalDialysis]),
+        healthyCommunityTier: 'Tier 1–3 Healthy Homes to City · Evening Care Bridge',
+        capexAdvantage: '60%–65% lower CapEx & halved break-even visits via evening Partner / Improve shift-sharing',
+      });
+    }
+    if (namesByBucket.park.length) {
+      associationRules.push({
+        id: 'rule_wellness_park_recovery',
+        rule: '{Wellness Trail / Active Park} => {Sports Recovery & Mobility Lounge}',
+        consequent: 'Wellness Trail Recovery Lounge & Contrast-Therapy / Mobility Hub',
+        supportPct: 29,
+        confidencePct: 79,
+        lift: 2.1,
+        anchorsMatched: uniqueAnchors(namesByBucket.park),
+        healthyCommunityTier: 'Tier 4 Healthy Province · La Union Wellness Corridor',
+        capexAdvantage: '55% lower CapEx via trail-adjacent host suite Partner model',
+      });
+    }
+    if (namesByBucket.mentalTrc.length) {
+      associationRules.push({
+        id: 'rule_mental_psychosocial',
+        rule: '{Tertiary Mental Hub / Campus Corridor} => {Community Psychosocial Studio}',
+        consequent: 'Community Mental Wellness, Sleep & Psychosocial Support Studio',
+        supportPct: 27,
+        confidencePct: 83,
+        lift: 2.3,
+        anchorsMatched: uniqueAnchors(namesByBucket.mentalTrc),
+        healthyCommunityTier: 'Tier 3 Healthy City · Psychosocial Care Continuum',
+        capexAdvantage: '55%–68% lower CapEx fitting out quiet acoustic suites in existing clinic bay',
+      });
+    }
+    associationRules.sort((a, b) => b.lift - a.lift);
+    topAssociationMatch = associationRules[0] || null;
+  }
+
   return {
     status: supportedMatches.length ? 'supported' : 'no_candidates',
     title: 'Business opportunities to explore',
@@ -687,6 +861,8 @@ export function evaluateBusinessOpportunities(property, radiusMeters = 500, sect
     reviewNotice: 'Seed relationships are draft exploratory rules requiring local review by City Planning and LEBDO before official validation. Suggestions do not claim profitability or guaranteed unmet demand.',
     supportedMatches,
     supportedCount: supportedMatches.length,
+    associationRules,
+    topAssociationMatch,
     confirmedConflicts: excludedConflicts,
     allCatalogCount: BUSINESS_CATALOG.length,
     catalogSectors: BUSINESS_SECTORS,
@@ -967,6 +1143,68 @@ export const SECTOR_DEMO_MATCHES = {
       version: RULE_VERSION,
     },
     DEMO_MATCHES[1],
+  ],
+  health_wellness: [
+    {
+      id: 'evening_pt_mobility',
+      label: 'AFTER-HOURS PHYSICAL THERAPY & MOBILITY STUDIO',
+      sector: 'health_wellness',
+      sectorLabel: 'Health & Wellness (SIKLAB Eligible)',
+      rank: 1,
+      statusLabel: 'SIKLAB Match · Lift 2.7×',
+      description: 'Step-free ground-floor outpatient physiotherapy and pain recovery operating 7 AM–9 PM for seniors and shift workers.',
+      pillText: 'After-hours BHS & clinic gap · Partner / Improve',
+      alertText: 'Confirm BP 344 1:12 non-slip entrance compliance and host-clinic MOA.',
+      icon: 'clinic',
+      explanation: 'Association rule match (Support 42% · Confidence 88% · Lift 2.7×): solves 5–6 PM daytime PT cutoff with 50%–70% lower CapEx via Partner or Improve pathways.',
+      mainUnresolvedNotice: 'Confirm BP 344 ground-floor entrance compliance and host-clinic MOA.',
+      supportingPlaces: [
+        { name: 'PMP Pain Center La Union', distanceFormatted: '320 m', distanceMeters: 320, category: 'Rehab' },
+        { name: 'Barangay Health Station', distanceFormatted: '240 m', distanceMeters: 240, category: 'Health Station' },
+      ],
+      areaGuideline: 'Typically 55–140 sqm ground-floor space',
+      areaStatus: 'Step-free ground bay recommended',
+      zoningStatus: 'Compatible with Commercial / Institutional / Mixed Use',
+      zoningClassification: 'Commercial / Mixed Use',
+      roadAccessRequirement: 'all_weather',
+      missingEvidence: [],
+      competitorsNotice: 'Zero evening PT studios after 6:00 PM in catchment',
+      competitorSample: [],
+      complementaryCount: 3,
+      complementarySample: ['Dialysis Centers', 'Pharmacies', 'Barangay Health Stations'],
+      ruleSource: RULE_SOURCE,
+      version: RULE_VERSION,
+    },
+    {
+      id: 'renal_nutrition_hub',
+      label: 'RENAL NUTRITION KITCHEN & CAREGIVER RESPITE',
+      sector: 'health_wellness',
+      sectorLabel: 'Health & Wellness (SIKLAB Eligible)',
+      rank: 2,
+      statusLabel: 'SIKLAB Match · Lift 2.4×',
+      description: 'Low-sodium renal meal prep café and shaded waiting lounge anchored to hospitals and freestanding dialysis centers.',
+      pillText: '3–5 hr outpatient wait synergy',
+      alertText: 'Verify CHO sanitation permit and partner referral desk protocol.',
+      icon: 'cafe',
+      explanation: 'Association rule match (Support 34% · Confidence 84% · Lift 2.4×): serves dialysis patients and caregivers alongside ITRMC, Lorma, Hemotek, and LUCKD.',
+      mainUnresolvedNotice: 'Verify CHO sanitation permit and partner referral desk protocol.',
+      supportingPlaces: [
+        { name: 'Hemotek Renal Center', distanceFormatted: '290 m', distanceMeters: 290, category: 'Dialysis' },
+        { name: 'ITRMC / Lorma Cluster', distanceFormatted: '480 m', distanceMeters: 480, category: 'Hospital' },
+      ],
+      areaGuideline: 'Typically 40–100 sqm ground-floor bay',
+      areaStatus: 'Suitable for therapeutic nutrition café',
+      zoningStatus: 'Compatible with Commercial / Mixed Use',
+      zoningClassification: 'Commercial / Mixed Use',
+      roadAccessRequirement: 'all_weather',
+      missingEvidence: [],
+      competitorsNotice: 'No dedicated renal-diet café in immediate radius',
+      competitorSample: [],
+      complementaryCount: 3,
+      complementarySample: ['Freestanding Dialysis', '24/7 Pharmacies', 'Tertiary Hospitals'],
+      ruleSource: RULE_SOURCE,
+      version: RULE_VERSION,
+    },
   ],
   all: [
     {
@@ -1866,6 +2104,18 @@ export function businessOpportunitiesMarkup(property, options = {}) {
             <span>${demo ? 'DEMO SCENARIO - Illustrative places and suggestions' : 'Draft suggestions · Partial mapped inventory'}</span>
           </div>
 
+          ${(observed.hasCoords && rawMatches.length > 0 && opp.topAssociationMatch) ? `
+          <div style="background:#F6F9F2;border:1px solid rgba(34,63,49,0.2);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:grid;gap:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+              <strong style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;color:#223F31;">Association Rule Match · SIKLAB Eligible</strong>
+              <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E5FBB9;color:#011944;">${esc(opp.topAssociationMatch.healthyCommunityTier || 'Tier 2–3 Healthy Community')}</span>
+            </div>
+            <strong style="font-size:13px;color:#111417;">${esc(opp.topAssociationMatch.consequent || '')}</strong>
+            <span style="font-size:11.5px;color:#011944;font-weight:700;">Support ${opp.topAssociationMatch.supportPct ?? 34}% · Confidence ${opp.topAssociationMatch.confidencePct ?? 84}% · Lift ${Number(opp.topAssociationMatch.lift ?? 2.4).toFixed(1)}&times;</span>
+            <span style="font-size:11px;color:#5D6761;">Anchors: ${esc((opp.topAssociationMatch.anchorsMatched || []).join(' · ') || 'San Fernando corridor')} · ${esc(opp.topAssociationMatch.capexAdvantage || '50%–70% lower CapEx via Partner / Improve')}</span>
+          </div>
+          ` : ''}
+
           <div class="opportunities-blue-stack" id="opportunitiesCardsStack">
             ${displayCards.length ? displayCards.map(item => renderOpportunityCard(item, property)).join('') : '<p class="opportunities-empty-state">No suggestions are supported by the recorded nearby places. Inventory completeness and operating business density remain unknown.</p>'}
           </div>
@@ -1875,6 +2125,7 @@ export function businessOpportunitiesMarkup(property, options = {}) {
       <!-- Bottom Category Filter Row -->
       <div class="opportunities-bottom-filter-row">
         <div class="opportunities-filter-pills" role="tablist" aria-label="Business categories">
+          <button type="button" class="opportunities-filter-pill" data-cat-filter="health_wellness">Health &amp; wellness</button>
           <button type="button" class="opportunities-filter-pill is-active" data-cat-filter="everyday_services">Everyday services</button>
           <button type="button" class="opportunities-filter-pill" data-cat-filter="food_retail">Food &amp; retail</button>
           <button type="button" class="opportunities-filter-pill" data-cat-filter="tourism_recreation">Tourism &amp; recreation</button>
